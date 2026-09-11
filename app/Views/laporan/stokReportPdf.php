@@ -343,7 +343,7 @@
             </div>
             <div class="col-md-6 title-container">
                 <h2 class="title">Laporan Stok</h2>
-                <h4 class="title">Pelanggan: <?= $nama_pelanggan ?></h4>
+                <!-- <h4 class="title">Pelanggan: <?= $nama_pelanggan ?></h4> -->
             </div>
             <div class="col-md-3 text-right">
                 <h4 class="title">Tanggal : <?= date('d-m-Y') ?></h4>

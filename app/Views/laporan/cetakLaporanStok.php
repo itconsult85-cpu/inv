@@ -81,7 +81,7 @@
 
         <table width="100%">
             <tr>
-                <td><strong>Pelanggan:</strong> <?= $nama_pelanggan ?></td>
+                <!-- <td><strong>Pelanggan:</strong> <?= $nama_pelanggan ?></td> -->
                 <td><strong>Tanggal Cetak:</strong> <?= date('d-m-Y') ?></td>
             </tr>
 
