@@ -107,7 +107,7 @@ Managemen Data Produk
             <th style="width: 5;">No</th>
             <th>Kode Produk</th>
             <th>Nama Produk</th>
-            <th>Material</th>
+            <th>Material &amp; Detail Berat</th>
             <th>Kategori</th>
             <th>Satuan</th>
             <th style="width: 10%;">#</th>

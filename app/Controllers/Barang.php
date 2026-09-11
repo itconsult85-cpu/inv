@@ -272,6 +272,12 @@ class Barang extends BaseController
                 ->groupBy('bmat.brgkode')
                 ->getCompiledSelect();
 
+            $materialDetailQuery = $db->table('berat_material bm')
+                ->select("bm.kodeprd, GROUP_CONCAT(CONCAT(COALESCE(m.matnama, CONCAT('Material #', bm.matid)), ' | Pakai: ', FORMAT(bm.berat * 1000, 4), ' g | Wise: ', COALESCE(CONCAT(FORMAT(bm.wise, 2), '%'), '-') , ' | Jadi: ', COALESCE(FORMAT(bm.berat_produk_jadi * 1000, 4), '-'), ' g') ORDER BY bm.matid SEPARATOR '|||') AS material_detail", false)
+                ->join('material m', 'm.matid = bm.matid', 'left')
+                ->groupBy('bm.kodeprd')
+                ->getCompiledSelect();
+
             $builder = $db->table('barang')
                 ->select("
                     barang.brgkode,
@@ -279,6 +285,7 @@ class Barang extends BaseController
                     barang.tanpa_berat,
                     COALESCE(barang.sumber_material, 'tre') AS sumber_material,
                     material_produk.matnama,
+                    material_detail.material_detail,
                     kategori.katnama,
                     satuan.satnama,
                     barang.idpel,
@@ -288,6 +295,12 @@ class Barang extends BaseController
                 ->join(
                     "($materialQuery) AS material_produk",
                     'material_produk.brgkode = barang.brgkode',
+                    'left',
+                    false
+                )
+                ->join(
+                    "($materialDetailQuery) AS material_detail",
+                    'material_detail.kodeprd = barang.brgkode',
                     'left',
                     false
                 )
@@ -316,14 +329,19 @@ class Barang extends BaseController
                     'barang.brgkode',
                     'barang.brgnama',
                     'material_produk.matnama',
+                    'material_detail.material_detail',
                     'kategori.katnama',
                     'satuan.satnama'
                 ])
                 ->addNumbering('nomor')
                 ->add('matnama_label', function ($row) {
                     $material = trim((string) ($row->matnama ?? ''));
+                    $detailRaw = trim((string) ($row->material_detail ?? ''));
+                    $detail = $detailRaw !== ''
+                        ? implode('<br>', array_map(static fn ($item) => esc(trim($item)), explode('|||', $detailRaw)))
+                        : '';
                     if (($row->sumber_material ?? 'tre') === 'vendor') {
-                        return ($material !== '' ? esc($material) . '<br>' : '')
+                        return ($detail !== '' ? $detail : ($material !== '' ? esc($material) . '<br>' : ''))
                             . '<span class="badge badge-info">Material dari Customer</span>';
                     }
 
@@ -332,11 +350,11 @@ class Barang extends BaseController
                     }
 
                     if ((int) ($row->tanpa_berat ?? 0) === 1) {
-                        return ($material !== '' ? esc($material) . '<br>' : '')
+                        return ($detail !== '' ? $detail : ($material !== '' ? esc($material) . '<br>' : ''))
                             . '<span class="badge badge-info">Jasa / Tanpa Berat</span>';
                     }
 
-                    return esc($material !== '' ? $material : '-');
+                    return $detail !== '' ? $detail : esc($material !== '' ? $material : '-');
                 })
                 ->add('aksi', function ($row) {
                     return "
