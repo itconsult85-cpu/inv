@@ -196,7 +196,7 @@ $labelPemakaianKode = implode(', ', array_map(static function ($row) {
                 </div>
             </div>
         </div>
-        <div class="row">
+        <div class="row d-none">
             <div class="col-md-6">
                 <div class="form-group">
                     <label for="wise">Wise <small class="text-muted">(% material yang kebuang/susut pas produksi)</small></label>
@@ -311,7 +311,12 @@ $labelPemakaianKode = implode(', ', array_map(static function ($row) {
             }
             input.addEventListener('input', hitungTotalBerat);
 
+            label.className = 'font-weight-bold mb-1';
             wrapper.appendChild(label);
+            var materialLabel = document.createElement('small');
+            materialLabel.className = 'd-block text-muted';
+            materialLabel.textContent = 'Berat material terpakai (gram)';
+            wrapper.appendChild(materialLabel);
             wrapper.appendChild(input);
             var detailRow = document.createElement('div');
             detailRow.className = 'row mt-1';
@@ -319,8 +324,8 @@ $labelPemakaianKode = implode(', ', array_map(static function ($row) {
                 ? wiseMaterialAwal[opt.value] : '';
             var beratProdukAwal = beratProdukJadiMaterialAwal[opt.value] !== undefined && beratProdukJadiMaterialAwal[opt.value] !== null
                 ? (parseFloat(beratProdukJadiMaterialAwal[opt.value]) * GRAM_KE_KG).toString() : '';
-            detailRow.innerHTML = '<div class="col-md-6"><input type="number" step="0.01" min="0" max="100" class="form-control wise-material" name="wise_material[' + opt.value + ']" placeholder="Wise (%)" value="' + wiseAwal + '"></div>'
-                + '<div class="col-md-6"><input type="number" step="0.0001" min="0.0001" required class="form-control berat-produk-jadi-material" name="berat_produk_jadi_material[' + opt.value + ']" placeholder="Berat jadi (gram)" value="' + beratProdukAwal + '"></div>';
+            detailRow.innerHTML = '<div class="col-md-6"><label class="small text-muted mb-1">Wise (%)</label><input type="number" step="0.01" min="0" max="100" class="form-control wise-material" name="wise_material[' + opt.value + ']" value="' + wiseAwal + '"></div>'
+                + '<div class="col-md-6"><label class="small text-muted mb-1">Berat produk jadi (gram)</label><input type="number" step="0.0001" min="0.0001" required class="form-control berat-produk-jadi-material" name="berat_produk_jadi_material[' + opt.value + ']" placeholder="Contoh: 8,6" value="' + beratProdukAwal + '"></div>';
             detailRow.querySelector('.wise-material').addEventListener('input', function() {
                 if (opt.value === materialUtamaElement.value) document.getElementById('wise').value = this.value;
             });

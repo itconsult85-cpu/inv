@@ -646,12 +646,14 @@ class Barang extends BaseController
             }
 
             $beratProduk = (new Modelberat())->find($row['brgkode']);
+            $materialUtamaLama = (int) ($materialTerpilih[0] ?? 0);
             foreach ($beratMaterialRows as $bm) {
                 $matid = (int) $bm['matid'];
-                if (!isset($beratProdukJadiMaterial[$matid]) || $beratProdukJadiMaterial[$matid] === null) {
+                if ($matid === $materialUtamaLama
+                    && (!isset($beratProdukJadiMaterial[$matid]) || $beratProdukJadiMaterial[$matid] === null)) {
                     $beratProdukJadiMaterial[$matid] = $beratProduk['berat'] ?? null;
                 }
-                if (!array_key_exists($matid, $wiseMaterial)) {
+                if ($matid === $materialUtamaLama && !array_key_exists($matid, $wiseMaterial)) {
                     $wiseMaterial[$matid] = $row['wise'] ?? null;
                 }
             }
