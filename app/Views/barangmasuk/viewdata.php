@@ -577,6 +577,16 @@ Data Produk Masuk
     var tableProduksi;
     var tableStok;
 
+    // Setiap POST AJAX dapat meregenerasi token CSRF. Sinkronkan token
+    // terbaru ke request berikutnya dan ke form cetak stok.
+    $(document).ajaxComplete(function(event, xhr) {
+        const responseToken = xhr.getResponseHeader('X-CSRF-TOKEN');
+        if (responseToken) {
+            csrfHash = responseToken;
+            $('#formCetakStok input[name="' + csrfToken + '"]').val(csrfHash);
+        }
+    });
+
     function formatNumber(number) {
         return number.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
     }
