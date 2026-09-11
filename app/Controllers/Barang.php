@@ -28,6 +28,37 @@ class Barang extends BaseController
         $this->ensureSumberMaterialColumns();
         $this->ensureMaterialColumnsNullable();
         $this->ensureWiseColumn();
+        $this->ensureBeratMaterialDetailColumns();
+    }
+
+    private function ensureBeratMaterialDetailColumns(): void
+    {
+        $db = \Config\Database::connect();
+        if (!$db->tableExists('berat_material')) {
+            return;
+        }
+
+        $forge = \Config\Database::forge();
+        if (!$db->fieldExists('berat_produk_jadi', 'berat_material')) {
+            $forge->addColumn('berat_material', [
+                'berat_produk_jadi' => [
+                    'type' => 'DECIMAL',
+                    'constraint' => '15,4',
+                    'null' => true,
+                    'after' => 'berat',
+                ],
+            ]);
+        }
+        if (!$db->fieldExists('wise', 'berat_material')) {
+            $forge->addColumn('berat_material', [
+                'wise' => [
+                    'type' => 'DECIMAL',
+                    'constraint' => '10,4',
+                    'null' => true,
+                    'after' => 'berat_produk_jadi',
+                ],
+            ]);
+        }
     }
 
     /**
@@ -373,6 +404,12 @@ class Barang extends BaseController
         $idpel = $this->request->getVar('idpel');
         $wise = $this->request->getPost('wise');
         $wise = ($wise !== null && $wise !== '' && is_numeric($wise)) ? (float) $wise : null;
+        $wisePerMaterial = $this->request->getPost('wise_material');
+        $materialUtamaInput = $this->materialUtama($materials);
+        if (is_array($wisePerMaterial) && array_key_exists($materialUtamaInput, $wisePerMaterial)) {
+            $wiseUtama = $wisePerMaterial[$materialUtamaInput];
+            $wise = ($wiseUtama !== '' && is_numeric($wiseUtama)) ? (float) $wiseUtama : null;
+        }
         $sumberMaterial = in_array($this->request->getPost('sumber_material'), ['vendor', 'beli_jadi'], true)
             ? $this->request->getPost('sumber_material')
             : 'tre';
@@ -596,11 +633,28 @@ class Barang extends BaseController
                 ->where('kodeprd', $row['brgkode'])
                 ->get()->getResultArray();
             $beratMaterial = [];
+            $beratProdukJadiMaterial = [];
+            $wiseMaterial = [];
             foreach ($beratMaterialRows as $bm) {
                 $beratMaterial[(int) $bm['matid']] = $bm['berat'];
+                if (array_key_exists('berat_produk_jadi', $bm)) {
+                    $beratProdukJadiMaterial[(int) $bm['matid']] = $bm['berat_produk_jadi'];
+                }
+                if (array_key_exists('wise', $bm)) {
+                    $wiseMaterial[(int) $bm['matid']] = $bm['wise'];
+                }
             }
 
             $beratProduk = (new Modelberat())->find($row['brgkode']);
+            foreach ($beratMaterialRows as $bm) {
+                $matid = (int) $bm['matid'];
+                if (!isset($beratProdukJadiMaterial[$matid]) || $beratProdukJadiMaterial[$matid] === null) {
+                    $beratProdukJadiMaterial[$matid] = $beratProduk['berat'] ?? null;
+                }
+                if (!array_key_exists($matid, $wiseMaterial)) {
+                    $wiseMaterial[$matid] = $row['wise'] ?? null;
+                }
+            }
             $pemakaianTransaksi = $this->relasiProdukTransaksi($row['brgkode']);
 
             $data = [
@@ -626,6 +680,8 @@ class Barang extends BaseController
                 'datamaterial' => $modelmaterial->findAll(),
                 'datapelanggan' => $pelanggans,
                 'beratMaterial' => $beratMaterial,
+                'beratProdukJadiMaterial' => $beratProdukJadiMaterial,
+                'wiseMaterial' => $wiseMaterial,
                 'beratProdukJadi' => $beratProduk['berat'] ?? null,
             ];
             return view('barang/formedit', $data);
@@ -685,6 +741,12 @@ class Barang extends BaseController
         $materialProduk = implode(',', $materials);
         $wise = $this->request->getPost('wise');
         $wise = ($wise !== null && $wise !== '' && is_numeric($wise)) ? (float) $wise : null;
+        $wisePerMaterial = $this->request->getPost('wise_material');
+        $materialUtamaInput = $this->materialUtama($materials);
+        if (is_array($wisePerMaterial) && array_key_exists($materialUtamaInput, $wisePerMaterial)) {
+            $wiseUtama = $wisePerMaterial[$materialUtamaInput];
+            $wise = ($wiseUtama !== '' && is_numeric($wiseUtama)) ? (float) $wiseUtama : null;
+        }
         $db = \Config\Database::connect();
         $db->transStart();
 
@@ -982,8 +1044,18 @@ class Barang extends BaseController
             throw new \InvalidArgumentException('Berat setiap material wajib diisi.');
         }
 
+        $inputBeratProduk = $this->request->getPost('berat_produk_jadi_material');
+        $inputWise = $this->request->getPost('wise_material');
+        $beratProdukFallback = (float) $beratProdukJadi;
+        $wiseFallback = $this->request->getPost('wise');
+        $wiseFallback = ($wiseFallback !== null && $wiseFallback !== '' && is_numeric($wiseFallback))
+            ? (float) $wiseFallback
+            : null;
+
         $modelMaterial = new Modelmaterial();
         $detail = [];
+        $beratProdukUtama = $beratProdukFallback;
+        $materialUtama = $this->materialUtama($materialIds);
 
         foreach ($materialIds as $matid) {
             $nilai = $inputBerat[$matid] ?? null;
@@ -998,10 +1070,24 @@ class Barang extends BaseController
                 throw new \InvalidArgumentException("Berat material {$namaMaterial} harus lebih besar dari 0.");
             }
 
+            $beratProduk = $inputBeratProduk[$matid] ?? $beratProdukFallback;
+            if ($beratProduk === '' || $beratProduk === null || !is_numeric($beratProduk) || (float) $beratProduk <= 0) {
+                throw new \InvalidArgumentException("Berat produk jadi untuk material {$namaMaterial} wajib diisi dengan angka lebih besar dari 0.");
+            }
+            $wise = $inputWise[$matid] ?? $wiseFallback;
+            if ($wise !== null && $wise !== '' && (!is_numeric($wise) || (float) $wise < 0 || (float) $wise > 100)) {
+                throw new \InvalidArgumentException("Wise untuk material {$namaMaterial} harus berupa angka 0 sampai 100.");
+            }
+            if ((int) $matid === (int) $materialUtama) {
+                $beratProdukUtama = (float) $beratProduk;
+            }
+
             $detail[] = [
                 'kodeprd' => $kodebarang,
                 'matid' => $matid,
                 'berat' => $berat,
+                'berat_produk_jadi' => (float) $beratProduk,
+                'wise' => ($wise === null || $wise === '') ? null : (float) $wise,
                 'created_at' => date('Y-m-d H:i:s'),
                 'updated_at' => date('Y-m-d H:i:s'),
             ];
@@ -1014,12 +1100,12 @@ class Barang extends BaseController
 
         $this->simpanBeratProdukJadi(
             $kodebarang,
-            $this->materialUtama($materialIds),
-            $beratProdukJadi,
+            $materialUtama,
+            $beratProdukUtama,
             $satuanBerat
         );
 
-        return $beratProdukJadi;
+        return $beratProdukUtama;
     }
 
     /**

@@ -150,6 +150,7 @@ Form Tambah Data Produk
             <div class="col-md-6">
                 <div class="form-group">
                     <label>Berat Material Terpakai <small class="text-muted">(input dalam gram)</small></label>
+                    <small class="d-block text-muted mb-2">Setiap material memiliki berat pemakaian, Wise, dan berat produk jadi masing-masing.</small>
                     <div id="materialBeratContainer" class="berat-material-container text-muted">
                         Pilih material terlebih dahulu.
                     </div>
@@ -269,6 +270,17 @@ Form Tambah Data Produk
 
             wrapper.appendChild(label);
             wrapper.appendChild(input);
+            var detailRow = document.createElement('div');
+            detailRow.className = 'row mt-1';
+            detailRow.innerHTML = '<div class="col-md-6"><input type="number" step="0.01" min="0" max="100" class="form-control wise-material" name="wise_material[' + opt.value + ']" placeholder="Wise (%)"></div>'
+                + '<div class="col-md-6"><input type="number" step="0.0001" min="0.0001" required class="form-control berat-produk-jadi-material" name="berat_produk_jadi_material[' + opt.value + ']" placeholder="Berat jadi (gram)"></div>';
+            detailRow.querySelector('.wise-material').addEventListener('input', function() {
+                if (opt.value === materialUtamaElement.value) document.getElementById('wise').value = this.value;
+            });
+            detailRow.querySelector('.berat-produk-jadi-material').addEventListener('input', function() {
+                if (opt.value === materialUtamaElement.value) document.getElementById('beratProdukJadi').value = this.value;
+            });
+            wrapper.appendChild(detailRow);
             materialBeratContainer.appendChild(wrapper);
         });
 
@@ -398,6 +410,10 @@ Form Tambah Data Produk
         }
 
         materialBeratContainer.querySelectorAll('.berat-material').forEach(function(input) {
+            var gram = parseFloat(input.value) || 0;
+            input.value = (gram / GRAM_KE_KG).toFixed(6);
+        });
+        materialBeratContainer.querySelectorAll('.berat-produk-jadi-material').forEach(function(input) {
             var gram = parseFloat(input.value) || 0;
             input.value = (gram / GRAM_KE_KG).toFixed(6);
         });

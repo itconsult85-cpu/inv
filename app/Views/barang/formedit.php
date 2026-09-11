@@ -182,6 +182,7 @@ $labelPemakaianKode = implode(', ', array_map(static function ($row) {
             <div class="col-md-6">
                 <div class="form-group">
                     <label>Berat Material Terpakai <small class="text-muted">(input dalam gram)</small></label>
+                    <small class="d-block text-muted mb-2">Setiap material memiliki berat pemakaian, Wise, dan berat produk jadi masing-masing.</small>
                     <div id="materialBeratContainer" class="berat-material-container text-muted">
                         Pilih material terlebih dahulu.
                     </div>
@@ -239,6 +240,8 @@ $labelPemakaianKode = implode(', ', array_map(static function ($row) {
     var materialUtamaElement = document.getElementById('materialUtama');
     var materialAlternatifElement = document.getElementById('materialAlternatif');
     var beratMaterialAwal = <?= json_encode($beratMaterial, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
+    var beratProdukJadiMaterialAwal = <?= json_encode($beratProdukJadiMaterial ?? [], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
+    var wiseMaterialAwal = <?= json_encode($wiseMaterial ?? [], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
     var GRAM_KE_KG = 1000;
     // Berat Produk Jadi sudah tersimpan sebelumnya (dari input manual lama)
     // -- jangan ditimpa otomatis pas halaman baru dibuka, biarin apa adanya
@@ -310,6 +313,21 @@ $labelPemakaianKode = implode(', ', array_map(static function ($row) {
 
             wrapper.appendChild(label);
             wrapper.appendChild(input);
+            var detailRow = document.createElement('div');
+            detailRow.className = 'row mt-1';
+            var wiseAwal = wiseMaterialAwal[opt.value] !== undefined && wiseMaterialAwal[opt.value] !== null
+                ? wiseMaterialAwal[opt.value] : '';
+            var beratProdukAwal = beratProdukJadiMaterialAwal[opt.value] !== undefined && beratProdukJadiMaterialAwal[opt.value] !== null
+                ? (parseFloat(beratProdukJadiMaterialAwal[opt.value]) * GRAM_KE_KG).toString() : '';
+            detailRow.innerHTML = '<div class="col-md-6"><input type="number" step="0.01" min="0" max="100" class="form-control wise-material" name="wise_material[' + opt.value + ']" placeholder="Wise (%)" value="' + wiseAwal + '"></div>'
+                + '<div class="col-md-6"><input type="number" step="0.0001" min="0.0001" required class="form-control berat-produk-jadi-material" name="berat_produk_jadi_material[' + opt.value + ']" placeholder="Berat jadi (gram)" value="' + beratProdukAwal + '"></div>';
+            detailRow.querySelector('.wise-material').addEventListener('input', function() {
+                if (opt.value === materialUtamaElement.value) document.getElementById('wise').value = this.value;
+            });
+            detailRow.querySelector('.berat-produk-jadi-material').addEventListener('input', function() {
+                if (opt.value === materialUtamaElement.value) document.getElementById('beratProdukJadi').value = this.value;
+            });
+            wrapper.appendChild(detailRow);
             materialBeratContainer.appendChild(wrapper);
         });
 
@@ -448,6 +466,10 @@ $labelPemakaianKode = implode(', ', array_map(static function ($row) {
         }
 
         materialBeratContainer.querySelectorAll('.berat-material').forEach(function(input) {
+            var gram = parseFloat(input.value) || 0;
+            input.value = (gram / GRAM_KE_KG).toFixed(6);
+        });
+        materialBeratContainer.querySelectorAll('.berat-produk-jadi-material').forEach(function(input) {
             var gram = parseFloat(input.value) || 0;
             input.value = (gram / GRAM_KE_KG).toFixed(6);
         });
