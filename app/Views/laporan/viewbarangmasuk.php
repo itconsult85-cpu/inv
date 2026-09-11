@@ -19,7 +19,8 @@ Laporan Barang Masuk
             <div class="card-header">Pilih Periode</div>
             <div class="card-body bg-white">
                 <p class="card-text">
-                    <?= form_open('laporan/cetak-barang-masuk-periode', ['target' => '_blank']) ?>
+                    <?= form_open('laporan/cetak-barang-masuk-periode', ['target' => '_blank', 'id' => 'formCetakBarangMasuk']) ?>
+                    <?= csrf_field() ?>
                 <div class="form-group">
                     <label for="">Tanggal Awal</label>
                     <input type="date" name="tglawal" class="form-control" required>
@@ -78,9 +79,14 @@ Laporan Barang Masuk
             beforeSend: function() {
                 $('.viewTampilGrafik').html('<i class="fa fa-spin fa-spinner"></i>');
             },
-            success: function(response) {
+            success: function(response, textStatus, xhr) {
                 if (response.data) {
                     $('.viewTampilGrafik').html(response.data);
+                }
+                const responseToken = xhr.getResponseHeader('X-CSRF-TOKEN');
+                if (responseToken) {
+                    csrfHash = responseToken;
+                    $('#formCetakBarangMasuk input[name="' + csrfToken + '"]').val(csrfHash);
                 }
             },
             error: function(xhr, ajaxOptions, thrownError) {
