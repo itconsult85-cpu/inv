@@ -44,7 +44,9 @@
                 <tr>
                     <td><?= $i + 1 ?></td>
                     <td><?= esc($invoice['invoice_no']) ?></td>
-                    <td><?= date('d-m-Y', strtotime($invoice['invoice_date'])) ?></td>
+                    <td data-order="<?= esc($invoice['invoice_date']) ?>">
+                        <?= date('d-m-Y', strtotime($invoice['invoice_date'])) ?>
+                    </td>
                     <td><?= esc($invoice['po_no']) ?></td>
                     <td><?= esc($invoice['customer_name']) ?></td>
                     <td class="text-right">Rp <?= number_format($invoice['grand_total'], 0, ',', '.') ?></td>
@@ -84,6 +86,13 @@
     </table>
 </div>
 <script>
-$(function(){ $('#invoiceOutTable').DataTable({ pageLength: 10, stateSave: true, stateDuration: -1, order: [[2, 'desc']] }); });
+$(function(){
+    $('#invoiceOutTable').DataTable({
+        pageLength: 10,
+        // Selalu gunakan urutan default terbaru, bukan state lama browser.
+        stateSave: false,
+        order: [[2, 'desc'], [0, 'desc']]
+    });
+});
 </script>
 <?= $this->endSection('isi') ?>
