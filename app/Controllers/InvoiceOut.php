@@ -184,14 +184,16 @@ class InvoiceOut extends BaseController
 
             $details = [];
             $materialCostCache = [];
+            // Deployment lama mungkin belum memiliki kolom snapshot material.
+            // Jangan kirim field tersebut ke INSERT jika kolom belum tersedia.
+            $supportsMaterialSnapshot = $this->supportsMaterialSnapshotColumns();
             foreach ($data['lines'] as $line) {
                 $kodeProduk = (string) $line['product_code'];
-                if (!isset($materialCostCache[$kodeProduk])) {
+                if ($supportsMaterialSnapshot && !isset($materialCostCache[$kodeProduk])) {
                     $materialCostCache[$kodeProduk] = $this->hargaMaterialPerPcs($kodeProduk);
                 }
-                $materialCost = $materialCostCache[$kodeProduk];
 
-                $details[] = [
+                $detail = [
                     'invoice_id' => $invoiceId,
                     'product_code' => $kodeProduk,
                     'source_no' => $line['source_no'],
@@ -201,18 +203,26 @@ class InvoiceOut extends BaseController
                     'unit' => $line['unit'],
                     'unit_price' => $line['unit_price'],
                     'amount' => $line['amount'],
-                    'material_cost_snapshot' => $materialCost['total'],
-                    'material_cost_detail_snapshot' => $materialCost['detail'],
-                    'material_cost_complete_snapshot' => $materialCost['lengkap'] ? 1 : 0,
                     'created_at' => date('Y-m-d H:i:s'),
                 ];
+                if ($supportsMaterialSnapshot) {
+                    $materialCost = $materialCostCache[$kodeProduk];
+                    $detail += [
+                        'material_cost_snapshot' => $materialCost['total'],
+                        'material_cost_detail_snapshot' => $materialCost['detail'],
+                        'material_cost_complete_snapshot' => $materialCost['lengkap'] ? 1 : 0,
+                    ];
+                }
+                $details[] = $detail;
             }
             if (!$this->detailModel->insertBatch($details)) {
                 throw new \RuntimeException('Detail invoice gagal disimpan.');
             }
 
             if (!$this->db->transStatus()) {
-                throw new \RuntimeException('Transaksi database gagal.');
+                $dbError = $this->db->error();
+                $message = trim((string) ($dbError['message'] ?? ''));
+                throw new \RuntimeException($message !== '' ? $message : 'Transaksi database gagal.');
             }
             $this->db->transCommit();
 
@@ -687,6 +697,25 @@ class InvoiceOut extends BaseController
                 ],
             ]);
         }
+    }
+
+    private function supportsMaterialSnapshotColumns(): bool
+    {
+        if (!$this->db->tableExists('invoice_out_detail')) {
+            return false;
+        }
+
+        foreach ([
+            'material_cost_snapshot',
+            'material_cost_detail_snapshot',
+            'material_cost_complete_snapshot',
+        ] as $column) {
+            if (!$this->db->fieldExists($column, 'invoice_out_detail')) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     private function hargaMaterialPerPcs(string $kodeProduk): array
