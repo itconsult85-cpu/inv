@@ -94,8 +94,9 @@ $(function(){
         order: [[2, 'desc']],
         drawCallback: function() {
             const api = this.api();
+            const pageStart = api.page.info().start;
             api.rows({ page: 'current' }).nodes().each(function(rowNode, pageRowIndex) {
-                $(rowNode).find('.row-number').text(pageRowIndex + 1);
+                $(rowNode).find('.row-number').text(pageStart + pageRowIndex + 1);
             });
         }
     });
