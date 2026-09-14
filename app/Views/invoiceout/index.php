@@ -23,8 +23,17 @@
     <table class="table table-bordered table-striped table-hover" id="invoiceOutTable">
         <thead>
             <tr>
-                <th>No</th><th>No. Invoice</th><th>Tanggal</th><th>No. PO</th>
-                <th>Pelanggan</th><th>Grand Total</th><th>Sudah Bayar</th><th>Sisa</th><th>Status</th><th>Status Bayar</th><th>Aksi</th>
+                <th>No</th>
+                <th>No. Invoice</th>
+                <th>Tanggal</th>
+                <th>No. PO</th>
+                <th>Pelanggan</th>
+                <th>Grand Total</th>
+                <th>Sudah Bayar</th>
+                <th>Sisa</th>
+                <th>Status</th>
+                <th>Status Bayar</th>
+                <th>Aksi</th>
             </tr>
         </thead>
         <tbody>
@@ -86,20 +95,24 @@
     </table>
 </div>
 <script>
-$(function(){
-    $('#invoiceOutTable').DataTable({
-        pageLength: 10,
-        // Selalu gunakan urutan default terbaru, bukan state lama browser.
-        stateSave: false,
-        order: [[2, 'desc']],
-        drawCallback: function() {
-            const api = this.api();
-            const pageStart = api.page.info().start;
-            api.rows({ page: 'current' }).nodes().each(function(rowNode, pageRowIndex) {
-                $(rowNode).find('.row-number').text(pageStart + pageRowIndex + 1);
-            });
-        }
+    $(function() {
+        $('#invoiceOutTable').DataTable({
+            pageLength: 10,
+            // Selalu gunakan urutan default terbaru, bukan state lama browser.
+            stateSave: false,
+            order: [
+                [2, 'desc']
+            ],
+            drawCallback: function() {
+                const api = this.api();
+                const pageStart = api.page.info().start;
+                api.rows({
+                    page: 'current'
+                }).nodes().each(function(rowNode, pageRowIndex) {
+                    $(rowNode).find('.row-number').text(pageStart + pageRowIndex + 1);
+                });
+            }
+        });
     });
-});
 </script>
 <?= $this->endSection('isi') ?>
