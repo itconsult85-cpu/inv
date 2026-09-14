@@ -42,7 +42,7 @@
                     : ($statusTampil === 'AKTIF' ? 'success' : 'secondary');
                 ?>
                 <tr>
-                    <td><?= $i + 1 ?></td>
+                    <td class="row-number"></td>
                     <td><?= esc($invoice['invoice_no']) ?></td>
                     <td data-order="<?= esc($invoice['invoice_date']) ?>">
                         <?= date('d-m-Y', strtotime($invoice['invoice_date'])) ?>
@@ -91,7 +91,14 @@ $(function(){
         pageLength: 10,
         // Selalu gunakan urutan default terbaru, bukan state lama browser.
         stateSave: false,
-        order: [[2, 'desc'], [0, 'desc']]
+        order: [[2, 'desc']],
+        drawCallback: function() {
+            const api = this.api();
+            const pageStart = api.page.info().start;
+            api.rows({ page: 'current' }).every(function(rowIndex) {
+                $(this.node()).find('.row-number').text(pageStart + rowIndex + 1);
+            });
+        }
     });
 });
 </script>
