@@ -21,6 +21,17 @@ use Config\Services;
 
 class Barangmasuk extends BaseController
 {
+    private function currentUserReference(): ?int
+    {
+        $userid = trim((string) session()->get('userid'));
+        if ($userid === '') {
+            return null;
+        }
+
+        $user = db_connect()->table('users')->select('id')->where('userid', $userid)->get()->getRowArray();
+        return $user ? (int) $user['id'] : null;
+    }
+
     public function __construct()
     {
         $this->ensureAdjustmentProdukMasukColumns();
@@ -165,7 +176,7 @@ class Barangmasuk extends BaseController
             'no_produksi' => $noProduksi,
             'tgl_produksi' => $tglfaktur,
             'gudang' => $gudang,
-            'iduser' => session()->get('userid'),
+            'iduser' => $this->currentUserReference(),
             'created_at' => date('Y-m-d H:i:s'),
             'keterangan' => 'Material Pelanggan',
         ]);

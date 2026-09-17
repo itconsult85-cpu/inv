@@ -24,6 +24,21 @@ class Produksi extends BaseController
         $this->db = db_connect();
     }
 
+    /**
+     * Simpan referensi user sebagai users.id agar kompatibel dengan database
+     * lama yang masih mendefinisikan produksi.iduser sebagai INT.
+     */
+    private function currentUserReference(): ?int
+    {
+        $userid = trim((string) session()->get('userid'));
+        if ($userid === '') {
+            return null;
+        }
+
+        $user = $this->db->table('users')->select('id')->where('userid', $userid)->get()->getRowArray();
+        return $user ? (int) $user['id'] : null;
+    }
+
     public function data()
     {
         return view('produksi/viewdata');
@@ -255,7 +270,7 @@ class Produksi extends BaseController
                 'no_produksi' => $noProduksi,
                 'tgl_produksi' => $tglProduksi,
                 'gudang' => $gudang,
-                'iduser' => session()->get('userid'),
+                'iduser' => $this->currentUserReference(),
                 'created_at' => date('Y-m-d H:i:s'),
             ]);
         } else {
@@ -352,7 +367,7 @@ class Produksi extends BaseController
                 ->select("pp.id AS produksi_produk_id, p.no_produksi, p.tgl_produksi, pp.kode_produk, pp.nama_produk, pp.qty_produk, g.gdgnama, p.keterangan, COALESCE(u.usernama, (SELECT u_lama.usernama FROM users u_lama WHERE u_lama.id = CAST(p.iduser AS UNSIGNED) LIMIT 1), NULLIF(p.iduser, ''), '-') AS user_input", false)
                 ->join('produksi p', 'p.no_produksi = pp.no_produksi', 'inner')
                 ->join('gudang g', 'g.gdgid = p.gudang', 'left')
-                ->join('users u', 'BINARY u.userid = BINARY CAST(p.iduser AS CHAR)', 'left', false)
+                ->join('users u', '(u.id = CAST(p.iduser AS UNSIGNED) OR BINARY u.userid = BINARY CAST(p.iduser AS CHAR))', 'left', false)
                 // Tampilkan transaksi dengan tanggal input terbaru di bagian atas.
                 // Nomor batch dan ID menjadi tie-breaker agar urutannya stabil.
                 ->orderBy('p.tgl_produksi', 'DESC')
@@ -710,7 +725,7 @@ class Produksi extends BaseController
             'no_produksi' => $noProduksi,
             'tgl_produksi' => $tglProduksi,
             'gudang' => $gudang,
-            'iduser' => session()->get('userid'),
+            'iduser' => $this->currentUserReference(),
             'created_at' => date('Y-m-d H:i:s'),
         ]);
 

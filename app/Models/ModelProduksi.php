@@ -22,7 +22,7 @@ class ModelProduksi extends Model
         return $db->table('produksi p')
             ->select('p.*, g.gdgnama')
             ->join('gudang g', 'g.gdgid = p.gudang', 'left')
-            ->join('users u', 'u.id = p.iduser', 'left')
+            ->join('users u', '(u.id = CAST(p.iduser AS UNSIGNED) OR BINARY u.userid = BINARY CAST(p.iduser AS CHAR))', 'left', false)
             ->where('SHA1(p.no_produksi) = ' . $db->escape($noProduksi), null, false)
             ->get();
     }
