@@ -62,6 +62,7 @@ class CreateBhpTables extends Migration
         $this->createTableIfMissing('log_stok_habis_pakai', [
             'id' => ['type' => 'BIGINT', 'unsigned' => true, 'auto_increment' => true],
             'stok_id' => ['type' => 'BIGINT', 'unsigned' => true],
+            'penerimaan_id' => ['type' => 'BIGINT', 'unsigned' => true, 'null' => true],
             'permintaan_id' => ['type' => 'BIGINT', 'unsigned' => true, 'null' => true],
             'po_keluar_id' => ['type' => 'BIGINT', 'unsigned' => true, 'null' => true],
             'po_detail_id' => ['type' => 'BIGINT', 'unsigned' => true, 'null' => true],
