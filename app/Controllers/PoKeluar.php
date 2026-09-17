@@ -233,6 +233,10 @@ class PoKeluar extends BaseController
         if (!$po) {
             throw \CodeIgniter\Exceptions\PageNotFoundException::forPageNotFound('PO Keluar tidak ditemukan.');
         }
+        if (strtoupper((string) ($po['status'] ?? '')) === 'NG') {
+            $this->refreshStatusAfterReplacement($id);
+            $po = $this->poModel->find($id);
+        }
 
         $po['status_penerimaan'] = $this->hitungStatusPenerimaan($po);
         $ngQtyByItem = $this->getNgQtyByPoItem($id);
