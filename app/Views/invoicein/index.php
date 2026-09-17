@@ -33,11 +33,13 @@
             </tr>
         </thead>
         <tbody>
-            <?php foreach ($invoices as $i => $invoice) : ?>
+            <?php foreach ($invoices as $invoice) : ?>
                 <tr>
-                    <td><?= $i + 1 ?></td>
+                    <td class="row-number"></td>
                     <td><?= esc($invoice['invoice_no']) ?></td>
-                    <td><?= date('d-m-Y', strtotime($invoice['invoice_date'])) ?></td>
+                    <td data-order="<?= esc($invoice['invoice_date']) ?>">
+                        <?= date('d-m-Y', strtotime($invoice['invoice_date'])) ?>
+                    </td>
                     <td><?= esc($invoice['supplier_name']) ?></td>
                     <?php $sourceNo = (string) ($invoice['source_no'] ?? ''); $sourceParts = explode('||', $sourceNo, 2); $sourceLabel = ($invoice['source_type'] ?? '') === 'po_keluar' ? 'PO Keluar' : ucfirst((string) ($invoice['source_type'] ?? '')) . ' Masuk'; ?>
                     <td><?= esc($sourceLabel) ?> - <?= esc($sourceParts[0]) ?><?= isset($sourceParts[1]) ? ' (SJ ' . esc($sourceParts[1]) . ')' : '' ?></td>
@@ -73,11 +75,15 @@
     $(function() {
         $('#invoiceInTable').DataTable({
             pageLength: 10,
-            stateSave: true,
-            stateDuration: -1,
-            order: [
-                [2, 'desc']
-            ]
+            stateSave: false,
+            order: [[2, 'desc']],
+            drawCallback: function() {
+                const api = this.api();
+                const pageStart = api.page.info().start;
+                api.rows({ page: 'current' }).nodes().each(function(rowNode, pageRowIndex) {
+                    $(rowNode).find('.row-number').text(pageStart + pageRowIndex + 1);
+                });
+            }
         });
     });
 </script>
