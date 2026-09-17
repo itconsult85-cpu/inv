@@ -477,9 +477,30 @@ class Materialmasuk extends BaseController
             ->where('dpk.tipe_item', 'material')
             ->get()->getResultArray();
 
+        $ngByItem = [];
+        $replacementByItem = [];
+        if (strtoupper((string) ($header['status'] ?? '')) === 'NG' && $db->tableExists('retur_material_detail')) {
+            foreach ($db->table('retur_material_detail rd')
+                ->select('dmm.detmatkode, SUM(rd.qty_retur) AS qty_ng', false)
+                ->join('detail_materialmasuk dmm', 'dmm.id = rd.material_masuk_detail_id', 'inner')
+                ->groupStart()->where('rd.po_keluar_id', $poKeluarId)->orWhere('dmm.po_keluar_id', $poKeluarId)->groupEnd()
+                ->groupBy('dmm.detmatkode')->get()->getResultArray() as $row) {
+                $ngByItem[(string) $row['detmatkode']] = (float) $row['qty_ng'];
+            }
+            foreach ($db->table('detail_materialmasuk dmm')
+                ->select('dmm.detmatkode, SUM(dmm.detjml) AS qty_pengganti', false)
+                ->join('materialmasuk mm', 'mm.faktur = dmm.detfaktur', 'inner')
+                ->where('dmm.po_keluar_id', $poKeluarId)
+                ->where('mm.sumber', 'retur_ng')
+                ->groupBy('dmm.detmatkode')->get()->getResultArray() as $row) {
+                $replacementByItem[(string) $row['detmatkode']] = (float) $row['qty_pengganti'];
+            }
+        }
+
         foreach ($items as &$item) {
+            $itemKey = (string) $item['kode_item'];
             $item['sisa'] = strtoupper((string) ($header['status'] ?? '')) === 'NG'
-                ? (float) $item['qty_pesan']
+                ? max(0, ($ngByItem[$itemKey] ?? 0) - ($replacementByItem[$itemKey] ?? 0))
                 : max(0, (float) $item['qty_pesan'] - (float) $item['qty_masuk']);
         }
 

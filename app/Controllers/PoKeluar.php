@@ -235,6 +235,16 @@ class PoKeluar extends BaseController
         }
 
         $po['status_penerimaan'] = $this->hitungStatusPenerimaan($po);
+        $ngQtyByItem = $this->getNgQtyByPoItem($id);
+        $replacementQtyByItem = $this->getReplacementQtyByPoItem($id);
+        $details = $this->detailModel->where('po_keluar_id', $id)->orderBy('id', 'ASC')->findAll();
+        foreach ($details as &$detail) {
+            $itemKey = (string) ($detail['kode_item'] ?? '');
+            $detail['qty_ng'] = $ngQtyByItem[$itemKey] ?? 0;
+            $detail['qty_pengganti'] = $replacementQtyByItem[$itemKey] ?? 0;
+            $detail['qty_masuk_net'] = max(0, (float) $detail['qty_masuk'] - (float) $detail['qty_ng']);
+        }
+        unset($detail);
 
         $returMaterial = $this->db->table('retur_material r')
             ->select('r.id, r.nomor_retur, r.material_masuk_faktur, r.tgl_retur, r.catatan, SUM(rd.qty_retur) AS total_qty', false)
@@ -250,7 +260,7 @@ class PoKeluar extends BaseController
 
         return view('pokeluar/detail', [
             'po' => $po,
-            'details' => $this->detailModel->where('po_keluar_id', $id)->orderBy('id', 'ASC')->findAll(),
+            'details' => $details,
             'materialMasuk' => $this->db->table('materialmasuk')
                 ->select('faktur, tglfaktur, no_do')
                 ->where('po_keluar_id', $id)
@@ -703,6 +713,43 @@ class PoKeluar extends BaseController
                 ->orWhere('dmm.po_keluar_id', $poId)
             ->groupEnd()
             ->countAllResults() > 0;
+    }
+
+    private function getNgQtyByPoItem(int $poId): array
+    {
+        if ($poId <= 0 || !$this->db->tableExists('retur_material_detail')) {
+            return [];
+        }
+
+        $rows = $this->db->table('retur_material_detail rd')
+            ->select('dmm.detmatkode AS kode_item, SUM(rd.qty_retur) AS qty_ng', false)
+            ->join('detail_materialmasuk dmm', 'dmm.id = rd.material_masuk_detail_id', 'inner')
+            ->groupStart()->where('rd.po_keluar_id', $poId)->orWhere('dmm.po_keluar_id', $poId)->groupEnd()
+            ->groupBy('dmm.detmatkode')
+            ->get()->getResultArray();
+
+        $result = [];
+        foreach ($rows as $row) {
+            $result[(string) $row['kode_item']] = (float) $row['qty_ng'];
+        }
+        return $result;
+    }
+
+    private function getReplacementQtyByPoItem(int $poId): array
+    {
+        $rows = $this->db->table('detail_materialmasuk dmm')
+            ->select('dmm.detmatkode AS kode_item, SUM(dmm.detjml) AS qty_pengganti', false)
+            ->join('materialmasuk mm', 'mm.faktur = dmm.detfaktur', 'inner')
+            ->where('dmm.po_keluar_id', $poId)
+            ->where('mm.sumber', 'retur_ng')
+            ->groupBy('dmm.detmatkode')
+            ->get()->getResultArray();
+
+        $result = [];
+        foreach ($rows as $row) {
+            $result[(string) $row['kode_item']] = (float) $row['qty_pengganti'];
+        }
+        return $result;
     }
 
     private function punyaPoTitipProsesTurunan(string $noPo): bool

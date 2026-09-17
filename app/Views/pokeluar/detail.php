@@ -31,7 +31,7 @@ $totalMasuk = 0.0;
 $satuanUtama = '';
 foreach ($details as $detail) {
     $totalPesan += (float) $detail['qty_pesan'];
-    $totalMasuk += (float) $detail['qty_masuk'];
+    $totalMasuk += (float) ($detail['qty_masuk_net'] ?? $detail['qty_masuk']);
     if ($satuanUtama === '') {
         $satuanUtama = (string) $detail['satuan'];
     }
@@ -88,7 +88,7 @@ $persenTerima = $totalPesan > 0 ? min(100, round(($totalMasuk / $totalPesan) * 1
                         <th>Nama Item</th>
                         <th>Satuan</th>
                         <th class="text-right">Jumlah Pesan</th>
-                        <th class="text-right">Jumlah Masuk</th>
+                        <th class="text-right">Jumlah Masuk Neto</th>
                         <th class="text-right">Harga</th>
                         <th class="text-right">Subtotal</th>
                         <th>Status</th>
@@ -101,7 +101,10 @@ $persenTerima = $totalPesan > 0 ? min(100, round(($totalMasuk / $totalPesan) * 1
                             <td><?= esc($detail['nama_item']) ?></td>
                             <td><?= esc($detail['satuan']) ?></td>
                             <td class="text-right"><?= number_format((float) $detail['qty_pesan'], 0, ',', '.') ?></td>
-                            <td class="text-right"><?= number_format((float) $detail['qty_masuk'], 0, ',', '.') ?></td>
+                            <td class="text-right">
+                                <?= number_format((float) ($detail['qty_masuk_net'] ?? $detail['qty_masuk']), 0, ',', '.') ?>
+                                <?php if ((float) ($detail['qty_ng'] ?? 0) > 0) : ?><small class="text-danger d-block">NG: <?= number_format((float) $detail['qty_ng'], 0, ',', '.') ?></small><?php endif ?>
+                            </td>
                             <td class="text-right">Rp <?= number_format((float) $detail['harga'], 0, ',', '.') ?></td>
                             <td class="text-right">Rp <?= number_format((float) $detail['subtotal'], 0, ',', '.') ?></td>
                             <td>
