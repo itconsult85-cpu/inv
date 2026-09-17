@@ -308,7 +308,7 @@ Edit Produksi
                 $('#qty_produk').focus();
             },
             error: function(xhr, ajaxOptions, thrownError) {
-                alert(xhr.status + '\n' + thrownError);
+                showBootstrapModal('Error', xhr.status + '\n' + thrownError, 'error');
             }
         });
     }
@@ -427,7 +427,7 @@ Edit Produksi
                     showBootstrapModal('Berhasil', response.sukses, 'success');
                 },
                 error: function(xhr, ajaxOptions, thrownError) {
-                    alert(xhr.status + '\n' + thrownError);
+                    showBootstrapModal('Error', xhr.status + '\n' + thrownError, 'error');
                 }
             });
         });
@@ -552,7 +552,7 @@ Edit Produksi
                     });
                 },
                 error: function(xhr, ajaxOptions, thrownError) {
-                    alert(xhr.status + '\n' + thrownError);
+                    showBootstrapModal('Error', xhr.status + '\n' + thrownError, 'error');
                 },
                 complete: function() {
                     $('#tombolSimpanProduksi').prop('disabled', false);

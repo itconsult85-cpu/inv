@@ -77,10 +77,10 @@ $(document).on('click', '.btn-simpan-maintenance', function () {
                 + ' ' + String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
             $tr.find('.ket-terakhir').text(aktif === '1' ? ('<?= esc(session()->get('userid')) ?> · ' + tgl) : '-');
         } else {
-            alert((res && res.error) ? res.error : 'Gagal menyimpan.');
+            showBootstrapModal('Error', (res && res.error) ? res.error : 'Gagal menyimpan.', 'error');
         }
     }).fail(function () {
-        alert('Gagal menyimpan, coba lagi.');
+        showBootstrapModal('Error', 'Gagal menyimpan, coba lagi.', 'error');
     }).always(function () {
         $btn.prop('disabled', false).text('Simpan');
     });

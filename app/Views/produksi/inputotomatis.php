@@ -208,7 +208,7 @@ Input Produksi
                 $('#qty_produk').focus();
             },
             error: function(xhr, ajaxOptions, thrownError) {
-                alert(xhr.status + '\n' + thrownError);
+                showBootstrapModal('Error', xhr.status + '\n' + thrownError, 'error');
             }
         });
     }
@@ -289,7 +289,7 @@ Input Produksi
                     });
                 },
                 error: function(xhr, ajaxOptions, thrownError) {
-                    alert(xhr.status + '\n' + thrownError);
+                    showBootstrapModal('Error', xhr.status + '\n' + thrownError, 'error');
                 },
                 complete: function() {
                     $('#tombolSimpanProduksi').prop('disabled', false);
@@ -325,7 +325,7 @@ Input Produksi
                     }
                 },
                 error: function(xhr, ajaxOptions, thrownError) {
-                    alert(xhr.status + '\n' + thrownError);
+                    showBootstrapModal('Error', xhr.status + '\n' + thrownError, 'error');
                 }
             });
         });

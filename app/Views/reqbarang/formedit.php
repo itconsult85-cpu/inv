@@ -194,7 +194,7 @@ Edit Permintaan Transfer
                     }
                 },
                 error: function(xhr, ajaxOptions, thrownError) {
-                    alert(xhr.status + '\n' + thrownError)
+                    showBootstrapModal('Error', xhr.status + '\n' + thrownError, 'error')
                 }
             });
         }
@@ -221,7 +221,7 @@ Edit Permintaan Transfer
                 }
             },
             error: function(xhr, ajaxOptions, thrownError) {
-                alert(xhr.status + '\n' + thrownError)
+                showBootstrapModal('Error', xhr.status + '\n' + thrownError, 'error')
             }
         });
     }
@@ -242,7 +242,7 @@ Edit Permintaan Transfer
                 $('#lbTotalQty').html(response.totalqty);
             },
             error: function(xhr, ajaxOptions, thrownError) {
-                alert(xhr.status + '\n' + thrownError)
+                showBootstrapModal('Error', xhr.status + '\n' + thrownError, 'error')
             }
         });
     }
@@ -285,7 +285,7 @@ Edit Permintaan Transfer
                     }
                 },
                 error: function(xhr, ajaxOptions, thrownError) {
-                    alert(xhr.status + '\n' + thrownError)
+                    showBootstrapModal('Error', xhr.status + '\n' + thrownError, 'error')
                 }
             });
         }
@@ -313,7 +313,7 @@ Edit Permintaan Transfer
                     }
                 },
                 error: function(xhr, ajaxOptions, thrownError) {
-                    alert(xhr.status + '\n' + thrownError)
+                    showBootstrapModal('Error', xhr.status + '\n' + thrownError, 'error')
                 }
             });
         });
@@ -363,7 +363,7 @@ Edit Permintaan Transfer
                     }
                 },
                 error: function(xhr, ajaxOptions, thrownError) {
-                    alert(xhr.status + '\n' + thrownError);
+                    showBootstrapModal('Error', xhr.status + '\n' + thrownError, 'error');
                 }
             });
         });
@@ -412,7 +412,7 @@ Edit Permintaan Transfer
                     }
                 },
                 error: function(xhr, ajaxOptions, thrownError) {
-                    alert(xhr.status + '\n' + thrownError)
+                    showBootstrapModal('Error', xhr.status + '\n' + thrownError, 'error')
                 }
             });
         });

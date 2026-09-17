@@ -499,7 +499,7 @@
                 }
             },
             error: function(xhr, ajaxOptions, thrownError) {
-                alert(xhr.status + '\n' + thrownError);
+                showBootstrapModal('Error', xhr.status + '\n' + thrownError, 'error');
             }
         });
     });
@@ -556,7 +556,7 @@
                 $('#cardItemPoKeluar').show();
             },
             error: function(xhr, ajaxOptions, thrownError) {
-                alert(xhr.status + '\n' + thrownError);
+                showBootstrapModal('Error', xhr.status + '\n' + thrownError, 'error');
             }
         });
     }
@@ -711,7 +711,7 @@
                     }
                 },
                 error: function(xhr, ajaxOptions, thrownError) {
-                    alert(xhr.status + '\n' + thrownError);
+                    showBootstrapModal('Error', xhr.status + '\n' + thrownError, 'error');
                 }
             });
         }
@@ -754,7 +754,7 @@
                     }
                 },
                 error: function(xhr, ajaxOptions, thrownError) {
-                    alert(xhr.status + '\n' + thrownError)
+                    showBootstrapModal('Error', xhr.status + '\n' + thrownError, 'error')
                 }
             });
         }
@@ -788,7 +788,7 @@
                 }
             },
             error: function(xhr, ajaxOptions, thrownError) {
-                alert(xhr.status + '\n' + thrownError)
+                showBootstrapModal('Error', xhr.status + '\n' + thrownError, 'error')
             }
         });
     }
@@ -834,7 +834,7 @@
                 $('#qty_produk').focus();
             },
             error: function(xhr, ajaxOptions, thrownError) {
-                alert(xhr.status + '\n' + thrownError);
+                showBootstrapModal('Error', xhr.status + '\n' + thrownError, 'error');
             }
         });
     }
@@ -943,7 +943,7 @@
                 simpanProduksiBerurutan(items, index + 1, tglProduksi, gudang);
             },
             error: function(xhr, ajaxOptions, thrownError) {
-                alert(xhr.status + '\n' + thrownError);
+                showBootstrapModal('Error', xhr.status + '\n' + thrownError, 'error');
             }
         });
     }
@@ -1121,7 +1121,7 @@
                     }
                 },
                 error: function(xhr, ajaxOptions, thrownError) {
-                    alert(xhr.status + '\n' + thrownError)
+                    showBootstrapModal('Error', xhr.status + '\n' + thrownError, 'error')
                 }
             });
         });
@@ -1138,7 +1138,7 @@
                     }
                 },
                 error: function(xhr, ajaxOptions, thrownError) {
-                    alert(xhr.status + '\n' + thrownError)
+                    showBootstrapModal('Error', xhr.status + '\n' + thrownError, 'error')
                 }
             });
         });
@@ -1236,7 +1236,7 @@
                                 }
                             },
                             error: function(xhr, ajaxOptions, thrownError) {
-                                alert(xhr.status + '\n' + thrownError)
+                                showBootstrapModal('Error', xhr.status + '\n' + thrownError, 'error')
                             }
                         });
                     }

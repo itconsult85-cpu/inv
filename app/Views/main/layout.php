@@ -1326,11 +1326,6 @@
                  padding: .65rem;
              }
 
-             .swal2-popup {
-                 width: calc(100vw - 1rem) !important;
-                 max-width: calc(100vw - 1rem) !important;
-                 padding: 1rem .75rem !important;
-             }
          }
 
 
@@ -5463,13 +5458,13 @@
                      document.querySelectorAll('#tombolSimpanItem, input[type="submit"][value="Simpan"]').forEach(function(el) { attachTooltip(el, copy.formSimpan); });
                      document.querySelectorAll('#tombolReload').forEach(function(el) { attachTooltip(el, copy.formReset); });
 
-                     // Modal SweetAlert "Label Nama per Supplier" -- elemennya
+                     // Modal Bootstrap "Label Nama per Supplier" -- elemennya
                      // cuma ada di DOM selagi dialog ini kebuka, jadi selector
                      // ID di sini aman (no-op kalau dialog belum/nggak dibuka).
                      document.querySelectorAll('#labelSupplierDaftar').forEach(function(el) { attachTooltip(el, copy.lsMaterialInfo); });
                      document.querySelectorAll('#labelSupplierSupplierId').forEach(function(el) {
                          attachTooltip(el, copy.lsSupplier);
-                         const cancelBtn = document.querySelector('.swal2-cancel');
+                         const cancelBtn = document.querySelector('.app-popup-cancel');
                          if (cancelBtn) {
                              attachTooltip(cancelBtn, copy.lsTutup);
                          }

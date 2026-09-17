@@ -84,7 +84,7 @@ Laporan Barang Keluar
                 }
             },
             error: function(xhr, ajaxOptions, thrownError) {
-                alert(xhr.status + '\n' + thrownError)
+                showBootstrapModal('Error', xhr.status + '\n' + thrownError, 'error')
             }
         });
     }

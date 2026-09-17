@@ -328,7 +328,7 @@ Managemen Data Produk
                             icon: 'error',
                             title: 'Kesalahan',
                             html: `Data Produk <b>${kode}</b> tidak bisa dihapus karena masih terkait dengan data di tabel lain`
-                            // alert(xhr.status + '\n' + thrownError)
+                            // showBootstrapModal('Error', xhr.status + '\n' + thrownError, 'error')
                         });
                     }
                 });

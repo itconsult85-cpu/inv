@@ -32,7 +32,7 @@ $badgeStatus = $statusTampil === 'SELESAI'
                 <td>
                     <span class="badge badge-<?= $badgeBayar ?>"><?= esc($statusBayar) ?></span>
                     <?php if ($invoice['status'] === 'AKTIF' && $statusBayar !== 'Lunas') : ?>
-                        <form action="<?= site_url('invoiceOut/tandaiLunas/' . $invoice['id']) ?>" method="post" class="d-inline ml-2" onsubmit="return confirm('Tandai invoice ini sudah Lunas?');">
+                        <form action="<?= site_url('invoiceOut/tandaiLunas/' . $invoice['id']) ?>" method="post" class="d-inline ml-2" data-bootstrap-confirm="Tandai invoice ini sudah Lunas?">
                             <?= csrf_field() ?><button class="btn btn-success btn-sm"><i class="fas fa-money-check-alt"></i> Tandai Lunas</button>
                         </form>
                     <?php endif ?>

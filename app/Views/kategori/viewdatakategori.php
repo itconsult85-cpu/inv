@@ -310,7 +310,7 @@ Managemen Data Kategori
                             icon: 'error',
                             title: 'Kesalahan',
                             html: `Data Kategori <b>${nama}</b> tidak bisa dihapus karena masih terkait dengan data di tabel lain`
-                            // alert(xhr.status + '\n' + thrownError)
+                            // showBootstrapModal('Error', xhr.status + '\n' + thrownError, 'error')
                         });
                     }
                 });

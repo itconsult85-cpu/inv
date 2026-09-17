@@ -145,7 +145,7 @@ Form Tambah Data Material
                                                     }
                                                 },
                                                 error: function(xhr, ajaxOptions, thrownError) {
-                                                    alert(xhr.status + '\n' + thrownError);
+                                                    showBootstrapModal('Error', xhr.status + '\n' + thrownError, 'error');
                                                 }
                                             });
                                         }
@@ -153,13 +153,13 @@ Form Tambah Data Material
                                 }
                             },
                             error: function(xhr, ajaxOptions, thrownError) {
-                                alert(xhr.status + '\n' + thrownError);
+                                showBootstrapModal('Error', xhr.status + '\n' + thrownError, 'error');
                             }
                         });
                     }
                 },
                 error: function(xhr, ajaxOptions, thrownError) {
-                    alert(xhr.status + '\n' + thrownError);
+                    showBootstrapModal('Error', xhr.status + '\n' + thrownError, 'error');
                 }
             });
         })

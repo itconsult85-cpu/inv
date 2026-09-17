@@ -1170,11 +1170,11 @@ Pengiriman
                             </select>
 
                             <label for="noKendaraanDo" class="mb-1">No Kendaraan</label>
-                            <input type="text" id="noKendaraanDo" class="swal2-input" placeholder="Contoh: B 9739 OH" style="margin: 0 0 12px 0; width: 100%;">
+                            <input type="text" id="noKendaraanDo" class="form-control" placeholder="Contoh: B 9739 OH" style="margin: 0 0 12px 0; width: 100%;">
 
                             <div id="pengirimDoGroup">
                                 <label for="pengirimDo" class="mb-1">Pengirim Barang</label>
-                                <input type="text" id="pengirimDo" class="swal2-input" placeholder="Contoh: Eka" style="margin: 0 0 12px 0; width: 100%;">
+                                <input type="text" id="pengirimDo" class="form-control" placeholder="Contoh: Eka" style="margin: 0 0 12px 0; width: 100%;">
                             </div>
 
                             <div id="notesDoGroup">
@@ -1270,7 +1270,7 @@ Pengiriman
                         tableRiwayat.ajax.reload();
                     },
                     error: function(xhr, ajaxOptions, thrownError) {
-                        alert(xhr.status + '\n' + thrownError);
+                        showBootstrapModal('Error', xhr.status + '\n' + thrownError, 'error');
                     }
                 });
             }
@@ -1306,7 +1306,7 @@ Pengiriman
                         tableRiwayat.ajax.reload();
                     },
                     error: function(xhr, ajaxOptions, thrownError) {
-                        alert(xhr.status + '\n' + thrownError);
+                        showBootstrapModal('Error', xhr.status + '\n' + thrownError, 'error');
                     }
                 });
             }

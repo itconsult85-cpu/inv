@@ -171,7 +171,7 @@ Edit Material Keluar
                     }
                 },
                 error: function(xhr, ajaxOptions, thrownError) {
-                    alert(xhr.status + '\n' + thrownError)
+                    showBootstrapModal('Error', xhr.status + '\n' + thrownError, 'error')
                 }
             });
         }
@@ -196,7 +196,7 @@ Edit Material Keluar
                 }
             },
             error: function(xhr, ajaxOptions, thrownError) {
-                alert(xhr.status + '\n' + thrownError)
+                showBootstrapModal('Error', xhr.status + '\n' + thrownError, 'error')
             }
         });
     }
@@ -215,7 +215,7 @@ Edit Material Keluar
                 $('#lbTotalBerat').html(response.totalberat);
             },
             error: function(xhr, ajaxOptions, thrownError) {
-                alert(xhr.status + '\n' + thrownError)
+                showBootstrapModal('Error', xhr.status + '\n' + thrownError, 'error')
             }
         });
     }
@@ -266,7 +266,7 @@ Edit Material Keluar
                     }
                 },
                 error: function(xhr, ajaxOptions, thrownError) {
-                    alert(xhr.status + '\n' + thrownError)
+                    showBootstrapModal('Error', xhr.status + '\n' + thrownError, 'error')
                 }
             });
         }
@@ -305,7 +305,7 @@ Edit Material Keluar
                     }
                 },
                 error: function(xhr, ajaxOptions, thrownError) {
-                    alert(xhr.status + '\n' + thrownError)
+                    showBootstrapModal('Error', xhr.status + '\n' + thrownError, 'error')
                 }
             });
         });
@@ -345,7 +345,7 @@ Edit Material Keluar
                     }
                 },
                 error: function(xhr, ajaxOptions, thrownError) {
-                    alert(xhr.status + '\n' + thrownError)
+                    showBootstrapModal('Error', xhr.status + '\n' + thrownError, 'error')
                 }
             });
         });

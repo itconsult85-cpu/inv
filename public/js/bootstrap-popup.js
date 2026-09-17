@@ -91,4 +91,28 @@
     window.alert = function (message) {
         return showBootstrapModal({ title: 'Pesan', text: message, icon: 'error' });
     };
+
+    $(document).on('submit', '[data-bootstrap-confirm]', function (event) {
+        var form = this;
+        var message = $(form).attr('data-bootstrap-confirm');
+        if ($(form).data('bootstrap-confirmed') === true) {
+            $(form).removeData('bootstrap-confirmed');
+            return;
+        }
+        event.preventDefault();
+        showBootstrapModal({
+            title: 'Konfirmasi',
+            text: message,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Lanjutkan',
+            cancelButtonText: 'Batal'
+        }).then(function (result) {
+            if (!result.isConfirmed) {
+                return;
+            }
+            $(form).data('bootstrap-confirmed', true);
+            form.submit();
+        });
+    });
 })(window, window.jQuery);

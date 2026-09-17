@@ -55,12 +55,12 @@
                     <td class="text-nowrap">
                         <a class="btn btn-info btn-sm" href="<?= site_url('invoiceIn/detail/' . $invoice['id']) ?>"><i class="fas fa-eye"></i></a>
                         <?php if ($invoice['status'] !== 'DIBATALKAN') : ?>
-                            <form method="post" action="<?= site_url('invoiceIn/cancel/' . $invoice['id']) ?>" class="d-inline" onsubmit="return confirm('Batalkan pencatatan invoice ini?');">
+                            <form method="post" action="<?= site_url('invoiceIn/cancel/' . $invoice['id']) ?>" class="d-inline" data-bootstrap-confirm="Batalkan pencatatan invoice ini?">
                                 <?= csrf_field() ?>
                                 <button class="btn btn-danger btn-sm" title="Batalkan"><i class="fas fa-ban"></i></button>
                             </form>
                         <?php else : ?>
-                            <form method="post" action="<?= site_url('invoiceIn/hapus/' . $invoice['id']) ?>" class="d-inline" onsubmit="return confirm('Hapus invoice ini secara permanen? Data yang sudah dihapus tidak bisa dikembalikan.');">
+                            <form method="post" action="<?= site_url('invoiceIn/hapus/' . $invoice['id']) ?>" class="d-inline" data-bootstrap-confirm="Hapus invoice ini secara permanen? Data yang sudah dihapus tidak bisa dikembalikan.">
                                 <?= csrf_field() ?>
                                 <button class="btn btn-danger btn-sm" title="Hapus"><i class="fas fa-trash-alt"></i></button>
                             </form>

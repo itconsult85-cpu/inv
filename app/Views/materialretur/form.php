@@ -102,7 +102,7 @@ Retur Material NG ke Supplier / Vendor
         });
         if (!valid) {
             event.preventDefault();
-            alert('Qty retur tidak boleh melebihi sisa yang dapat diretur.');
+            showBootstrapModal('Error', 'Qty retur tidak boleh melebihi sisa yang dapat diretur.', 'error');
         }
     });
 </script>

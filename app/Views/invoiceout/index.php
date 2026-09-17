@@ -75,16 +75,16 @@
                             </div>
                         </div>
                         <?php if ($invoice['status'] === 'AKTIF' && $statusBayar !== 'Lunas') : ?>
-                            <form action="<?= site_url('invoiceOut/tandaiLunas/' . $invoice['id']) ?>" method="post" class="d-inline" onsubmit="return confirm('Tandai invoice ini sudah Lunas?');">
+                            <form action="<?= site_url('invoiceOut/tandaiLunas/' . $invoice['id']) ?>" method="post" class="d-inline" data-bootstrap-confirm="Tandai invoice ini sudah Lunas?">
                                 <?= csrf_field() ?><button class="btn btn-success btn-sm" title="Tandai Lunas"><i class="fas fa-money-check-alt"></i></button>
                             </form>
                         <?php endif ?>
                         <?php if ($invoice['status'] === 'AKTIF') : ?>
-                            <form action="<?= site_url('invoiceOut/cancel/' . $invoice['id']) ?>" method="post" class="d-inline" onsubmit="return confirm('Batalkan invoice ini? Qty-nya akan dapat ditagihkan kembali.');">
+                            <form action="<?= site_url('invoiceOut/cancel/' . $invoice['id']) ?>" method="post" class="d-inline" data-bootstrap-confirm="Batalkan invoice ini? Qty-nya akan dapat ditagihkan kembali.">
                                 <?= csrf_field() ?><button class="btn btn-danger btn-sm" title="Batalkan"><i class="fas fa-ban"></i></button>
                             </form>
                         <?php else : ?>
-                            <form action="<?= site_url('invoiceOut/hapus/' . $invoice['id']) ?>" method="post" class="d-inline" onsubmit="return confirm('Hapus permanen invoice yang sudah dibatalkan ini?');">
+                            <form action="<?= site_url('invoiceOut/hapus/' . $invoice['id']) ?>" method="post" class="d-inline" data-bootstrap-confirm="Hapus permanen invoice yang sudah dibatalkan ini?">
                                 <?= csrf_field() ?><button class="btn btn-danger btn-sm" title="Hapus"><i class="fas fa-trash"></i></button>
                             </form>
                         <?php endif ?>

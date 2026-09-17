@@ -333,7 +333,7 @@
                 }
             },
             error: function(xhr, ajaxOptions, thrownError) {
-                alert(xhr.status + '\n' + thrownError);
+                showBootstrapModal('Error', xhr.status + '\n' + thrownError, 'error');
             }
         });
     });
@@ -394,7 +394,7 @@
                 $('#cardItemPoKeluar').show();
             },
             error: function(xhr, ajaxOptions, thrownError) {
-                alert(xhr.status + '\n' + thrownError);
+                showBootstrapModal('Error', xhr.status + '\n' + thrownError, 'error');
             }
         });
     }
@@ -477,7 +477,7 @@
                 }
             },
             error: function(xhr, ajaxOptions, thrownError) {
-                alert(xhr.status + '\n' + thrownError);
+                showBootstrapModal('Error', xhr.status + '\n' + thrownError, 'error');
             }
         });
     }
@@ -503,7 +503,7 @@
                 }
             },
             error: function(xhr, ajaxOptions, thrownError) {
-                alert(xhr.status + '\n' + thrownError);
+                showBootstrapModal('Error', xhr.status + '\n' + thrownError, 'error');
             }
         });
     }
@@ -584,7 +584,7 @@
                     }
                 },
                 error: function(xhr, ajaxOptions, thrownError) {
-                    alert(xhr.status + '\n' + thrownError);
+                    showBootstrapModal('Error', xhr.status + '\n' + thrownError, 'error');
                 }
             });
         }
@@ -635,7 +635,7 @@
                     }
                 },
                 error: function(xhr, ajaxOptions, thrownError) {
-                    alert(xhr.status + '\n' + thrownError)
+                    showBootstrapModal('Error', xhr.status + '\n' + thrownError, 'error')
                 }
             });
         }
@@ -671,7 +671,7 @@
                 }
             },
             error: function(xhr, ajaxOptions, thrownError) {
-                alert(xhr.status + '\n' + thrownError)
+                showBootstrapModal('Error', xhr.status + '\n' + thrownError, 'error')
             }
         });
     }
@@ -746,7 +746,7 @@
                     }
                 },
                 error: function(xhr, ajaxOptions, thrownError) {
-                    alert(xhr.status + '\n' + thrownError)
+                    showBootstrapModal('Error', xhr.status + '\n' + thrownError, 'error')
                 }
             });
         });
@@ -763,7 +763,7 @@
                     }
                 },
                 error: function(xhr, ajaxOptions, thrownError) {
-                    alert(xhr.status + '\n' + thrownError)
+                    showBootstrapModal('Error', xhr.status + '\n' + thrownError, 'error')
                 }
             });
         });
@@ -870,7 +870,7 @@
                                 }
                             },
                             error: function(xhr, ajaxOptions, thrownError) {
-                                alert(xhr.status + '\n' + thrownError)
+                                showBootstrapModal('Error', xhr.status + '\n' + thrownError, 'error')
                             }
                         });
                     }

@@ -131,7 +131,7 @@ Managemen Data Berat/Ukuran
                             icon: 'error',
                             title: 'Gagal',
                             html: `Data Berat tidak bisa dihapus karena masih terkait dengan data di tabel lain`
-                            // alert(xhr.status + '\n' + thrownError)
+                            // showBootstrapModal('Error', xhr.status + '\n' + thrownError, 'error')
                         });
                     }
                 });

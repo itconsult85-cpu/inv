@@ -123,7 +123,7 @@ Managemen Data Gudang
                             icon: 'error',
                             title: 'Gagal',
                             html: `Data Gudang <b>${nama}</b> tidak bisa dihapus karena masih terkait dengan data di tabel lain`
-                            // alert(xhr.status + '\n' + thrownError)
+                            // showBootstrapModal('Error', xhr.status + '\n' + thrownError, 'error')
                         });
                     }
                 });

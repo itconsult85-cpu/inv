@@ -192,7 +192,7 @@ Edit Produk Masuk
                     }
                 },
                 error: function(xhr, ajaxOptions, thrownError) {
-                    alert(xhr.status + '\n' + thrownError)
+                    showBootstrapModal('Error', xhr.status + '\n' + thrownError, 'error')
                 }
             });
         }
@@ -221,7 +221,7 @@ Edit Produk Masuk
                 }
             },
             error: function(xhr, ajaxOptions, thrownError) {
-                alert(xhr.status + '\n' + thrownError)
+                showBootstrapModal('Error', xhr.status + '\n' + thrownError, 'error')
             }
         });
     }
@@ -240,7 +240,7 @@ Edit Produk Masuk
                 $('#lbTotalBerat').html(response.totalberat);
             },
             error: function(xhr, ajaxOptions, thrownError) {
-                alert(xhr.status + '\n' + thrownError)
+                showBootstrapModal('Error', xhr.status + '\n' + thrownError, 'error')
             }
         });
     }
@@ -301,7 +301,7 @@ Edit Produk Masuk
                     }
                 },
                 error: function(xhr, ajaxOptions, thrownError) {
-                    alert(xhr.status + '\n' + thrownError)
+                    showBootstrapModal('Error', xhr.status + '\n' + thrownError, 'error')
                 }
             });
         }
@@ -386,7 +386,7 @@ Edit Produk Masuk
                         }
                     },
                     error: function(xhr, ajaxOptions, thrownError) {
-                        alert(xhr.status + '\n' + thrownError)
+                        showBootstrapModal('Error', xhr.status + '\n' + thrownError, 'error')
                     }
                 });
             }

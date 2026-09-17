@@ -263,7 +263,7 @@ Edit Antar Gudang
                 }
             },
             error: function(xhr, ajaxOptions, thrownError) {
-                alert(xhr.status + '\n' + thrownError);
+                showBootstrapModal('Error', xhr.status + '\n' + thrownError, 'error');
             }
         });
     }
@@ -305,7 +305,7 @@ Edit Antar Gudang
                 });
             },
             error: function(xhr, ajaxOptions, thrownError) {
-                alert(xhr.status + '\n' + thrownError);
+                showBootstrapModal('Error', xhr.status + '\n' + thrownError, 'error');
             }
         });
     });
@@ -349,7 +349,7 @@ Edit Antar Gudang
                 }
             },
             error: function(xhr, ajaxOptions, thrownError) {
-                alert(xhr.status + '\n' + thrownError)
+                showBootstrapModal('Error', xhr.status + '\n' + thrownError, 'error')
             }
         });
     }
@@ -374,7 +374,7 @@ Edit Antar Gudang
                 }
             },
             error: function(xhr, ajaxOptions, thrownError) {
-                alert(xhr.status + '\n' + thrownError)
+                showBootstrapModal('Error', xhr.status + '\n' + thrownError, 'error')
             }
         });
     }
@@ -393,7 +393,7 @@ Edit Antar Gudang
                 $('#lbTotalQty').html(response.totalqty);
             },
             error: function(xhr, ajaxOptions, thrownError) {
-                alert(xhr.status + '\n' + thrownError)
+                showBootstrapModal('Error', xhr.status + '\n' + thrownError, 'error')
             }
         });
     }
@@ -458,7 +458,7 @@ Edit Antar Gudang
                 }
             },
             error: function(xhr, ajaxOptions, thrownError) {
-                alert(xhr.status + '\n' + thrownError)
+                showBootstrapModal('Error', xhr.status + '\n' + thrownError, 'error')
             }
         });
     }
@@ -551,7 +551,7 @@ Edit Antar Gudang
                     }
                 },
                 error: function(xhr, ajaxOptions, thrownError) {
-                    alert(xhr.status + '\n' + thrownError);
+                    showBootstrapModal('Error', xhr.status + '\n' + thrownError, 'error');
                 }
             });
         });

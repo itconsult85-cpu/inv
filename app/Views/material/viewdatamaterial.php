@@ -428,7 +428,7 @@ Managemen Data Material
                             icon: 'error',
                             title: 'Kesalahan',
                             html: `Data Material <b>${nama}</b> tidak bisa dihapus karena masih terkait dengan data di tabel lain`
-                            // alert(xhr.status + '\n' + thrownError)
+                            // showBootstrapModal('Error', xhr.status + '\n' + thrownError, 'error')
                         });
                     }
                 });

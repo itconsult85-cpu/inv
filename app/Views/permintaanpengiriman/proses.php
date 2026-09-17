@@ -284,16 +284,16 @@ $formatTanggalInput = static function ($value): string {
                         <small class="d-block mb-3">Stok tidak akan dikurangi lagi karena barang sudah pernah dikirim.</small>
                         <div class="form-group">
                             <label for="splitNoPoTujuan">PO Tujuan</label>
-                            <select id="splitNoPoTujuan" class="swal2-select">${opsiPo}</select>
+                            <select id="splitNoPoTujuan" class="form-control">${opsiPo}</select>
                         </div>
                         <div class="form-group">
                             <label for="splitNoDo">No Surat Jalan</label>
-                            <input type="text" id="splitNoDo" class="swal2-input" placeholder="Isi Surat Jalan lama atau input Surat Jalan baru">
+                            <input type="text" id="splitNoDo" class="form-control" placeholder="Isi Surat Jalan lama atau input Surat Jalan baru">
                             <small class="d-block text-muted">Boleh pakai Surat Jalan lama jika masih masuk dokumen pengiriman yang sama.</small>
                         </div>
                         <div class="form-group">
                             <label for="splitQty">Qty yang dipindahkan</label>
-                            <input type="number" id="splitQty" class="swal2-input" value="1" min="1" max="${qtyTerkirim - 1}" step="1">
+                            <input type="number" id="splitQty" class="form-control" value="1" min="1" max="${qtyTerkirim - 1}" step="1">
                         </div>
                     </div>
                 `,
