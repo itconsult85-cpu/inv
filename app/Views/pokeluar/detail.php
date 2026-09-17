@@ -242,22 +242,23 @@ $persenTerima = $totalPesan > 0 ? min(100, round(($totalMasuk / $totalPesan) * 1
         <?php if (strtoupper((string) ($po['status'] ?? '')) === 'NG') : ?>
             <div class="po-card mt-3">
                 <div class="po-card-header">
+                    <?php $isProdukPo = strtolower((string) ($po['jenis_po'] ?? '')) === 'produk'; $ngInputUrl = $isProdukPo ? 'barangmasuk/input?penerimaan_ng=1&po_keluar_id=' . (int) $po['id'] : 'materialmasuk/input?penerimaan_ng=1&po_keluar_id=' . (int) $po['id']; $returList = $isProdukPo ? ($returProduk ?? []) : ($returMaterial ?? []); ?>
                     <div class="po-card-header-title">
                         <h4>Penerimaan dari NG</h4>
-                        <span class="po-card-badge"><?= count($returMaterial ?? []) ?> retur</span>
+                        <span class="po-card-badge"><?= count($returList) ?> retur</span>
                     </div>
-                    <a href="<?= site_url('materialmasuk/input?penerimaan_ng=1&po_keluar_id=' . (int) $po['id']) ?>" class="btn btn-sm btn-danger">
+                    <a href="<?= site_url($ngInputUrl) ?>" class="btn btn-sm btn-danger">
                         <i class="fa fa-plus"></i> Input Penerimaan NG
                     </a>
                 </div>
                 <div class="po-card-body-collapsible po-material-masuk-list">
-                    <?php if (empty($returMaterial)) : ?>
+                    <?php if (empty($returList)) : ?>
                         <p class="po-empty-state mb-0">Belum ada retur NG tercatat.</p>
                     <?php else : ?>
-                        <?php foreach ($returMaterial as $retur) : ?>
+                        <?php foreach ($returList as $retur) : ?>
                             <div class="po-info-row">
                                 <span class="po-info-label"><?= esc($retur['nomor_retur']) ?></span>
-                                <span class="po-info-value"><?= esc($retur['material_masuk_faktur']) ?> · <?= number_format((float) $retur['total_qty'], 3, ',', '.') ?> · <?= date('d-m-Y', strtotime($retur['tgl_retur'])) ?></span>
+                                <span class="po-info-value"><?= esc($retur[$isProdukPo ? 'barang_masuk_faktur' : 'material_masuk_faktur']) ?> · <?= number_format((float) $retur['total_qty'], 3, ',', '.') ?> · <?= date('d-m-Y', strtotime($retur['tgl_retur'])) ?></span>
                             </div>
                         <?php endforeach ?>
                     <?php endif ?>

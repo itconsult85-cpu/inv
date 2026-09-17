@@ -1,7 +1,7 @@
 <?= $this->extend('main/layout') ?>
 
 <?= $this->section('judul') ?>
-Input Produk Masuk
+<?= !empty($penerimaanNg) ? 'Penerimaan Produk Pengganti NG' : 'Input Produk Masuk' ?>
 <?= $this->endSection('judul') ?>
 
 <?= $this->section('subjudul') ?>
@@ -63,7 +63,8 @@ Input Produk Masuk
         <div class="form-group">
             <label for="sumberProduk">Sumber Produk</label>
             <select id="sumberProduk" class="form-control">
-                <option value="beli">Beli dari Supplier</option>
+                <option value="beli" <?= !empty($penerimaanNg) ? '' : 'selected' ?>>Beli dari Supplier</option>
+                <?php if (!empty($penerimaanNg)) : ?><option value="retur_ng" selected>Penerimaan Pengganti NG</option><?php endif ?>
                 <option value="adjustment">Adjustment Stok</option>
                 <option value="produksi">Produksi dari Material</option>
                 <option value="produksi_pelanggan">Produksi Material Pelanggan</option>
@@ -957,7 +958,7 @@ Input Produk Masuk
             $('.beli-only').show();
             $('.produk-picker-row').show();
             $('.produksi-only').hide();
-            $('.supplier-only').toggle(sumber === 'beli');
+            $('.supplier-only').toggle(sumber === 'beli' || sumber === 'retur_ng');
             if (sumber === 'adjustment' || sumber === 'produksi_pelanggan') {
                 $('#nofaktur').val(null).trigger('change');
                 $('#po_keluar_id').val('');
@@ -1006,6 +1007,11 @@ Input Produk Masuk
         kosongProdukInput();
         renderDaftarProduk();
         terapkanSumberProduk();
+        <?php if (!empty($penerimaanNg) && !empty($poNgTerpilih)) : ?>
+        $('#sumberProduk').val('retur_ng').prop('disabled', true);
+        $('#nofaktur').val('<?= esc($poNgTerpilih['no_po'], 'js') ?>').trigger('change');
+        $('#po_keluar_id').val('<?= (int) $poNgTerpilih['id'] ?>');
+        <?php endif ?>
 
         $('#sumberProduk').on('change', function() {
             terapkanSumberProduk();

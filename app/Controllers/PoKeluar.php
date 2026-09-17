@@ -258,6 +258,13 @@ class PoKeluar extends BaseController
             ->orderBy('r.tgl_retur', 'DESC')
             ->get()->getResultArray();
 
+        $returProduk = $this->db->table('retur_produk r')
+            ->select('r.id, r.nomor_retur, r.barang_masuk_faktur, r.tgl_retur, r.catatan, SUM(rd.qty_retur) AS total_qty', false)
+            ->join('retur_produk_detail rd', 'rd.retur_id = r.id', 'inner')
+            ->where('rd.po_keluar_id', $id)
+            ->groupBy('r.id, r.nomor_retur, r.barang_masuk_faktur, r.tgl_retur, r.catatan')
+            ->orderBy('r.tgl_retur', 'DESC')->get()->getResultArray();
+
         return view('pokeluar/detail', [
             'po' => $po,
             'details' => $details,
@@ -268,6 +275,7 @@ class PoKeluar extends BaseController
                 ->get()->getResultArray(),
             'statusPayment' => $this->hitungStatusPayment((string) $po['no_po']),
             'returMaterial' => $returMaterial,
+            'returProduk' => $returProduk,
         ]);
     }
 
@@ -732,6 +740,11 @@ class PoKeluar extends BaseController
         foreach ($rows as $row) {
             $result[(string) $row['kode_item']] = (float) $row['qty_ng'];
         }
+        if ($this->db->tableExists('retur_produk_detail')) {
+            foreach ($this->db->table('retur_produk_detail')->select('kode_barang AS kode_item, SUM(qty_retur) AS qty_ng', false)->where('po_keluar_id', $poId)->groupBy('kode_barang')->get()->getResultArray() as $row) {
+                $result[(string) $row['kode_item']] = ($result[(string) $row['kode_item']] ?? 0) + (float) $row['qty_ng'];
+            }
+        }
         return $result;
     }
 
@@ -748,6 +761,11 @@ class PoKeluar extends BaseController
         $result = [];
         foreach ($rows as $row) {
             $result[(string) $row['kode_item']] = (float) $row['qty_pengganti'];
+        }
+        if ($this->db->fieldExists('sumber', 'barangmasuk')) {
+            foreach ($this->db->table('detail_barangmasuk d')->select('d.detbrgkode AS kode_item, SUM(d.detjml) AS qty_pengganti', false)->join('barangmasuk bm', 'bm.faktur = d.detfaktur')->where('bm.po_keluar_id', $poId)->where('bm.sumber', 'retur_ng')->groupBy('d.detbrgkode')->get()->getResultArray() as $row) {
+                $result[(string) $row['kode_item']] = ($result[(string) $row['kode_item']] ?? 0) + (float) $row['qty_pengganti'];
+            }
         }
         return $result;
     }
@@ -807,6 +825,8 @@ class PoKeluar extends BaseController
 
         $totalPesan = (float) ($totals['total_pesan'] ?? 0);
         $totalMasuk = (float) ($totals['total_masuk'] ?? 0);
+        $ngQty = array_sum($this->getNgQtyByPoItem($poKeluarId));
+        $totalMasuk = max(0, $totalMasuk - $ngQty);
 
         if ($totalMasuk <= 0) {
             return 'Belum Diterima';

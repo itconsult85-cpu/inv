@@ -18,6 +18,8 @@ $routes->get('main/index', 'Main::index');
 $routes->post('stok/cetakLaporan', 'Stok::cetakLaporan');
 $routes->get('materialmasuk/retur/(:segment)', 'Materialretur::form/$1');
 $routes->post('materialretur/simpan', 'Materialretur::simpan');
+$routes->get('barangmasuk/retur/(:segment)', 'Produkretur::form/$1');
+$routes->post('produkretur/simpan', 'Produkretur::simpan');
 $routes->get('laporan', 'Laporan::index');
 $routes->get('laporan/index', 'Laporan::index');
 $routes->get('laporan/cetak-raw-produk', 'Laporan::cetak_raw_produk');

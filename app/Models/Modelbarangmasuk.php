@@ -9,7 +9,7 @@ class Modelbarangmasuk extends Model
     protected $table            = 'barangmasuk';
     protected $primaryKey       = 'faktur';
     protected $allowedFields    = [
-        'faktur', 'po_keluar_id', 'tglfaktur', 'idsup', 'gudang', 'qtymasuk', 'totalberatbarang'
+        'faktur', 'po_keluar_id', 'sumber', 'tglfaktur', 'idsup', 'gudang', 'qtymasuk', 'totalberatbarang'
     ];
 
     public function cekFaktur($faktur)

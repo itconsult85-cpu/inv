@@ -212,7 +212,7 @@ class Barangmasuk extends BaseController
 
             $db = \Config\Database::connect();
             $builder = $db->table('barangmasuk')
-                ->select("barangmasuk.faktur, barangmasuk.tglfaktur, COALESCE(supplier.supnama, 'Adjustment Stok') AS supnama, barangmasuk.totalberatbarang, gudang.gdgnama, barangmasuk.qtymasuk", false)
+                ->select("barangmasuk.faktur, barangmasuk.tglfaktur, barangmasuk.po_keluar_id, COALESCE(supplier.supnama, 'Adjustment Stok') AS supnama, barangmasuk.totalberatbarang, gudang.gdgnama, barangmasuk.qtymasuk", false)
                 ->join('gudang', 'gdgid = gudang')
                 ->join('supplier', 'supid = idsup', 'left');
 
@@ -238,11 +238,12 @@ class Barangmasuk extends BaseController
             return DataTable::of($builder)
                 ->addNumbering('nomor')
                 ->add('aksi', function ($row) {
+                    $retur = !empty($row->po_keluar_id) ? "<button type=\"button\" class=\"btn btn-sm btn-warning\" onclick=\"location.href='/barangmasuk/retur/" . sha1($row->faktur) . "'\" title=\"Retur NG\"><i class=\"fa fa-exchange-alt\"></i></button>&nbsp;" : '';
                     if (\App\Libraries\AccessControl::can('produk.masuk.delete')) {
-                        return "<button type=\"button\" class=\"btn btn-sm btn-primary\" onclick=\"edit('" . sha1($row->faktur) . "')\"><i class=\"fa fa-edit\"></i></button>&nbsp
+                        return $retur . "<button type=\"button\" class=\"btn btn-sm btn-primary\" onclick=\"edit('" . sha1($row->faktur) . "')\"><i class=\"fa fa-edit\"></i></button>&nbsp
                         <button type=\"button\" class=\"btn btn-sm btn-danger\" onclick=\"hapus('" . $row->faktur . "')\"><i class=\"fa fa-trash-alt\"></i></button>";
                     }
-                    return "<button type=\"button\" class=\"btn btn-sm btn-primary\" onclick=\"edit('" . sha1($row->faktur) . "')\"><i class=\"fa fa-edit\"></i></button>";
+                    return $retur . "<button type=\"button\" class=\"btn btn-sm btn-primary\" onclick=\"edit('" . sha1($row->faktur) . "')\"><i class=\"fa fa-edit\"></i></button>";
                 })
                 ->format('qtymasuk', function ($value) {
                     return number_format($value, 0, ',', '.');
@@ -261,9 +262,17 @@ class Barangmasuk extends BaseController
     public function input()
     {
         $modelgudang = new Modelgudang();
+        $penerimaanNg = (string) $this->request->getGet('penerimaan_ng') === '1';
+        $poNgId = (int) $this->request->getGet('po_keluar_id');
+        $poKeluar = new PoKeluar();
+        $datapokeluar = $penerimaanNg ? $poKeluar->daftarPoNgUntukTipe('produk') : $poKeluar->daftarPoAktifUntukTipe('produk');
+        $poNgTerpilih = null;
+        foreach ($datapokeluar as $po) if ((int) $po['id'] === $poNgId) $poNgTerpilih = $po;
         $data = [
             'datagudang' => $modelgudang->findAll(),
-            'datapokeluar' => (new PoKeluar())->daftarPoAktifUntukTipe('produk'),
+            'datapokeluar' => $datapokeluar,
+            'penerimaanNg' => $penerimaanNg,
+            'poNgTerpilih' => $poNgTerpilih,
             'datasupplier' => (new ModelSupplier())->orderBy('supnama', 'ASC')->findAll(),
             'databarang' => (new Modelbarang())->select('brgkode, brgnama')->orderBy('brgkode', 'ASC')->findAll(),
             'datamaterial' => (new Modelmaterial())->select('matid, matkode, matnama')->orderBy('matkode', 'ASC')->findAll(),
@@ -618,13 +627,19 @@ class Barangmasuk extends BaseController
             ->join('barang b', 'b.brgkode = dpk.kode_item', 'left')
             ->where('dpk.po_keluar_id', $poKeluarId)
             ->where('dpk.tipe_item', 'produk')
-            ->where('COALESCE(dpk.qty_masuk, 0) < dpk.qty_pesan', null, false)
             ->orderBy('dpk.id', 'ASC')
             ->get()->getResultArray();
 
-        foreach ($items as &$item) {
-            $item['sisa'] = max(0, (float) $item['qty_pesan'] - (float) $item['qty_masuk']);
+        $ngByItem = $replacementByItem = [];
+        if (strtoupper((string) ($header['status'] ?? '')) === 'NG' && $db->tableExists('retur_produk_detail')) {
+            foreach ($db->table('retur_produk_detail')->select('kode_barang, SUM(qty_retur) AS qty_ng', false)->where('po_keluar_id', $poKeluarId)->groupBy('kode_barang')->get()->getResultArray() as $r) $ngByItem[(string) $r['kode_barang']] = (float) $r['qty_ng'];
+            if ($db->fieldExists('sumber', 'barangmasuk')) foreach ($db->table('detail_barangmasuk d')->select('d.detbrgkode, SUM(d.detjml) AS qty_pengganti', false)->join('barangmasuk b', 'b.faktur = d.detfaktur')->where('d.detfaktur IS NOT NULL', null, false)->where('b.po_keluar_id', $poKeluarId)->where('b.sumber', 'retur_ng')->groupBy('d.detbrgkode')->get()->getResultArray() as $r) $replacementByItem[(string) $r['detbrgkode']] = (float) $r['qty_pengganti'];
         }
+        foreach ($items as &$item) {
+            $item['sisa'] = strtoupper((string) ($header['status'] ?? '')) === 'NG' ? max(0, ($ngByItem[(string) $item['kodebarang']] ?? 0) - ($replacementByItem[(string) $item['kodebarang']] ?? 0)) : max(0, (float) $item['qty_pesan'] - (float) $item['qty_masuk']);
+        }
+        unset($item);
+        $items = array_values(array_filter($items, static fn(array $item): bool => (float) ($item['sisa'] ?? 0) > 0));
 
         return $this->response->setJSON([
             'sukses' => [
@@ -646,7 +661,7 @@ class Barangmasuk extends BaseController
             $totalberatbarang = $this->request->getPost('totalberatbarang');
             $poKeluarId = (int) $this->request->getPost('po_keluar_id');
             $sumberProdukInput = $this->request->getPost('sumber_produk');
-            $sumberProduk = in_array($sumberProdukInput, ['adjustment', 'produksi', 'produksi_pelanggan'], true) ? $sumberProdukInput : 'beli';
+            $sumberProduk = in_array($sumberProdukInput, ['adjustment', 'produksi', 'produksi_pelanggan', 'retur_ng'], true) ? $sumberProdukInput : 'beli';
             if ($sumberProduk === 'adjustment' || $sumberProduk === 'produksi' || $sumberProduk === 'produksi_pelanggan') {
                 $poKeluarId = 0;
                 $idsupplier = null;
@@ -722,6 +737,7 @@ class Barangmasuk extends BaseController
                 $modelBarangMasuk->insert([
                     'faktur' => $nofaktur,
                     'po_keluar_id' => $poKeluarId ?: null,
+                    'sumber' => $sumberProduk,
                     'tglfaktur' => $tglfaktur,
                     'idsup' => $idsupplier,
                     'gudang' => $gudang,

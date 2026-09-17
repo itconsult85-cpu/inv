@@ -9,6 +9,9 @@ Data Produk Masuk
 <button type="button" class="btn btn-primary" onclick="location.href=('/barangmasuk/input')">
     <i class="fa fa-plus-circle"></i> Input Transaksi Produk Masuk
 </button>
+<button type="button" class="btn btn-danger ml-2" onclick="location.href=('/barangmasuk/input?penerimaan_ng=1')">
+    <i class="fa fa-exchange-alt"></i> Penerimaan Produk dari NG
+</button>
 
 <?= $this->endSection('subjudul') ?>
 
