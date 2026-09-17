@@ -484,10 +484,12 @@ Managemen Data Pelanggan
                 }
             },
             error: function(xhr, ajaxOptions, thrownError) {
-                alert(
+                showBootstrapModal(
+                    'Error',
                     'Status: ' + xhr.status +
                     '\nError: ' + thrownError +
-                    '\n\n' + xhr.responseText
+                    '\n\n' + xhr.responseText,
+                    'error'
                 );
             }
         });

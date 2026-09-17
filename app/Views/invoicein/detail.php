@@ -38,7 +38,7 @@
                             <i class="fas fa-upload"></i> <?= !empty($invoice['invoice_file']) ? 'Ganti' : 'Upload' ?>
                         </a>
                         <?php if (!empty($invoice['invoice_file'])) : ?>
-                            <?= form_open('/invoiceIn/hapusFileInvoice/' . $invoice['id'], ['class' => 'd-inline', 'onsubmit' => "return confirm('Hapus file invoice ini? Data Invoice In tetap tersimpan.');"]) ?>
+                            <?= form_open('/invoiceIn/hapusFileInvoice/' . $invoice['id'], ['class' => 'd-inline', 'data-bootstrap-confirm' => 'Hapus file invoice ini? Data Invoice In tetap tersimpan.']) ?>
                             <button type="submit" class="btn btn-outline-danger btn-sm">
                                 <i class="fas fa-trash"></i> Hapus
                             </button>
