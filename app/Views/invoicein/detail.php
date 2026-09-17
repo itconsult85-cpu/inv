@@ -39,9 +39,9 @@
                         </a>
                         <?php if (!empty($invoice['invoice_file'])) : ?>
                             <?= form_open('/invoiceIn/hapusFileInvoice/' . $invoice['id'], ['class' => 'd-inline', 'onsubmit' => "return confirm('Hapus file invoice ini? Data Invoice In tetap tersimpan.');"]) ?>
-                                <button type="submit" class="btn btn-outline-danger btn-sm">
-                                    <i class="fas fa-trash"></i> Hapus
-                                </button>
+                            <button type="submit" class="btn btn-outline-danger btn-sm">
+                                <i class="fas fa-trash"></i> Hapus
+                            </button>
                             <?= form_close() ?>
                             <?php if (!empty($invoice['invoice_uploaded_at'])) : ?>
                                 <small class="text-muted ml-2">Upload: <?= date('d-m-Y H:i', strtotime($invoice['invoice_uploaded_at'])) ?></small>
@@ -72,7 +72,9 @@
         </table>
     </div>
     <div class="col-md-6">
-        <?php $sourceNo = (string) ($invoice['source_no'] ?? ''); $sourceParts = explode('||', $sourceNo, 2); $sourceLabel = ($invoice['source_type'] ?? '') === 'po_keluar' ? 'PO Keluar' : ucfirst((string) ($invoice['source_type'] ?? '')) . ' Masuk'; ?>
+        <?php $sourceNo = (string) ($invoice['source_no'] ?? '');
+        $sourceParts = explode('||', $sourceNo, 2);
+        $sourceLabel = ($invoice['source_type'] ?? '') === 'po_keluar' ? 'PO Keluar' : ucfirst((string) ($invoice['source_type'] ?? '')) . ' Masuk'; ?>
         <table class="table table-sm">
             <tr>
                 <th>Supplier</th>
