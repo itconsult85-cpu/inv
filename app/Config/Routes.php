@@ -120,6 +120,7 @@ $routes->get('logaktivitas/index', 'LogAktivitas::index');
 $routes->get('logaktivitas/listdata', 'LogAktivitas::listData');
 $routes->get('logaktivitas/listArchive', 'LogAktivitas::listArchive');
 $routes->get('logaktivitas/downloadArchive/(:num)', 'LogAktivitas::downloadArchive/$1');
+$routes->post('ngdata/detail', 'Ngdata::detail');
 $routes->post('logaktivitas/simpanEmailPenerima', 'LogAktivitas::simpanEmailPenerima');
 $routes->get('cron/arsip-log-mingguan', 'Cron::arsipLogMingguan');
 $routes->get('users/akses', 'Users::akses');

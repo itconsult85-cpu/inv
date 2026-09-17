@@ -61,12 +61,14 @@ Data Raw Produk
             <th class="text-center">Berat Keluar (KG)</th>
             <th class="text-center">Berat Masuk (KG)</th>
             <th class="text-center">Sisa Material (KG)</th>
+            <th class="text-center" data-orderable="false">Aksi</th>
         </tr>
     </thead>
     <tbody>
 
     </tbody>
 </table>
+<div class="viewmodal" style="display: none;"></div>
 <script>
     // var pusher = new Pusher('8f027ac11961f0fa1906', {
     //     cluster: 'ap1'
@@ -129,8 +131,37 @@ Data Raw Produk
                     orderable: false,
                     className: 'text-right'
                 },
+                {
+                    data: 'aksi',
+                    orderable: false,
+                    searchable: false,
+                    className: 'text-center'
+                },
             ]
         });
+
+        window.detailNg = function(idsup, matjenis) {
+            $.ajax({
+                type: 'post',
+                url: '<?= site_url('ngdata/detail') ?>',
+                data: {
+                    [csrfToken]: csrfHash,
+                    idsup: idsup,
+                    matjenis: matjenis
+                },
+                dataType: 'json',
+                success: function(response) {
+                    if (response.error) {
+                        showBootstrapModal('Gagal', response.error, 'error');
+                        return;
+                    }
+                    $('.viewmodal').html(response.data).show();
+                },
+                error: function(xhr) {
+                    showBootstrapModal('Gagal', xhr.status + ' - Detail NG tidak dapat dimuat.', 'error');
+                }
+            });
+        };
 
         $('#tombolTampil').on('click', function() {
             table.ajax.reload();
