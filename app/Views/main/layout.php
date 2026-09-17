@@ -417,6 +417,82 @@
              pointer-events: none;
          }
 
+         /* Bootstrap popup: compact by default, wide only for real forms. */
+         #appPopupModal .app-popup-dialog {
+             max-width: 24rem !important;
+             margin: 1.75rem auto;
+         }
+
+         #appPopupModal .app-popup-dialog.app-popup-dialog-wide {
+             max-width: 42rem !important;
+         }
+
+         #appPopupModal .app-popup-content {
+             border: 0;
+             border-radius: .9rem;
+             box-shadow: 0 1rem 2.5rem rgba(15, 23, 42, .22);
+             overflow: hidden;
+         }
+
+         #appPopupModal .modal-header {
+             align-items: center;
+             border-bottom: 1px solid rgba(15, 23, 42, .08);
+             min-height: 3.35rem;
+             padding: .75rem 1rem;
+         }
+
+         #appPopupModal .modal-title {
+             color: #1f2937;
+             font-size: 1.05rem;
+             font-weight: 600;
+             line-height: 1.35;
+         }
+
+         #appPopupModal .modal-body {
+             color: #4b5563;
+             font-size: .94rem;
+             line-height: 1.5;
+             max-height: min(68vh, 34rem);
+             overflow-y: auto;
+             padding: 1rem;
+         }
+
+         #appPopupModal .modal-footer {
+             border-top: 1px solid rgba(15, 23, 42, .08);
+             gap: .5rem;
+             justify-content: flex-end;
+             padding: .7rem 1rem;
+         }
+
+         #appPopupModal .modal-footer .btn {
+             border-radius: .4rem;
+             font-size: .875rem;
+             min-width: 5.25rem;
+             padding: .4rem .85rem;
+         }
+
+         #appPopupModal .modal-footer .app-popup-cancel {
+             background: #f3f4f6;
+             border-color: #e5e7eb;
+             color: #4b5563;
+         }
+
+         #appPopupModal .close {
+             font-size: 1.35rem;
+             font-weight: 400;
+             margin: -.35rem -.35rem -.35rem auto;
+             opacity: .55;
+             padding: .35rem;
+         }
+
+         @media (max-width: 575.98px) {
+             #appPopupModal .app-popup-dialog,
+             #appPopupModal .app-popup-dialog.app-popup-dialog-wide {
+                 margin: .75rem;
+                 max-width: none !important;
+             }
+         }
+
          /* Mobile: sidebar jadi panel overlay, digeser pakai transform (bukan
             margin-left) biar nggak bentrok sama mekanisme AdminLTE bawaan. */
          @media (max-width: 767.98px) {
