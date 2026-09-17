@@ -36,6 +36,7 @@
         var body = options.html !== undefined ? options.html : escapeHtml(options.text || '').replace(/\n/g, '<br>');
         var iconMarkup = options.icon ? '<i class="' + iconClass(options.icon) + ' mr-2" aria-hidden="true"></i>' : '';
 
+        modal.find('.app-popup-dialog').toggleClass('app-popup-dialog-wide', Boolean(options.width || (options.html && String(options.html).length > 240)));
         modal.find('.app-popup-title').html(iconMarkup + escapeHtml(title));
         modal.find('.app-popup-body').html(body);
         modal.find('.app-popup-confirm')

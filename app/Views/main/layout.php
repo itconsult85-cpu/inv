@@ -1322,9 +1322,106 @@
                  margin: .25rem auto;
              }
 
-             .modal-body {
-                 padding: .65rem;
+         .modal-body {
+             padding: .65rem;
+         }
+
+         #appPopupModal .app-popup-dialog {
+             max-width: 24rem;
+             margin: 1.75rem auto;
+         }
+
+         #appPopupModal .app-popup-dialog.app-popup-dialog-wide {
+             max-width: 42rem;
+         }
+
+         #appPopupModal .app-popup-content {
+             border: 0;
+             border-radius: .9rem;
+             box-shadow: 0 1rem 2.5rem rgba(15, 23, 42, .22);
+             overflow: hidden;
+         }
+
+         #appPopupModal .modal-header {
+             align-items: center;
+             border-bottom: 1px solid rgba(15, 23, 42, .08);
+             min-height: 3.35rem;
+             padding: .75rem 1rem;
+         }
+
+         #appPopupModal .modal-title {
+             color: #1f2937;
+             font-size: 1.05rem;
+             font-weight: 600;
+             line-height: 1.35;
+         }
+
+         #appPopupModal .modal-title i {
+             font-size: 1.1rem;
+         }
+
+         #appPopupModal .modal-body {
+             color: #4b5563;
+             font-size: .94rem;
+             line-height: 1.5;
+             max-height: min(68vh, 34rem);
+             overflow-y: auto;
+             padding: 1rem;
+         }
+
+         #appPopupModal .modal-footer {
+             border-top: 1px solid rgba(15, 23, 42, .08);
+             gap: .5rem;
+             justify-content: flex-end;
+             padding: .7rem 1rem;
+         }
+
+         #appPopupModal .modal-footer .btn {
+             border-radius: .4rem;
+             font-size: .875rem;
+             min-width: 5.25rem;
+             padding: .4rem .85rem;
+         }
+
+         #appPopupModal .modal-footer .app-popup-cancel {
+             background: #f3f4f6;
+             border-color: #e5e7eb;
+             color: #4b5563;
+         }
+
+         #appPopupModal .modal-footer .app-popup-cancel:hover {
+             background: #e5e7eb;
+             color: #1f2937;
+         }
+
+         #appPopupModal .close {
+             font-size: 1.35rem;
+             font-weight: 400;
+             margin: -.35rem -.35rem -.35rem auto;
+             opacity: .55;
+             padding: .35rem;
+         }
+
+         #appPopupModal .close:hover {
+             opacity: .85;
+         }
+
+         #appPopupModal .app-popup-loading {
+             color: #16869a;
+             font-size: .9rem;
+         }
+
+         #appPopupModal .app-popup-validation {
+             font-size: .86rem;
+         }
+
+         @media (max-width: 575.98px) {
+             #appPopupModal .app-popup-dialog,
+             #appPopupModal .app-popup-dialog.app-popup-dialog-wide {
+                 margin: .75rem;
+                 max-width: none;
              }
+         }
 
          }
 
@@ -2512,8 +2609,8 @@
          });
      </script>
      <div class="modal fade" id="appPopupModal" tabindex="-1" role="dialog" aria-labelledby="appPopupModalLabel" aria-hidden="true">
-         <div class="modal-dialog modal-dialog-centered" role="document">
-             <div class="modal-content">
+         <div class="modal-dialog modal-dialog-centered app-popup-dialog" role="document">
+             <div class="modal-content app-popup-content">
                  <div class="modal-header">
                      <h5 class="modal-title" id="appPopupModalLabel"><span class="app-popup-title">Pesan</span></h5>
                      <button type="button" class="close" data-dismiss="modal" aria-label="Tutup"><span aria-hidden="true">&times;</span></button>
