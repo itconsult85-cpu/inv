@@ -236,6 +236,18 @@ class PoKeluar extends BaseController
 
         $po['status_penerimaan'] = $this->hitungStatusPenerimaan($po);
 
+        $returMaterial = $this->db->table('retur_material r')
+            ->select('r.id, r.nomor_retur, r.material_masuk_faktur, r.tgl_retur, r.catatan, SUM(rd.qty_retur) AS total_qty', false)
+            ->join('retur_material_detail rd', 'rd.retur_id = r.id', 'inner')
+            ->join('detail_materialmasuk dmm', 'dmm.id = rd.material_masuk_detail_id', 'left')
+            ->groupStart()
+                ->where('rd.po_keluar_id', $id)
+                ->orWhere('dmm.po_keluar_id', $id)
+            ->groupEnd()
+            ->groupBy('r.id, r.nomor_retur, r.material_masuk_faktur, r.tgl_retur, r.catatan')
+            ->orderBy('r.tgl_retur', 'DESC')
+            ->get()->getResultArray();
+
         return view('pokeluar/detail', [
             'po' => $po,
             'details' => $this->detailModel->where('po_keluar_id', $id)->orderBy('id', 'ASC')->findAll(),
@@ -245,6 +257,7 @@ class PoKeluar extends BaseController
                 ->orderBy('tglfaktur', 'DESC')
                 ->get()->getResultArray(),
             'statusPayment' => $this->hitungStatusPayment((string) $po['no_po']),
+            'returMaterial' => $returMaterial,
         ]);
     }
 
@@ -568,6 +581,19 @@ class PoKeluar extends BaseController
         }));
     }
 
+    public function daftarPoNgUntukTipe(string $tipeItem): array
+    {
+        return $this->db->table('po_keluar pk')
+            ->select('pk.id, pk.no_po, pk.supplier_nama, pk.tgl_po, pk.jenis_po, pk.jenis_transaksi, pk.kirim_langsung')
+            ->join('detail_po_keluar dpk', 'dpk.po_keluar_id = pk.id', 'inner')
+            ->where('LOWER(dpk.tipe_item) = ' . $this->db->escape(strtolower($tipeItem)), null, false)
+            ->where('UPPER(pk.status) = ' . $this->db->escape('NG'), null, false)
+            ->groupBy('pk.id, pk.no_po, pk.supplier_nama, pk.tgl_po, pk.jenis_po, pk.jenis_transaksi, pk.kirim_langsung')
+            ->orderBy('pk.tgl_po', 'DESC')
+            ->orderBy('pk.id', 'DESC')
+            ->get()->getResultArray();
+    }
+
     /**
      * Menambahkan qty yang baru diterima ke detail_po_keluar yang cocok
      * (berdasarkan po_keluar_id + tipe_item + kode_item), dipanggil dari
@@ -619,6 +645,10 @@ class PoKeluar extends BaseController
      */
     private function hitungStatusPenerimaan(array $po): string
     {
+        if (strtoupper((string) ($po['status'] ?? '')) === 'NG' || $this->poPunyaReturNg((int) ($po['id'] ?? 0))) {
+            return 'NG';
+        }
+
         $jenisTransaksi = trim((string) ($po['jenis_transaksi'] ?? 'Beli'));
         $isTitipProses = strcasecmp($jenisTransaksi, 'Titip Proses') === 0;
 
@@ -658,6 +688,21 @@ class PoKeluar extends BaseController
         }
 
         return $this->hitungStatusQtyPenerimaan((int) $po['id']);
+    }
+
+    private function poPunyaReturNg(int $poId): bool
+    {
+        if ($poId <= 0 || !$this->db->tableExists('retur_material_detail')) {
+            return false;
+        }
+
+        return $this->db->table('retur_material_detail rd')
+            ->join('detail_materialmasuk dmm', 'dmm.id = rd.material_masuk_detail_id', 'left')
+            ->groupStart()
+                ->where('rd.po_keluar_id', $poId)
+                ->orWhere('dmm.po_keluar_id', $poId)
+            ->groupEnd()
+            ->countAllResults() > 0;
     }
 
     private function punyaPoTitipProsesTurunan(string $noPo): bool

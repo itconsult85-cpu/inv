@@ -311,6 +311,7 @@ Data PO Keluar
                     <select id="poKeluarStatusFilter" class="po-filter-select" aria-label="Status">
                         <option value="">Semua Status</option>
                         <option value="AKTIF">AKTIF</option>
+                        <option value="NG">NG</option>
                         <option value="DIBATALKAN">DIBATALKAN</option>
                     </select>
                     <select id="poKeluarJenisFilter" class="po-filter-select" aria-label="Jenis PO">
@@ -364,7 +365,7 @@ Data PO Keluar
                 <tr>
                     <td class="text-center"><?= $i + 1 ?></td>
                     <td class="text-center">
-                        <span class="badge badge-<?= $row['status'] === 'AKTIF' ? 'success' : 'secondary' ?>">
+                        <span class="badge badge-<?= $row['status'] === 'NG' ? 'danger' : ($row['status'] === 'AKTIF' ? 'success' : 'secondary') ?>">
                             <?= esc($row['status']) ?>
                         </span>
                     </td>
@@ -404,6 +405,7 @@ Data PO Keluar
                                 'Dikirim untuk Proses ke Vendor' => 'info',
                                 'Menunggu Invoice Jasa' => 'warning',
                                 'Selesai' => 'primary',
+                                'NG' => 'danger',
                             ][$row['status_penerimaan']] ?? 'secondary';
                         ?>
                         <span class="badge badge-<?= $badgePenerimaan ?>"><?= esc($row['status_penerimaan']) ?></span>

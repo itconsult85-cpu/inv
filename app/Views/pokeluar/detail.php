@@ -91,6 +91,7 @@ $persenTerima = $totalPesan > 0 ? min(100, round(($totalMasuk / $totalPesan) * 1
                         <th class="text-right">Jumlah Masuk</th>
                         <th class="text-right">Harga</th>
                         <th class="text-right">Subtotal</th>
+                        <th>Status</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -103,6 +104,13 @@ $persenTerima = $totalPesan > 0 ? min(100, round(($totalMasuk / $totalPesan) * 1
                             <td class="text-right"><?= number_format((float) $detail['qty_masuk'], 0, ',', '.') ?></td>
                             <td class="text-right">Rp <?= number_format((float) $detail['harga'], 0, ',', '.') ?></td>
                             <td class="text-right">Rp <?= number_format((float) $detail['subtotal'], 0, ',', '.') ?></td>
+                            <td>
+                                <?php if (strtoupper((string) ($detail['status'] ?? 'NORMAL')) === 'NG') : ?>
+                                    <span class="badge badge-danger">NG</span>
+                                <?php else : ?>
+                                    <span class="badge badge-success">NORMAL</span>
+                                <?php endif ?>
+                            </td>
                         </tr>
                     <?php endforeach ?>
                 </tbody>
@@ -228,6 +236,31 @@ $persenTerima = $totalPesan > 0 ? min(100, round(($totalMasuk / $totalPesan) * 1
                 </div>
             <?php endif ?>
         </div>
+        <?php if (strtoupper((string) ($po['status'] ?? '')) === 'NG') : ?>
+            <div class="po-card mt-3">
+                <div class="po-card-header">
+                    <div class="po-card-header-title">
+                        <h4>Penerimaan dari NG</h4>
+                        <span class="po-card-badge"><?= count($returMaterial ?? []) ?> retur</span>
+                    </div>
+                    <a href="<?= site_url('materialmasuk/input?penerimaan_ng=1&po_keluar_id=' . (int) $po['id']) ?>" class="btn btn-sm btn-danger">
+                        <i class="fa fa-plus"></i> Input Penerimaan NG
+                    </a>
+                </div>
+                <div class="po-card-body-collapsible po-material-masuk-list">
+                    <?php if (empty($returMaterial)) : ?>
+                        <p class="po-empty-state mb-0">Belum ada retur NG tercatat.</p>
+                    <?php else : ?>
+                        <?php foreach ($returMaterial as $retur) : ?>
+                            <div class="po-info-row">
+                                <span class="po-info-label"><?= esc($retur['nomor_retur']) ?></span>
+                                <span class="po-info-value"><?= esc($retur['material_masuk_faktur']) ?> · <?= number_format((float) $retur['total_qty'], 3, ',', '.') ?> · <?= date('d-m-Y', strtotime($retur['tgl_retur'])) ?></span>
+                            </div>
+                        <?php endforeach ?>
+                    <?php endif ?>
+                </div>
+            </div>
+        <?php endif ?>
     </div>
 </div>
 

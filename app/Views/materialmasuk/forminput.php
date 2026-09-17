@@ -1,7 +1,7 @@
 <?= $this->extend('main/layout') ?>
 
 <?= $this->section('judul') ?>
-Input Material Masuk
+<?= !empty($penerimaanNg) ? 'Penerimaan Material Pengganti NG' : 'Input Material Masuk' ?>
 <?= $this->endSection('judul') ?>
 
 <?= $this->section('subjudul') ?>
@@ -15,6 +15,7 @@ Input Material Masuk
 <?= $this->section('isi') ?>
 
 <div class="row">
+    <?php if (!empty($penerimaanNg)) : ?><div class="col-12"><div class="alert alert-danger"><i class="fa fa-exclamation-triangle"></i> Mode Penerimaan dari NG: pilih PO berstatus NG yang akan menerima material pengganti.</div></div><?php endif ?>
     <div class="col-lg-2">
         <div class="form-group">
             <label for="tglfaktur">Tanggal</label>
@@ -38,7 +39,8 @@ Input Material Masuk
         <div class="form-group">
             <label for="sumber_material">Sumber Material</label>
             <select name="sumber" id="sumber_material" class="form-control">
-                <option value="beli">Beli dari Supplier</option>
+                <option value="beli" <?= !empty($penerimaanNg) ? '' : 'selected' ?>>Beli dari Supplier</option>
+                <?php if (!empty($penerimaanNg)) : ?><option value="retur_ng" selected>Penerimaan Pengganti NG</option><?php endif ?>
                 <option value="adjustment">Adjustment Stok</option>
                 <option value="konsinyasi">Konsinyasi dari Pelanggan</option>
             </select>
@@ -105,7 +107,7 @@ Input Material Masuk
 <script>
     function terapkanSumberMaterial() {
         var sumber = $('#sumber_material').val();
-        var beli = sumber === 'beli';
+        var beli = sumber === 'beli' || sumber === 'retur_ng';
         var konsinyasi = sumber === 'konsinyasi';
         var adjustment = sumber === 'adjustment';
 
@@ -710,6 +712,12 @@ Input Material Masuk
             }
         });
         terapkanSumberMaterial();
+        <?php if (!empty($penerimaanNg) && !empty($poNgTerpilih)) : ?>
+        $('#sumber_material').prop('disabled', true);
+        $('#po_keluar_id').val('<?= (int) $poNgTerpilih['id'] ?>');
+        $('#po_keluar_input').val('<?= esc($poNgTerpilih['no_po'], 'js') ?> - <?= esc($poNgTerpilih['supplier_nama'], 'js') ?>');
+        muatItemPoKeluar('<?= (int) $poNgTerpilih['id'] ?>');
+        <?php endif ?>
 
         $(document).off('tre:supplierAdded.supplierCombobox').on('tre:supplierAdded.supplierCombobox', function(event, supplier) {
             if (supplierCombobox && typeof supplierCombobox.addOption === 'function') {
@@ -805,7 +813,7 @@ Input Material Masuk
                     icon: 'warning',
                     text: 'Maaf data pelanggan (sumber konsinyasi) tidak boleh kosong'
                 })
-            } else if (sumber === 'beli' && idsupplier.length == 0) {
+            } else if ((sumber === 'beli' || sumber === 'retur_ng') && idsupplier.length == 0) {
                 Swal.fire({
                     title: 'Pesan',
                     icon: 'warning',

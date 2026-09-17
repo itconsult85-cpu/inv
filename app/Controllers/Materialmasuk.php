@@ -207,9 +207,24 @@ class Materialmasuk extends BaseController
     public function input()
     {
         $modelgudang = new Modelgudang();
+        $penerimaanNg = (string) $this->request->getGet('penerimaan_ng') === '1';
+        $poNgId = (int) $this->request->getGet('po_keluar_id');
+        $poKeluar = new PoKeluar();
+        $datapokeluar = $penerimaanNg
+            ? $poKeluar->daftarPoNgUntukTipe('material')
+            : $poKeluar->daftarPoAktifUntukTipe('material');
+        $poNgTerpilih = null;
+        foreach ($datapokeluar as $po) {
+            if ((int) $po['id'] === $poNgId) {
+                $poNgTerpilih = $po;
+                break;
+            }
+        }
         $data = [
             'datagudang' => $modelgudang->findAll(),
-            'datapokeluar' => (new PoKeluar())->daftarPoAktifUntukTipe('material'),
+            'datapokeluar' => $datapokeluar,
+            'penerimaanNg' => $penerimaanNg,
+            'poNgTerpilih' => $poNgTerpilih,
             'datapelanggan' => (new \App\Models\ModelPelanggan())->whereNotIn('pelid', [1, 2])->findAll(),
             'datasupplier' => (new ModelSupplier())->whereNotIn('supid', [1, 2])->orderBy('supnama', 'ASC')->findAll(),
             'datamaterial' => (new Modelmaterial())->select('matid, matkode, matnama')->orderBy('matkode', 'ASC')->findAll(),
@@ -324,7 +339,7 @@ class Materialmasuk extends BaseController
             $jml = $this->request->getPost('jml');
             $idsupplier = $this->request->getPost('idsupplier');
             $sumberInput = $this->request->getPost('sumber');
-            $sumber = in_array($sumberInput, ['konsinyasi', 'adjustment'], true) ? $sumberInput : 'beli';
+            $sumber = in_array($sumberInput, ['konsinyasi', 'adjustment', 'retur_ng'], true) ? $sumberInput : 'beli';
             $idpelanggan = $this->request->getPost('idpelanggan');
             $poKeluarId = (int) $this->request->getPost('po_keluar_id') ?: null;
 
@@ -342,7 +357,7 @@ class Materialmasuk extends BaseController
                     'label' => 'Pelanggan',
                     'errors' => ['required' => '{field} belum dipilih'],
                 ];
-            } elseif ($sumber === 'beli') {
+            } elseif (in_array($sumber, ['beli', 'retur_ng'], true)) {
                 $rules['idsupplier'] = [
                     'rules' => 'required|not_in_list[1,2]',
                     'label' => 'Supplier',
@@ -398,7 +413,7 @@ class Materialmasuk extends BaseController
                     $modelTempMaterialMasuk->insert([
                         'detfaktur' => $nofaktur,
                         'po_keluar_id' => $poKeluarId,
-                        'idsup' => $sumber === 'beli' ? ($idsupplier ?: null) : null,
+                        'idsup' => in_array($sumber, ['beli', 'retur_ng'], true) ? ($idsupplier ?: null) : null,
                         'tgl' => $tglfaktur,
                         'detmatkode' => $materialid,
                         'idmat' => $idmat,
@@ -463,7 +478,9 @@ class Materialmasuk extends BaseController
             ->get()->getResultArray();
 
         foreach ($items as &$item) {
-            $item['sisa'] = max(0, (float) $item['qty_pesan'] - (float) $item['qty_masuk']);
+            $item['sisa'] = strtoupper((string) ($header['status'] ?? '')) === 'NG'
+                ? (float) $item['qty_pesan']
+                : max(0, (float) $item['qty_pesan'] - (float) $item['qty_masuk']);
         }
 
         return $this->response->setJSON([
@@ -524,7 +541,7 @@ class Materialmasuk extends BaseController
             $idsupplier = $this->request->getPost('idsupplier');
             $idgudang = $this->request->getPost('idgudang');
             $sumberInput = $this->request->getPost('sumber');
-            $sumber = in_array($sumberInput, ['konsinyasi', 'adjustment'], true) ? $sumberInput : 'beli';
+            $sumber = in_array($sumberInput, ['konsinyasi', 'adjustment', 'retur_ng'], true) ? $sumberInput : 'beli';
             $idpelanggan = $this->request->getPost('idpelanggan');
 
             if ($sumber === 'adjustment') {
@@ -597,10 +614,10 @@ class Materialmasuk extends BaseController
 
                 $headerData = [
                     'faktur' => $nofaktur,
-                    'po_keluar_id' => $sumber === 'beli' ? $poKeluarIdHeader : null,
+                    'po_keluar_id' => in_array($sumber, ['beli', 'retur_ng'], true) ? $poKeluarIdHeader : null,
                     'no_do' => $noDo,
                     'tglfaktur' => $tglfaktur,
-                    'idsup' => $sumber === 'beli' ? $idsupHeader : null,
+                    'idsup' => in_array($sumber, ['beli', 'retur_ng'], true) ? $idsupHeader : null,
                     'sumber' => $sumber,
                     'idpel' => $sumber === 'konsinyasi' ? $idpelanggan : null,
                     'totalberatmaterial' => $totalSubTotal,
@@ -620,7 +637,7 @@ class Materialmasuk extends BaseController
                 foreach ($dataTemp->getResultArray() as $row) {
                     // Item Adjustment Stok/Konsinyasi nggak boleh kecantol ke
                     // PO Keluar manapun, sama kayak aturan lama.
-                    $poKeluarIdItem = ($sumber === 'beli' && !empty($row['po_keluar_id'])) ? (int) $row['po_keluar_id'] : null;
+                    $poKeluarIdItem = (in_array($sumber, ['beli', 'retur_ng'], true) && !empty($row['po_keluar_id'])) ? (int) $row['po_keluar_id'] : null;
 
                     $fieldDetail[] = [
                         'detfaktur' => $row['detfaktur'],

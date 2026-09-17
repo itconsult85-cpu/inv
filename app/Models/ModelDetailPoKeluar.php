@@ -19,6 +19,7 @@ class ModelDetailPoKeluar extends Model
         'satuan',
         'qty_pesan',
         'qty_masuk',
+        'status',
         'harga',
         'subtotal',
         'created_at',

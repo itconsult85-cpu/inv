@@ -35,7 +35,7 @@ class Materialretur extends BaseController
 
         $db = db_connect();
         $details = $db->table('detail_materialmasuk dmm')
-            ->select("dmm.id, dmm.detfaktur, dmm.idmat, dmm.detmatkode, dmm.detjml, m.matkode, m.matnama, s.supnama, COALESCE(r.qty_retur, 0) AS qty_retur, (dmm.detjml - COALESCE(r.qty_retur, 0)) AS sisa_retur", false)
+            ->select("dmm.id, dmm.detfaktur, dmm.po_keluar_id, dmm.idmat, dmm.detmatkode, dmm.detjml, m.matkode, m.matnama, s.supnama, COALESCE(r.qty_retur, 0) AS qty_retur, (dmm.detjml - COALESCE(r.qty_retur, 0)) AS sisa_retur", false)
             ->join('material m', 'm.matid = dmm.detmatkode', 'left')
             ->join('supplier s', 's.supid = dmm.idsup', 'left')
             ->join('(SELECT material_masuk_detail_id, SUM(qty_retur) AS qty_retur FROM retur_material_detail GROUP BY material_masuk_detail_id) r', 'r.material_masuk_detail_id = dmm.id', 'left')
@@ -155,6 +155,7 @@ class Materialretur extends BaseController
 
                 $okDetail = $db->table('retur_material_detail')->insert([
                     'retur_id' => $returId,
+                    'po_keluar_id' => $detail['po_keluar_id'] ?: null,
                     'material_masuk_detail_id' => $detail['id'],
                     'idmat' => $detail['idmat'],
                     'materialid' => $detail['detmatkode'],
@@ -165,6 +166,16 @@ class Materialretur extends BaseController
                 if (!$okDetail) {
                     $error = 'Detail retur gagal disimpan.';
                     break;
+                }
+
+                if (!empty($detail['po_keluar_id'])) {
+                    $poId = (int) $detail['po_keluar_id'];
+                    $db->table('po_keluar')->where('id', $poId)->update(['status' => 'NG']);
+                    $db->table('detail_po_keluar')
+                        ->where('po_keluar_id', $poId)
+                        ->where('tipe_item', 'material')
+                        ->where('kode_item', (string) $detail['detmatkode'])
+                        ->update(['status' => 'NG']);
                 }
             }
         }
