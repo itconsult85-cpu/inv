@@ -1,4 +1,16 @@
-ALTER TABLE `barangmasuk` ADD COLUMN IF NOT EXISTS `sumber` VARCHAR(30) NOT NULL DEFAULT 'beli' AFTER `po_keluar_id`;
+SET @add_sumber_sql = (
+  SELECT IF(COUNT(*) = 0,
+    'ALTER TABLE `barangmasuk` ADD COLUMN `sumber` VARCHAR(30) NOT NULL DEFAULT ''beli'' AFTER `po_keluar_id`',
+    'SELECT 1'
+  )
+  FROM information_schema.columns
+  WHERE table_schema = DATABASE()
+    AND table_name = 'barangmasuk'
+    AND column_name = 'sumber'
+);
+PREPARE add_sumber_stmt FROM @add_sumber_sql;
+EXECUTE add_sumber_stmt;
+DEALLOCATE PREPARE add_sumber_stmt;
 
 CREATE TABLE IF NOT EXISTS `retur_produk` (
   `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
