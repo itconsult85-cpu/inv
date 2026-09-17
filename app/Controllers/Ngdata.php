@@ -47,12 +47,6 @@ class Ngdata extends BaseController
 
             return DataTable::of($builder)
                 ->addNumbering('nomor')
-                ->add('aksi', function ($row) {
-                    return '<button type="button" class="btn btn-sm btn-outline-primary" onclick="detailNg('
-                        . (int) $row->idsup . ',' . (int) $row->matjenis
-                        . ')" title="Lihat dan koreksi transaksi sumber">'
-                        . '<i class="fas fa-edit"></i> Koreksi</button>';
-                })
                 ->setSearchableColumns(['supnama', 'matnama'])
                 ->filter(function ($builder, $request) {
                     if (\App\Libraries\AccessControl::can('material.raw_produk.print')) {
@@ -93,24 +87,6 @@ class Ngdata extends BaseController
                 })
                 ->toJson(true);
         }
-    }
-
-    public function detail()
-    {
-        if (!$this->request->isAJAX()) {
-            return $this->response->setStatusCode(404);
-        }
-
-        $supplierId = (int) $this->request->getPost('idsup');
-        $materialId = (int) $this->request->getPost('matjenis');
-        if ($supplierId <= 0 || $materialId <= 0) {
-            return $this->response->setJSON(['error' => 'Parameter supplier atau material tidak valid.']);
-        }
-
-        $rows = (new Modelng())->detailBySupplierMaterial($supplierId, $materialId);
-        return $this->response->setJSON([
-            'data' => view('ngdata/modal_detail', ['rows' => $rows]),
-        ]);
     }
 
 
