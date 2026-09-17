@@ -349,10 +349,10 @@ class Produksi extends BaseController
             $tglakhir = $this->request->getPost('tglakhir');
 
             $builder = $this->db->table('produksi_produk pp')
-                ->select("pp.id AS produksi_produk_id, p.no_produksi, p.tgl_produksi, pp.kode_produk, pp.nama_produk, pp.qty_produk, g.gdgnama, p.keterangan, COALESCE(u.usernama, p.iduser, '-') AS user_input", false)
+                ->select("pp.id AS produksi_produk_id, p.no_produksi, p.tgl_produksi, pp.kode_produk, pp.nama_produk, pp.qty_produk, g.gdgnama, p.keterangan, COALESCE(u.usernama, (SELECT u_lama.usernama FROM users u_lama WHERE u_lama.id = CAST(p.iduser AS UNSIGNED) LIMIT 1), NULLIF(p.iduser, ''), '-') AS user_input", false)
                 ->join('produksi p', 'p.no_produksi = pp.no_produksi', 'inner')
                 ->join('gudang g', 'g.gdgid = p.gudang', 'left')
-                ->join('users u', 'u.userid = p.iduser', 'left')
+                ->join('users u', 'BINARY u.userid = BINARY CAST(p.iduser AS CHAR)', 'left', false)
                 // Tampilkan transaksi dengan tanggal input terbaru di bagian atas.
                 // Nomor batch dan ID menjadi tie-breaker agar urutannya stabil.
                 ->orderBy('p.tgl_produksi', 'DESC')

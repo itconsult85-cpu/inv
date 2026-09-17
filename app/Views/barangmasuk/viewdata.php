@@ -872,7 +872,9 @@ Data Produk Masuk
                     groupBy: function(row) {
                         return row.no_produksi;
                     },
-                    columns: [1, 5, 6]
+                    // Tanggal sengaja tidak di-merge agar tiap baris produksi
+                    // tetap jelas terbaca walaupun masih satu batch.
+                    columns: [5, 6]
                 });
             },
             columns: [{
