@@ -102,12 +102,18 @@ $sourceNoForSave = $sourceNoForSave ?? $selectedSource;
             </div>
             <div class="col-md-4 form-group mb-0">
                 <label>DP</label>
-                <div class="input-group">
-                    <div class="input-group-prepend"><div class="input-group-text"><input type="checkbox" name="dp_enabled" id="dpEnabled" value="1" <?= old('dp_enabled') ? 'checked' : '' ?>></div></div>
-                    <input type="number" name="dp_percent" id="dpPercent" class="form-control" min="0" max="100" step="0.01" value="<?= old('dp_percent', 50) ?>">
-                    <div class="input-group-append"><span class="input-group-text">%</span></div>
+                <div class="d-flex align-items-center mb-2">
+                    <div class="input-group mr-2" style="max-width: 8rem;">
+                        <div class="input-group-prepend"><div class="input-group-text"><input type="checkbox" name="dp_enabled" id="dpEnabled" value="1" <?= old('dp_enabled') ? 'checked' : '' ?>></div></div>
+                        <select name="dp_mode" id="dpMode" class="form-control">
+                            <option value="percent" <?= old('dp_mode', 'percent') === 'percent' ? 'selected' : '' ?>>%</option>
+                            <option value="amount" <?= old('dp_mode') === 'amount' ? 'selected' : '' ?>>Rp</option>
+                        </select>
+                    </div>
+                    <input type="number" name="dp_percent" id="dpPercent" class="form-control dp-value-percent" min="0" max="100" step="0.01" value="<?= old('dp_percent', 50) ?>">
+                    <input type="number" name="dp_amount" id="dpAmount" class="form-control dp-value-amount" min="0" step="0.01" value="<?= old('dp_amount', 0) ?>" style="display:none;">
                 </div>
-                <small class="text-muted">Centang kalau supplier sudah menerima DP.</small>
+                <small class="text-muted">Centang jika ada DP, lalu pilih persentase atau nominal rupiah.</small>
             </div>
         </div>
     </div>
@@ -159,8 +165,10 @@ function hitung(){
     const pph=pphEnabled?sub*(pphPercent/100):0;
 
     const dpEnabled=$('#dpEnabled').is(':checked');
+    const dpMode=$('#dpMode').val()==='amount'?'amount':'percent';
     const dpPercent=parseFloat($('#dpPercent').val())||0;
-    const dpAmount=dpEnabled?(sub+ppn)*(dpPercent/100):0;
+    const dpValue=parseFloat($('#dpAmount').val())||0;
+    const dpAmount=dpEnabled?(dpMode==='amount'?Math.min(dpValue,sub+ppn):(sub+ppn)*(dpPercent/100)):0;
     const grand=Math.max((sub+ppn)-pph-dpAmount,0);
 
     $('#subtotal').text('Rp '+Math.round(sub).toLocaleString('id-ID'));
@@ -170,14 +178,19 @@ function hitung(){
     $('#pphLabel').text((pphPercent||0).toLocaleString('id-ID',{maximumFractionDigits:2})+'%');
     $('#pph').text('Rp '+Math.round(pph).toLocaleString('id-ID'));
     $('#rowPph').toggle(pphEnabled);
-    $('#dpLabel').text((dpPercent||0).toLocaleString('id-ID',{maximumFractionDigits:2})+'%');
+    $('#dpLabel').text(dpMode==='amount'?'Nominal DP':'DP '+(dpPercent||0).toLocaleString('id-ID',{maximumFractionDigits:2})+'%');
     $('#dp').text('Rp '+Math.round(dpAmount).toLocaleString('id-ID'));
     $('#rowDp').toggle(dpEnabled);
     $('#grand').text('Rp '+Math.round(grand).toLocaleString('id-ID'));
 }
 $('.harga').on('input',hitung);
-$('#ppnPercent, #pphPercent, #dpPercent').on('input',hitung);
-$('#ppnEnabled, #pphEnabled, #dpEnabled').on('change',hitung);
-hitung();
+$('#ppnPercent, #pphPercent, #dpPercent, #dpAmount').on('input',hitung);
+$('#ppnEnabled, #pphEnabled, #dpEnabled, #dpMode').on('change',function(){
+    const amountMode=$('#dpMode').val()==='amount';
+    $('.dp-value-percent').toggle(!amountMode);
+    $('.dp-value-amount').toggle(amountMode);
+    hitung();
+});
+$('#dpMode').trigger('change');
 </script>
 <?= $this->endSection('isi') ?>

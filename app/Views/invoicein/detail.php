@@ -134,7 +134,7 @@
             <?php endif ?>
             <?php if ((int) ($invoice['dp_enabled'] ?? 0) === 1) : ?>
                 <tr>
-                    <th colspan="6" class="text-right">DP <?= number_format((float) ($invoice['dp_percent'] ?? 50), 0, ',', '.') ?>%</th>
+                    <th colspan="6" class="text-right"><?= ($invoice['dp_mode'] ?? 'percent') === 'amount' ? 'DP Nominal' : 'DP ' . number_format((float) ($invoice['dp_percent'] ?? 50), 0, ',', '.') . '%' ?></th>
                     <th class="text-right">Rp <?= number_format((float) ($invoice['dp_amount'] ?? 0), 0, ',', '.') ?></th>
                 </tr>
             <?php endif ?>

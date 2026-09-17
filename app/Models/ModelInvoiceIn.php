@@ -17,7 +17,7 @@ class ModelInvoiceIn extends Model
         'bukti_transfer_file', 'bukti_transfer_original_name', 'bukti_transfer_uploaded_at',
         'subtotal', 'ppn', 'ppn_enabled', 'ppn_percent',
         'pph23', 'pph_enabled', 'pph_percent',
-        'dp_enabled', 'dp_percent', 'dp_amount',
+        'dp_enabled', 'dp_mode', 'dp_percent', 'dp_amount',
         'grand_total', 'status', 'tanggal_lunas', 'created_by',
     ];
 }

@@ -33,6 +33,7 @@ class InvoiceIn extends BaseController
             'pph_enabled' => ['type' => 'TINYINT', 'constraint' => 1, 'default' => 1, 'after' => 'pph23'],
             'pph_percent' => ['type' => 'DECIMAL', 'constraint' => '5,2', 'default' => 2, 'after' => 'pph_enabled'],
             'dp_enabled' => ['type' => 'TINYINT', 'constraint' => 1, 'default' => 0, 'after' => 'pph_percent'],
+            'dp_mode' => ['type' => 'VARCHAR', 'constraint' => 10, 'default' => 'percent', 'after' => 'dp_enabled'],
             'dp_percent' => ['type' => 'DECIMAL', 'constraint' => '5,2', 'default' => 50, 'after' => 'dp_enabled'],
             'dp_amount' => ['type' => 'DECIMAL', 'constraint' => '18,2', 'default' => 0, 'after' => 'dp_percent'],
             'invoice_uploaded_at' => ['type' => 'DATETIME', 'null' => true, 'after' => 'invoice_original_name'],
@@ -180,10 +181,19 @@ class InvoiceIn extends BaseController
         $pph23 = $pphEnabled ? round($subtotal * ($pphPercent / 100), 2) : 0;
 
         $dpEnabled = $this->request->getPost('dp_enabled') ? 1 : 0;
+        $dpMode = in_array($this->request->getPost('dp_mode'), ['percent', 'amount'], true)
+            ? $this->request->getPost('dp_mode')
+            : 'percent';
         $dpPercent = max(0, min(100, (float) str_replace(',', '.', (string) $this->request->getPost('dp_percent'))));
         $dpPercent = $dpPercent > 0 ? $dpPercent : 50;
+        $dpRupiah = max(0, (float) str_replace(',', '.', (string) $this->request->getPost('dp_amount')));
         // Grand Total = (subtotal + PPN) - PPh 23 - DP.
-        $dpAmount = $dpEnabled ? round(($subtotal + $ppn) * ($dpPercent / 100), 2) : 0;
+        $dpAmount = !$dpEnabled ? 0 : ($dpMode === 'amount'
+            ? min(round($dpRupiah, 2), round($subtotal + $ppn, 2))
+            : round(($subtotal + $ppn) * ($dpPercent / 100), 2));
+        if ($dpMode === 'amount') {
+            $dpPercent = 0;
+        }
         $grandTotal = max(($subtotal + $ppn) - $pph23 - $dpAmount, 0);
 
         $this->db->transBegin();
@@ -208,6 +218,7 @@ class InvoiceIn extends BaseController
                 'pph_enabled' => $pphEnabled,
                 'pph_percent' => $pphPercent,
                 'dp_enabled' => $dpEnabled,
+                'dp_mode' => $dpMode,
                 'dp_percent' => $dpPercent,
                 'dp_amount' => $dpAmount,
                 'grand_total' => $grandTotal,
@@ -533,6 +544,7 @@ class InvoiceIn extends BaseController
         $invoice['pph_enabled'] = isset($invoice['pph_enabled']) ? (int) $invoice['pph_enabled'] : 1;
         $invoice['pph_percent'] = (float) ($invoice['pph_percent'] ?? 2);
         $invoice['dp_enabled'] = (int) ($invoice['dp_enabled'] ?? 0);
+        $invoice['dp_mode'] = ($invoice['dp_mode'] ?? 'percent') === 'amount' ? 'amount' : 'percent';
         $invoice['dp_percent'] = (float) ($invoice['dp_percent'] ?? 50);
         $invoice['dp_amount'] = (float) ($invoice['dp_amount'] ?? 0);
         return [
