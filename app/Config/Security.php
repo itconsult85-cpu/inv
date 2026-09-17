@@ -60,19 +60,21 @@ class Security extends BaseConfig
      *
      * Expiration time for Cross Site Request Forgery protection cookie.
      *
-     * Defaults to two hours (in seconds).
+     * Keep the token valid for a full day so users can leave forms open
+     * without losing the page token during normal work.
      */
-    public int $expires = 7200;
+    public int $expires = 86400;
 
     /**
      * --------------------------------------------------------------------------
      * CSRF Regenerate
      * --------------------------------------------------------------------------
      *
-     * Regenerate CSRF Token on every submission.
+     * Do not rotate on every submission. The shared layout synchronizes the
+     * response header for AJAX requests; keeping the token stable also avoids
+     * invalidating other open forms after a successful POST.
      */
-    public bool $regenerate = true;
-    // public bool $regenerate = true;
+    public bool $regenerate = false;
 
     /**
      * --------------------------------------------------------------------------
