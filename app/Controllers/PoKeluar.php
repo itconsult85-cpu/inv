@@ -740,13 +740,20 @@ class PoKeluar extends BaseController
             return false;
         }
 
-        return $this->db->table('retur_material_detail rd')
+        $hasRetur = $this->db->table('retur_material_detail rd')
             ->join('detail_materialmasuk dmm', 'dmm.id = rd.material_masuk_detail_id', 'left')
             ->groupStart()
                 ->where('rd.po_keluar_id', $poId)
                 ->orWhere('dmm.po_keluar_id', $poId)
             ->groupEnd()
             ->countAllResults() > 0;
+        if (!$hasRetur && (!$this->db->tableExists('retur_produk_detail') || $this->db->table('retur_produk_detail')->where('po_keluar_id', $poId)->countAllResults() === 0)) return false;
+        $ng = $this->getNgQtyByPoItem($poId);
+        $replacement = $this->getReplacementQtyByPoItem($poId);
+        foreach ($ng as $kode => $qtyNg) {
+            if ($qtyNg - ($replacement[$kode] ?? 0) > 0.000001) return true;
+        }
+        return false;
     }
 
     private function getNgQtyByPoItem(int $poId): array
