@@ -192,4 +192,53 @@ class Materialretur extends BaseController
 
         return redirect()->to(site_url('materialmasuk/data'))->with('success', 'Retur material NG berhasil disimpan dan stok sudah dikurangi.');
     }
+
+    public function kelola(string $hash)
+    {
+        $header = $this->headerByHash($hash);
+        if (!$header) throw \CodeIgniter\Exceptions\PageNotFoundException::forPageNotFound('Transaksi Material Masuk tidak ditemukan.');
+        $db = db_connect();
+        $returns = $db->table('retur_material_detail rd')
+            ->select('rd.*, r.nomor_retur, r.tgl_retur, r.catatan, d.detfaktur, d.detjml, m.matkode, m.matnama')
+            ->join('retur_material r', 'r.id = rd.retur_id')
+            ->join('detail_materialmasuk d', 'd.id = rd.material_masuk_detail_id')
+            ->join('material m', 'm.matid = rd.detmatkode', 'left')
+            ->where('r.material_masuk_faktur', $header['faktur'])
+            ->orderBy('rd.id', 'DESC')->get()->getResultArray();
+        return view('materialretur/manage', ['header' => $header, 'returns' => $returns]);
+    }
+
+    public function koreksi()
+    {
+        $db = db_connect();
+        $id = (int) $this->request->getPost('id');
+        $qtyBaru = (float) $this->request->getPost('qty_retur');
+        $ket = trim((string) $this->request->getPost('keterangan')) ?: 'NG';
+        if ($qtyBaru < 0) return redirect()->back()->with('error', 'Qty retur tidak boleh negatif.');
+        $row = $db->table('retur_material_detail rd')->select('rd.*, r.material_masuk_faktur, d.detjml, d.detmatkode AS source_matkode, d.idmat AS source_idmat, d.po_keluar_id AS source_po')->join('retur_material r', 'r.id=rd.retur_id')->join('detail_materialmasuk d', 'd.id=rd.material_masuk_detail_id')->where('rd.id', $id)->get()->getRowArray();
+        if (!$row) return redirect()->back()->with('error', 'Detail retur material tidak ditemukan.');
+        $selisih = $qtyBaru - (float) $row['qty_retur'];
+        if ($qtyBaru > (float) $row['detjml'] + 0.000001) return redirect()->back()->with('error', 'Qty retur melebihi Qty material masuk.');
+        $db->transStart();
+        if ($selisih > 0) {
+            $stok = $db->table('stokmaterial')->where('id', (int) $row['idmat'])->get()->getRowArray();
+            if (!$stok || (float) $stok['stok'] < $selisih) { $db->transRollback(); return redirect()->back()->with('error', 'Stok material tidak cukup untuk menambah retur.'); }
+            $db->table('stokmaterial')->where('id', (int) $row['idmat'])->set('stok', 'stok - ' . $selisih, false)->update();
+        } elseif ($selisih < 0) {
+            $db->table('stokmaterial')->where('id', (int) $row['idmat'])->set('stok', 'stok + ' . abs($selisih), false)->update();
+        }
+        if ($qtyBaru <= 0) $db->table('retur_material_detail')->where('id', $id)->delete();
+        else $db->table('retur_material_detail')->where('id', $id)->update(['qty_retur' => $qtyBaru, 'keterangan' => $ket]);
+        $poId = (int) ($row['po_keluar_id'] ?: $row['source_po']);
+        $db->transComplete();
+        if ($db->transStatus() === false) return redirect()->back()->with('error', 'Koreksi retur material gagal disimpan.');
+        if ($poId > 0) (new PoKeluar())->refreshStatusAfterReplacement($poId);
+        return redirect()->back()->with('success', $qtyBaru <= 0 ? 'Retur material dibatalkan dan stok dikembalikan.' : 'Retur material berhasil dikoreksi.');
+    }
+
+    public function hapusDetail()
+    {
+        $this->request->setGlobal('post', array_merge($this->request->getPost(), ['qty_retur' => 0]));
+        return $this->koreksi();
+    }
 }

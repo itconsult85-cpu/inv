@@ -39,4 +39,54 @@ class Produkretur extends BaseController
         foreach ($rows as $row) { $d = $row['detail']; $db->table('stok')->where('id', $db->table('stok')->where('kodebarang', $d['detbrgkode'])->where('gudang', $d['gudang'])->get()->getRowArray()['id'])->set('stok', 'stok - ' . $row['qty'], false)->update(); $db->table('retur_produk_detail')->insert(['retur_id' => $returId, 'po_keluar_id' => $header['po_keluar_id'] ?: null, 'barang_masuk_detail_id' => $d['id'], 'kode_barang' => $d['detbrgkode'], 'qty_retur' => $row['qty'], 'keterangan' => $row['ket']]); if (!empty($header['po_keluar_id'])) { $poId = (int) $header['po_keluar_id']; $db->table('po_keluar')->where('id', $poId)->update(['status' => 'NG']); $db->table('detail_po_keluar')->where('po_keluar_id', $poId)->where('tipe_item', 'produk')->where('kode_item', $d['detbrgkode'])->update(['status' => 'NG']); } }
         $db->transComplete(); if ($db->transStatus() === false) return redirect()->back()->withInput()->with('error', 'Retur produk gagal disimpan.'); return redirect()->to(site_url('barangmasuk/data'))->with('success', 'Retur produk NG berhasil disimpan dan stok dikurangi.');
     }
+
+    public function kelola(string $hash)
+    {
+        $header = $this->headerByHash($hash);
+        if (!$header) throw \CodeIgniter\Exceptions\PageNotFoundException::forPageNotFound('Transaksi Produk Masuk tidak ditemukan.');
+        $db = db_connect();
+        $returns = $db->table('retur_produk_detail rd')
+            ->select('rd.*, r.nomor_retur, r.tgl_retur, r.catatan, d.detfaktur, d.detjml, d.detbrgnama')
+            ->join('retur_produk r', 'r.id = rd.retur_id')
+            ->join('detail_barangmasuk d', 'd.id = rd.barang_masuk_detail_id')
+            ->where('r.barang_masuk_faktur', $header['faktur'])
+            ->orderBy('rd.id', 'DESC')->get()->getResultArray();
+        return view('produkretur/manage', ['header' => $header, 'returns' => $returns]);
+    }
+
+    public function koreksi()
+    {
+        $db = db_connect();
+        $id = (int) $this->request->getPost('id');
+        $qtyBaru = (float) $this->request->getPost('qty_retur');
+        $ket = trim((string) $this->request->getPost('keterangan')) ?: 'NG';
+        if ($qtyBaru < 0) return redirect()->back()->with('error', 'Qty retur tidak boleh negatif.');
+        $row = $db->table('retur_produk_detail rd')
+            ->select('rd.*, d.detjml, d.detbrgkode AS source_kode, d.gudang AS source_gudang')
+            ->join('retur_produk r', 'r.id=rd.retur_id')
+            ->join('detail_barangmasuk d', 'd.id=rd.barang_masuk_detail_id')
+            ->where('rd.id', $id)->get()->getRowArray();
+        if (!$row) return redirect()->back()->with('error', 'Detail retur produk tidak ditemukan.');
+        $selisih = $qtyBaru - (float) $row['qty_retur'];
+        if ($qtyBaru > (float) $row['detjml'] + 0.000001) return redirect()->back()->with('error', 'Qty retur melebihi Qty produk masuk.');
+        $db->transStart();
+        $stok = $db->table('stok')->where('kodebarang', $row['source_kode'])->where('gudang', $row['source_gudang'])->get()->getRowArray();
+        if (!$stok) { $db->transRollback(); return redirect()->back()->with('error', 'Stok produk tidak ditemukan.'); }
+        if ($selisih > 0 && (float) $stok['stok'] < $selisih) { $db->transRollback(); return redirect()->back()->with('error', 'Stok produk tidak cukup untuk menambah retur.'); }
+        if ($selisih > 0) $db->table('stok')->where('id', (int) $stok['id'])->set('stok', 'stok - ' . $selisih, false)->update();
+        elseif ($selisih < 0) $db->table('stok')->where('id', (int) $stok['id'])->set('stok', 'stok + ' . abs($selisih), false)->update();
+        if ($qtyBaru <= 0) $db->table('retur_produk_detail')->where('id', $id)->delete();
+        else $db->table('retur_produk_detail')->where('id', $id)->update(['qty_retur' => $qtyBaru, 'keterangan' => $ket]);
+        $poId = (int) $row['po_keluar_id'];
+        $db->transComplete();
+        if ($db->transStatus() === false) return redirect()->back()->with('error', 'Koreksi retur produk gagal disimpan.');
+        if ($poId > 0) (new PoKeluar())->refreshStatusAfterReplacement($poId);
+        return redirect()->back()->with('success', $qtyBaru <= 0 ? 'Retur produk dibatalkan dan stok dikembalikan.' : 'Retur produk berhasil dikoreksi.');
+    }
+
+    public function hapusDetail()
+    {
+        $this->request->setGlobal('post', array_merge($this->request->getPost(), ['qty_retur' => 0]));
+        return $this->koreksi();
+    }
 }

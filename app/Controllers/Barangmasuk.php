@@ -239,11 +239,12 @@ class Barangmasuk extends BaseController
                 ->addNumbering('nomor')
                 ->add('aksi', function ($row) {
                     $retur = !empty($row->po_keluar_id) ? "<button type=\"button\" class=\"btn btn-sm btn-warning\" onclick=\"location.href='/barangmasuk/retur/" . sha1($row->faktur) . "'\" title=\"Retur NG\"><i class=\"fa fa-exchange-alt\"></i></button>&nbsp;" : '';
+                    $kelolaRetur = !empty($row->po_keluar_id) ? "<button type=\"button\" class=\"btn btn-sm btn-secondary\" onclick=\"location.href='" . site_url('produkretur/kelola/' . sha1($row->faktur)) . "'\" title=\"Koreksi/Batalkan Retur NG\"><i class=\"fa fa-tools\"></i></button>&nbsp;" : '';
                     if (\App\Libraries\AccessControl::can('produk.masuk.delete')) {
-                        return $retur . "<button type=\"button\" class=\"btn btn-sm btn-primary\" onclick=\"edit('" . sha1($row->faktur) . "')\"><i class=\"fa fa-edit\"></i></button>&nbsp
+                        return $retur . $kelolaRetur . "<button type=\"button\" class=\"btn btn-sm btn-primary\" onclick=\"edit('" . sha1($row->faktur) . "')\"><i class=\"fa fa-edit\"></i></button>&nbsp
                         <button type=\"button\" class=\"btn btn-sm btn-danger\" onclick=\"hapus('" . $row->faktur . "')\"><i class=\"fa fa-trash-alt\"></i></button>";
                     }
-                    return $retur . "<button type=\"button\" class=\"btn btn-sm btn-primary\" onclick=\"edit('" . sha1($row->faktur) . "')\"><i class=\"fa fa-edit\"></i></button>";
+                    return $retur . $kelolaRetur . "<button type=\"button\" class=\"btn btn-sm btn-primary\" onclick=\"edit('" . sha1($row->faktur) . "')\"><i class=\"fa fa-edit\"></i></button>";
                 })
                 ->format('qtymasuk', function ($value) {
                     return number_format($value, 0, ',', '.');
