@@ -79,7 +79,9 @@ class PoHabisPakai extends BaseController
         $before = (float) $stok['stok']; $after = $before + $qty;
         (new ModelStokHabisPakai())->update($stok['id'], ['stok' => $after, 'updated_at' => $now]); (new ModelDetailPoHabisPakai())->update($detailId, ['qty_diterima' => (float) $detail['qty_diterima'] + $qty]);
         $receiptId = (new ModelPenerimaanPoHabisPakai())->insert(['po_id' => $detail['po_id'], 'detail_id' => $detailId, 'stok_id' => $stok['id'], 'nomor_invoice' => $invoice, 'nomor_surat_jalan' => $suratJalan, 'qty' => $qty, 'diterima_oleh' => (string) session()->get('userid'), 'diterima_at' => $now], true);
-        (new ModelLogStokHabisPakai())->insert(['stok_id' => $stok['id'], 'penerimaan_id' => $receiptId, 'nomor_invoice' => $invoice, 'nomor_surat_jalan' => $suratJalan, 'jenis' => 'MASUK', 'qty' => $qty, 'stok_sebelum' => $before, 'stok_sesudah' => $after, 'user_id' => (string) session()->get('userid'), 'catatan' => 'Penerimaan PO BHP', 'created_at' => $now]);
+        $logData = ['stok_id' => $stok['id'], 'nomor_invoice' => $invoice, 'nomor_surat_jalan' => $suratJalan, 'jenis' => 'MASUK', 'qty' => $qty, 'stok_sebelum' => $before, 'stok_sesudah' => $after, 'user_id' => (string) session()->get('userid'), 'catatan' => 'Penerimaan PO BHP', 'created_at' => $now];
+        if ($this->hasReceiptLogColumn()) $logData['penerimaan_id'] = $receiptId;
+        (new ModelLogStokHabisPakai())->insert($logData);
         $this->refreshPoStatus($detail['po_id']); $db->transComplete(); $ok = $db->transStatus();
         return redirect()->back()->with($ok ? 'message' : 'error', $ok ? 'Penerimaan berhasil, stok bertambah.' : 'Penerimaan gagal.');
     }
@@ -127,11 +129,18 @@ class PoHabisPakai extends BaseController
     private function refreshPoStatus(int $poId): void { $row = db_connect()->table('po_habis_pakai_detail')->select('SUM(qty_pesan) total, SUM(qty_diterima) received')->where('po_id', $poId)->get()->getRowArray(); $status = ((float) ($row['total'] ?? 0) > 0 && (float) ($row['received'] ?? 0) >= (float) ($row['total'] ?? 0)) ? 'SELESAI' : 'DIBUAT'; (new ModelPoHabisPakai())->update($poId, ['status' => $status, 'updated_at' => date('Y-m-d H:i:s')]); }
     private function updateReceiptLog(array $receipt, array $stok, float $qty, string $invoice, ?string $suratJalan, float $before, float $after): void
     {
-        $model = new ModelLogStokHabisPakai(); $log = $model->where('penerimaan_id', $receipt['id'])->first(); if (!$log) $log = $model->where('stok_id', $receipt['stok_id'])->where('jenis', 'MASUK')->where('nomor_invoice', $receipt['nomor_invoice'])->where('qty', $receipt['qty'])->orderBy('id', 'DESC')->first();
-        $fields = ['penerimaan_id' => $receipt['id'], 'nomor_invoice' => $invoice, 'nomor_surat_jalan' => $suratJalan, 'qty' => $qty, 'stok_sebelum' => $before, 'stok_sesudah' => $after]; if ($log) $model->update($log['id'], $fields); else $model->insert(array_merge($fields, ['stok_id' => $stok['id'], 'jenis' => 'MASUK', 'catatan' => 'Penerimaan PO BHP', 'created_at' => date('Y-m-d H:i:s')]));
+        $model = new ModelLogStokHabisPakai(); $log = $this->hasReceiptLogColumn() ? $model->where('penerimaan_id', $receipt['id'])->first() : null; if (!$log) $log = $model->where('stok_id', $receipt['stok_id'])->where('jenis', 'MASUK')->where('nomor_invoice', $receipt['nomor_invoice'])->where('qty', $receipt['qty'])->orderBy('id', 'DESC')->first();
+        $fields = ['nomor_invoice' => $invoice, 'nomor_surat_jalan' => $suratJalan, 'qty' => $qty, 'stok_sebelum' => $before, 'stok_sesudah' => $after]; if ($this->hasReceiptLogColumn()) $fields['penerimaan_id'] = $receipt['id']; if ($log) $model->update($log['id'], $fields); else $model->insert(array_merge($fields, ['stok_id' => $stok['id'], 'jenis' => 'MASUK', 'catatan' => 'Penerimaan PO BHP', 'created_at' => date('Y-m-d H:i:s')]));
     }
     private function deleteReceiptLog(array $receipt): void
     {
-        $model = new ModelLogStokHabisPakai(); $log = $model->where('penerimaan_id', $receipt['id'])->first(); if (!$log) $log = $model->where('stok_id', $receipt['stok_id'])->where('jenis', 'MASUK')->where('nomor_invoice', $receipt['nomor_invoice'])->where('qty', $receipt['qty'])->orderBy('id', 'DESC')->first(); if ($log) $model->delete($log['id']);
+        $model = new ModelLogStokHabisPakai(); $log = $this->hasReceiptLogColumn() ? $model->where('penerimaan_id', $receipt['id'])->first() : null; if (!$log) $log = $model->where('stok_id', $receipt['stok_id'])->where('jenis', 'MASUK')->where('nomor_invoice', $receipt['nomor_invoice'])->where('qty', $receipt['qty'])->orderBy('id', 'DESC')->first(); if ($log) $model->delete($log['id']);
+    }
+
+    private function hasReceiptLogColumn(): bool
+    {
+        static $hasColumn;
+        if ($hasColumn === null) $hasColumn = db_connect()->tableExists('log_stok_habis_pakai') && in_array('penerimaan_id', db_connect()->getFieldNames('log_stok_habis_pakai'), true);
+        return $hasColumn;
     }
 }
