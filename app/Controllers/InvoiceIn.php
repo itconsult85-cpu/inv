@@ -182,10 +182,9 @@ class InvoiceIn extends BaseController
         $dpEnabled = $this->request->getPost('dp_enabled') ? 1 : 0;
         $dpPercent = max(0, min(100, (float) str_replace(',', '.', (string) $this->request->getPost('dp_percent'))));
         $dpPercent = $dpPercent > 0 ? $dpPercent : 50;
-        // Sama seperti Invoice Out: PPh 23 ditampilkan sebagai informasi,
-        // Grand Total = subtotal + PPN, dikurangi DP kalau dipakai.
+        // Grand Total = (subtotal + PPN) - PPh 23 - DP.
         $dpAmount = $dpEnabled ? round(($subtotal + $ppn) * ($dpPercent / 100), 2) : 0;
-        $grandTotal = max(($subtotal + $ppn) - $dpAmount, 0);
+        $grandTotal = max(($subtotal + $ppn) - $pph23 - $dpAmount, 0);
 
         $this->db->transBegin();
         try {

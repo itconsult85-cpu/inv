@@ -161,7 +161,7 @@ function hitung(){
     const dpEnabled=$('#dpEnabled').is(':checked');
     const dpPercent=parseFloat($('#dpPercent').val())||0;
     const dpAmount=dpEnabled?(sub+ppn)*(dpPercent/100):0;
-    const grand=Math.max((sub+ppn)-dpAmount,0);
+    const grand=Math.max((sub+ppn)-pph-dpAmount,0);
 
     $('#subtotal').text('Rp '+Math.round(sub).toLocaleString('id-ID'));
     $('#ppnLabel').text((ppnPercent||0).toLocaleString('id-ID',{maximumFractionDigits:2})+'%');
