@@ -599,7 +599,7 @@ class Materialmasuk extends BaseController
                 $json = ['error' => "No. Invoice {$noInvoice} sudah digunakan"];
             } elseif ($nomorTransaksiTerpakai) {
                 $json = ['error' => 'Nomor transaksi internal sudah terpakai. Silakan refresh halaman lalu coba lagi.'];
-            } elseif ($sumberNoDo !== null) {
+            } elseif ($sumberNoDo !== null && $sumber !== 'retur_ng') {
                 $json = [
                     'error' => "No Surat Jalan {$noDo} sudah digunakan pada {$sumberNoDo}"
                 ];
@@ -711,6 +711,12 @@ class Materialmasuk extends BaseController
                     $errStok = $db->error();
                     if (!empty($errStok['message'])) {
                         $langkahGagal = 'update stok material (' . $errStok['message'] . ')';
+                    }
+                }
+
+                if ($langkahGagal === null && $sumber === 'retur_ng') {
+                    foreach (array_keys($poKeluarIdPerItem) as $poId) {
+                        (new PoKeluar())->refreshStatusAfterReplacement((int) $poId);
                     }
                 }
 

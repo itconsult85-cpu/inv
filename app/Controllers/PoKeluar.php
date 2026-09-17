@@ -637,6 +637,18 @@ class PoKeluar extends BaseController
             ->update();
     }
 
+    public function refreshStatusAfterReplacement(int $poKeluarId): void
+    {
+        if ($poKeluarId <= 0) return;
+        $ng = $this->getNgQtyByPoItem($poKeluarId);
+        $replacement = $this->getReplacementQtyByPoItem($poKeluarId);
+        foreach ($ng as $kode => $qtyNg) {
+            if ($qtyNg - ($replacement[$kode] ?? 0) > 0.000001) return;
+        }
+        $this->db->table('po_keluar')->where('id', $poKeluarId)->where('status', 'NG')->update(['status' => 'AKTIF']);
+        $this->db->table('detail_po_keluar')->where('po_keluar_id', $poKeluarId)->where('status', 'NG')->update(['status' => 'NORMAL']);
+    }
+
     /**
      * Kebalikan dari terimaQty() -- dipanggil saat transaksi/item Barang
      * Masuk atau Material Masuk yang tadinya nambah qty_masuk dihapus,

@@ -788,6 +788,9 @@ class Barangmasuk extends BaseController
                 // die();
                 $modelDetail = new Modeldetailbarangmasuk();
                 $modelDetail->insertBatch($fieldDetail);
+                if ($sumberProduk === 'retur_ng' && $poKeluarId) {
+                    (new PoKeluar())->refreshStatusAfterReplacement($poKeluarId);
+                }
 
                 $modelStok = new Modelstok();
                 $modelStok->updateOrInsertBatch($fieldStok);
