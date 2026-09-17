@@ -42,7 +42,7 @@
                     </td>
                     <td><?= esc($invoice['supplier_name']) ?></td>
                     <?php $sourceNo = (string) ($invoice['source_no'] ?? ''); $sourceParts = explode('||', $sourceNo, 2); $sourceLabel = ($invoice['source_type'] ?? '') === 'po_keluar' ? 'PO Keluar' : ucfirst((string) ($invoice['source_type'] ?? '')) . ' Masuk'; ?>
-                    <td><?= esc($sourceLabel) ?> - <?= esc($sourceParts[0]) ?><?= isset($sourceParts[1]) ? ' (SJ ' . esc($sourceParts[1]) . ')' : '' ?></td>
+                    <td><?= esc($sourceLabel) ?> - <?= esc($sourceParts[0]) ?></td>
                     <td class="text-right">Rp <?= number_format($invoice['grand_total'], 0, ',', '.') ?></td>
                     <?php
                         $badgeStatus = [
