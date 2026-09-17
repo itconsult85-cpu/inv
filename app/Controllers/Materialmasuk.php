@@ -609,6 +609,13 @@ class Materialmasuk extends BaseController
                 ];
             } else {
                 $db = db_connect();
+                if ($sumber === 'retur_ng') {
+                    foreach ($modelTemp->getWhere(['detfaktur' => $nofaktur])->getResultArray() as $tempRow) {
+                        if (empty($tempRow['po_keluar_id'])) {
+                            return $this->response->setJSON(['error' => 'Penerimaan NG wajib memilih item dari PO NG. Silakan pilih ulang item PO tersebut.']);
+                        }
+                    }
+                }
                 $db->transStart();
 
                 $langkahGagal = null;
@@ -697,7 +704,10 @@ class Materialmasuk extends BaseController
 
                 if ($langkahGagal === null) {
                     $modelStok = new ModelStokMaterial();
-                    $modelStok->updateOrInsertBatch($stokData);
+                    $stokOk = $modelStok->updateOrInsertBatch($stokData);
+                    if ($stokOk === false) {
+                        $langkahGagal = 'update stok material gagal';
+                    }
                     $errStok = $db->error();
                     if (!empty($errStok['message'])) {
                         $langkahGagal = 'update stok material (' . $errStok['message'] . ')';
