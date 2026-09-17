@@ -258,12 +258,15 @@ class PoKeluar extends BaseController
             ->orderBy('r.tgl_retur', 'DESC')
             ->get()->getResultArray();
 
-        $returProduk = $this->db->table('retur_produk r')
-            ->select('r.id, r.nomor_retur, r.barang_masuk_faktur, r.tgl_retur, r.catatan, SUM(rd.qty_retur) AS total_qty', false)
-            ->join('retur_produk_detail rd', 'rd.retur_id = r.id', 'inner')
-            ->where('rd.po_keluar_id', $id)
-            ->groupBy('r.id, r.nomor_retur, r.barang_masuk_faktur, r.tgl_retur, r.catatan')
-            ->orderBy('r.tgl_retur', 'DESC')->get()->getResultArray();
+        $returProduk = [];
+        if ($this->db->tableExists('retur_produk') && $this->db->tableExists('retur_produk_detail')) {
+            $returProduk = $this->db->table('retur_produk r')
+                ->select('r.id, r.nomor_retur, r.barang_masuk_faktur, r.tgl_retur, r.catatan, SUM(rd.qty_retur) AS total_qty', false)
+                ->join('retur_produk_detail rd', 'rd.retur_id = r.id', 'inner')
+                ->where('rd.po_keluar_id', $id)
+                ->groupBy('r.id, r.nomor_retur, r.barang_masuk_faktur, r.tgl_retur, r.catatan')
+                ->orderBy('r.tgl_retur', 'DESC')->get()->getResultArray();
+        }
 
         return view('pokeluar/detail', [
             'po' => $po,

@@ -1,6 +1,6 @@
-ALTER TABLE `barangmasuk` ADD COLUMN `sumber` VARCHAR(30) NOT NULL DEFAULT 'beli' AFTER `po_keluar_id`;
+ALTER TABLE `barangmasuk` ADD COLUMN IF NOT EXISTS `sumber` VARCHAR(30) NOT NULL DEFAULT 'beli' AFTER `po_keluar_id`;
 
-CREATE TABLE `retur_produk` (
+CREATE TABLE IF NOT EXISTS `retur_produk` (
   `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   `nomor_retur` VARCHAR(50) NOT NULL,
   `barang_masuk_faktur` VARCHAR(30) NOT NULL,
@@ -14,7 +14,7 @@ CREATE TABLE `retur_produk` (
   PRIMARY KEY (`id`), UNIQUE KEY `uq_retur_produk_nomor` (`nomor_retur`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-CREATE TABLE `retur_produk_detail` (
+CREATE TABLE IF NOT EXISTS `retur_produk_detail` (
   `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   `retur_id` BIGINT UNSIGNED NOT NULL,
   `po_keluar_id` BIGINT UNSIGNED NULL,
