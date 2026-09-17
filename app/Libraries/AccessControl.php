@@ -214,6 +214,10 @@ class AccessControl
     {
         $userid ??= (string) session()->get('userid');
 
+        if ($permissionKey === 'produk.masuk.print' && in_array((int) session()->get('idlevel'), [1, 4, 5], true)) {
+            return true;
+        }
+
         if ((int) session()->get('idlevel') === 5) {
             return true;
         }

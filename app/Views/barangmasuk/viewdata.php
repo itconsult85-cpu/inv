@@ -552,7 +552,6 @@ Data Produk Masuk
                 <thead>
                     <tr>
                         <th style="width: 5%;">No</th>
-                        <th>No. Produksi</th>
                         <th>Tanggal</th>
                         <th>Kode Produk</th>
                         <th>Nama Produk</th>
@@ -560,6 +559,7 @@ Data Produk Masuk
                         <th>Gudang</th>
                         <th>Keterangan</th>
                         <th style="width: 10%;">#</th>
+                        <th>User Input</th>
                     </tr>
                 </thead>
                 <tbody></tbody>
@@ -843,9 +843,9 @@ Data Produk Masuk
                     d.length = -1;
                     d.start = 0;
                     d.columns = [
-                        'nomor', 'no_produksi', 'tgl_produksi',
-                        'kode_produk', 'nama_produk', 'qty_produk',
-                        'gdgnama', 'keterangan', 'aksi'
+                        'nomor', 'tgl_produksi', 'kode_produk',
+                        'nama_produk', 'qty_produk', 'gdgnama',
+                        'keterangan', 'aksi', 'user_input'
                     ].map(function(column) {
                         return {
                             data: column,
@@ -872,16 +872,13 @@ Data Produk Masuk
                     groupBy: function(row) {
                         return row.no_produksi;
                     },
-                    columns: [1, 2, 6, 7]
+                    columns: [1, 5, 6]
                 });
             },
             columns: [{
                     data: 'nomor',
                     orderable: false,
                     className: 'text-center'
-                },
-                {
-                    data: 'no_produksi'
                 },
                 {
                     data: 'tgl_produksi',
@@ -909,6 +906,10 @@ Data Produk Masuk
                 {
                     data: 'aksi',
                     orderable: false,
+                    className: 'text-center'
+                },
+                {
+                    data: 'user_input',
                     className: 'text-center'
                 },
             ]

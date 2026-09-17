@@ -138,6 +138,10 @@ class Stok extends BaseController
 
     public function cetakLaporan()
     {
+        if (!\App\Libraries\AccessControl::can('produk.masuk.print')) {
+            return $this->response->setStatusCode(403)->setBody('Anda tidak memiliki akses untuk mencetak laporan stok produk.');
+        }
+
         $material = $this->request->getPost('material');
         $kategori = $this->request->getPost('kategori');
         $pelanggan_id = $this->request->getPost('pelanggan');
