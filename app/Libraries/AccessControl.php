@@ -214,7 +214,7 @@ class AccessControl
     {
         $userid ??= (string) session()->get('userid');
 
-        if ($permissionKey === 'produk.masuk.print' && in_array((int) session()->get('idlevel'), [1, 4, 5], true)) {
+        if (in_array($permissionKey, ['produk.masuk.print', 'material.masuk.return_ng'], true) && in_array((int) session()->get('idlevel'), [1, 4, 5], true)) {
             return true;
         }
 
@@ -662,6 +662,7 @@ class AccessControl
                     self::permissionAction($key, 'save_receipt', 'Simpan Transaksi Material Masuk', self::patterns(['materialmasuk/selesaiTransaksi']), 'create'),
                     self::permissionAction($key, 'payment', 'Catat Pembayaran Material Masuk', self::patterns(['materialmasuk/simpanPembayaran']), 'edit'),
                     self::permissionAction($key, 'edit_detail', 'Edit Detail Material Masuk', self::patterns(['materialmasuk/edit', 'materialmasuk/edit/*', 'materialmasuk/updateInvoice', 'materialmasuk/editItem', 'materialmasuk/simpanItemDetail']), 'edit'),
+                    self::permissionAction($key, 'return_ng', 'Retur Material NG ke Supplier', self::patterns(['materialmasuk/retur', 'materialmasuk/retur/*', 'materialretur/simpan']), 'edit'),
                     self::permissionAction($key, 'delete', 'Hapus Material Masuk', self::actionPatterns($basePatterns, ['hapus', 'hapusTransaksi', 'hapusItem', 'hapusItemDetail']), 'delete'),
                 ];
 
