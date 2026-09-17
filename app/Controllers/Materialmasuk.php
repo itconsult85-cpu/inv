@@ -720,7 +720,9 @@ class Materialmasuk extends BaseController
 
                 $db->transComplete();
 
-                if ($langkahGagal !== null || $db->transStatus() === false) {
+                $persisted = $db->table('materialmasuk')->where('faktur', $nofaktur)->countAllResults() === 1
+                    && $db->table('detail_materialmasuk')->where('detfaktur', $nofaktur)->countAllResults() > 0;
+                if ($langkahGagal !== null || $db->transStatus() === false || !$persisted) {
                     $detailPesan = $langkahGagal ?? ($db->error()['message'] ?? '');
                     log_message('error', 'Gagal simpan Material Masuk: {message}', ['message' => $detailPesan]);
                     $json = ['error' => 'Transaksi Material Masuk gagal disimpan. Tidak ada data yang diubah.' . ($detailPesan !== '' ? ' Sebab: ' . $detailPesan : '')];
