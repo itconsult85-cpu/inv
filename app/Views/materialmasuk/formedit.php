@@ -64,14 +64,6 @@ Edit Material Masuk
     </tr>
 </table>
 
-<div class="alert alert-info d-flex align-items-start mb-3" role="alert">
-    <i class="fas fa-info-circle mr-2 mt-1"></i>
-    <div>
-        <strong>Koreksi NG:</strong> klik baris material yang ingin diperbaiki, ubah nilai <strong>Qty</strong>, lalu tekan tombol <strong>Edit Item</strong>.
-        Nilai NG dan stok akan dihitung ulang dari transaksi ini.
-    </div>
-</div>
-
 <div class="row mt-4">
     <div class="col-lg-2">
         <div class="form-group">
@@ -121,7 +113,7 @@ Edit Material Masuk
                     <i class="fa fa-save"></i>
                 </button>&nbsp;
                 <button type="button" style="display: none;" class="btn btn-primary" title="Edit Item" id="tombolEditItem">
-                    <i class="fa fa-edit"></i> Edit Item
+                    <i class="fa fa-edit"></i>
                 </button>&nbsp;
                 <button type="button" style="display:none;" class="btn btn-default" title="Batalkan" id="tombolBatal">
                     <i class="fa fa-sync-alt"></i>

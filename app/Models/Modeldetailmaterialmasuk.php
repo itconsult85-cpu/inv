@@ -15,10 +15,8 @@ class Modeldetailmaterialmasuk extends Model
     public function tampilDataTemp($nofaktur)
     {
         return $this->table('detail_materialmasuk')
-            ->select('detail_materialmasuk.*, material.matkode, material.matnama, COALESCE(ngdata.beratng, 0) AS current_ng', false)
-            ->join('material', 'detail_materialmasuk.detmatkode=material.matid')
-            ->join('ngdata', 'ngdata.detfaktur=detail_materialmasuk.detfaktur AND ngdata.tgl=detail_materialmasuk.tgl AND ngdata.idsup=detail_materialmasuk.idsup AND ngdata.matjenis=detail_materialmasuk.detmatkode', 'left', false)
-            ->where('detail_materialmasuk.detfaktur', $nofaktur)->get();
+            ->join('material', 'detmatkode=matid')
+            ->where('detfaktur', $nofaktur)->get();
     }
 
     public function getDataMaterial($kodematerial)
