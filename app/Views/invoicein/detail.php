@@ -84,7 +84,7 @@
             </tr>
             <tr>
                 <th>No. Transaksi</th>
-                <td><?= esc($sourceParts[0]) ?><?= isset($sourceParts[1]) ? ' (SJ ' . esc($sourceParts[1]) . ')' : '' ?></td>
+                <td><?= esc($sourceParts[0]) ?></td>
             </tr>
         </table>
     </div>
