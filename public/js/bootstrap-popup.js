@@ -115,4 +115,38 @@
             form.submit();
         });
     });
+
+    // Keep numbering sequential after server-side sorting and pagination.
+    $(document).on('preInit.dt', function (event, settings) {
+        var api = new $.fn.dataTable.Api(settings);
+        var headers = api.columns().header().toArray();
+        var dateColumn = -1;
+        headers.some(function (header, index) {
+            var label = $(header).text().trim().toLowerCase();
+            if (/(tanggal|tgl|date|dibuat|created|waktu)/i.test(label)) {
+                dateColumn = index;
+                return true;
+            }
+            return false;
+        });
+
+        // If a table exposes a date column, latest records are the initial view.
+        if (dateColumn >= 0) {
+            settings.aaSorting = [[dateColumn, 'desc']];
+        }
+    });
+
+    $(document).on('draw.dt', function (event, settings) {
+        var api = new $.fn.dataTable.Api(settings);
+        var firstHeader = $(api.column(0).header()).text().trim().toLowerCase();
+        if (firstHeader !== 'no' && firstHeader !== 'nomor' && firstHeader !== '#') {
+            return;
+        }
+        var start = api.page.info().start;
+        var visibleIndex = 0;
+        api.rows({ page: 'current' }).every(function () {
+            $(this.node()).find('td').first().text(start + visibleIndex + 1);
+            visibleIndex += 1;
+        });
+    });
 })(window, window.jQuery);
