@@ -190,7 +190,7 @@ class InvoiceIn extends BaseController
         // Grand Total = (subtotal + PPN) - PPh 23 - DP.
         $dpAmount = !$dpEnabled ? 0 : ($dpMode === 'amount'
             ? min(round($dpRupiah, 2), round($subtotal + $ppn, 2))
-            : round(($subtotal + $ppn) * ($dpPercent / 100), 2));
+            : round(($subtotal) * ($dpPercent / 100), 2));
         if ($dpMode === 'amount') {
             $dpPercent = 0;
         }
@@ -591,15 +591,15 @@ class InvoiceIn extends BaseController
             ->select("'po_keluar' AS source_type, pk.no_po AS source_no, pk.no_po AS source_label, pk.tgl_po AS source_date, pk.idsup AS supplier_id, s.supnama AS supplier_name, pk.kirim_langsung AS kirim_langsung, pk.jenis_po AS jenis_po, pk.jenis_transaksi AS jenis_transaksi", false)
             ->join('supplier s', 's.supid = pk.idsup', 'left')
             ->groupStart()
-                ->where('pk.kirim_langsung', 1)
-                ->orWhere("(pk.jenis_po = 'jasa' AND COALESCE(pk.jenis_transaksi, 'Beli') != 'Titip Proses')", null, false)
-                ->orWhere("EXISTS (SELECT 1 FROM po_keluar child WHERE child.po_asal = pk.no_po AND child.jenis_transaksi = 'Titip Proses' AND child.status = 'AKTIF')", null, false)
+            ->where('pk.kirim_langsung', 1)
+            ->orWhere("(pk.jenis_po = 'jasa' AND COALESCE(pk.jenis_transaksi, 'Beli') != 'Titip Proses')", null, false)
+            ->orWhere("EXISTS (SELECT 1 FROM po_keluar child WHERE child.po_asal = pk.no_po AND child.jenis_transaksi = 'Titip Proses' AND child.status = 'AKTIF')", null, false)
             ->groupEnd()
             ->where('pk.status', 'AKTIF')
             ->where("NOT EXISTS (SELECT 1 FROM invoice_in ii WHERE ii.source_type = 'po_keluar' AND ii.source_no = pk.no_po)", null, false)
             ->groupStart()
-                ->where('s.supnama IS NULL')
-                ->orWhere('s.supnama NOT LIKE', 'TRE-%')
+            ->where('s.supnama IS NULL')
+            ->orWhere('s.supnama NOT LIKE', 'TRE-%')
             ->groupEnd()
             ->get()->getResultArray();
 
@@ -611,15 +611,15 @@ class InvoiceIn extends BaseController
             ->join('supplier s', 's.supid = pk.idsup', 'left')
             ->where('pk.kirim_langsung', 0)
             ->groupStart()
-                ->where('pk.jenis_po !=', 'jasa')
-                ->orWhere("(pk.jenis_po = 'jasa' AND pk.jenis_transaksi = 'Titip Proses')", null, false)
+            ->where('pk.jenis_po !=', 'jasa')
+            ->orWhere("(pk.jenis_po = 'jasa' AND pk.jenis_transaksi = 'Titip Proses')", null, false)
             ->groupEnd()
             ->where('pk.status', 'AKTIF')
             ->where("(EXISTS (SELECT 1 FROM materialmasuk mm WHERE mm.po_keluar_id = pk.id AND EXISTS (SELECT 1 FROM detail_materialmasuk dm WHERE dm.detfaktur = mm.faktur)) OR EXISTS (SELECT 1 FROM barangmasuk bm WHERE bm.po_keluar_id = pk.id AND EXISTS (SELECT 1 FROM detail_barangmasuk dbm WHERE dbm.detfaktur = bm.faktur)))", null, false)
             ->where("NOT EXISTS (SELECT 1 FROM invoice_in ii WHERE ii.source_type = 'po_keluar' AND ii.source_no = pk.no_po)", null, false)
             ->groupStart()
-                ->where('s.supnama IS NULL')
-                ->orWhere('s.supnama NOT LIKE', 'TRE-%')
+            ->where('s.supnama IS NULL')
+            ->orWhere('s.supnama NOT LIKE', 'TRE-%')
             ->groupEnd()
             ->get()->getResultArray();
 
@@ -663,8 +663,8 @@ class InvoiceIn extends BaseController
             ->select('source_no')
             ->where('source_type', 'po_keluar')
             ->groupStart()
-                ->where('source_no', $poNo)
-                ->orLike('source_no', $poNo . '||', 'after')
+            ->where('source_no', $poNo)
+            ->orLike('source_no', $poNo . '||', 'after')
             ->groupEnd()
             ->findAll();
 
