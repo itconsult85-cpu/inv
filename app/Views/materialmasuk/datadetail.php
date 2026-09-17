@@ -17,6 +17,7 @@
             <th style="text-align: center;">Nama Material</th>
             <th style="text-align: center;">Jumlah</th>
             <th style="text-align: center;">Subtotal</th>
+            <th style="text-align: center;">NG Saat Ini</th>
             <th style="width: 2%; text-align: center;">#</th>
         </tr>
     </thead>
@@ -37,6 +38,9 @@
                 <td style="text-align: center;"><?= $row['matnama'] ?></td>
                 <td style="text-align: center;"><?= number_format($row['detjml'], 0, ",", ".") ?></td>
                 <td style="text-align: right;"><?= number_format($row['detsubtotal'], 0, ",", ".") ?></td>
+                <td style="text-align: right;" class="font-weight-bold <?= (float) ($row['current_ng'] ?? 0) != 0 ? 'text-danger' : 'text-muted' ?>">
+                    <?= number_format((float) ($row['current_ng'] ?? 0), 2, ",", ".") ?>
+                </td>
                 <td style="width: 2%; text-align: center;">
                     <button type="button" class="btn btn-sm btn-danger" onclick="hapusItem('<?= $row['id'] ?>')">
                         <i class="fa fa-trash-alt"></i>
