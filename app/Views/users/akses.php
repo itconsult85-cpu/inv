@@ -536,14 +536,14 @@ foreach ($permissionsBySection as $sectionKey => $section) {
                 }
 
                 if (response.error) {
-                    Swal.fire('Gagal', response.error, 'error');
+                    showBootstrapModal('Gagal', response.error, 'error');
                     return;
                 }
 
-                Swal.fire('Berhasil', response.sukses, 'success');
+                showBootstrapModal('Berhasil', response.sukses, 'success');
             },
             error: function() {
-                Swal.fire('Gagal', 'Hak akses gagal disimpan.', 'error');
+                showBootstrapModal('Gagal', 'Hak akses gagal disimpan.', 'error');
             }
         });
     });

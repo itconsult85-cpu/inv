@@ -64,7 +64,7 @@
                     }
 
                     if (response.sukses) {
-                        Swal.fire({
+                        showBootstrapModal({
                             title: 'Berhasil',
                             text: response.sukses,
                             icon: 'warning',

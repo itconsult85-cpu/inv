@@ -13,7 +13,6 @@
      <link rel="icon" type="image/png" href="<?= base_url() ?>image/logo.png">
      <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700&display=fallback">
      <link rel="stylesheet" href="<?= base_url() ?>plugins/fontawesome-free/css/all.min.css">
-     <link rel="stylesheet" href="<?= base_url() ?>plugins/sweetalert2/sweetalert2.min.css">
      <link rel="stylesheet" href="<?= base_url() ?>dist/css/adminlte.min.css">
      <link rel="stylesheet" href="<?= base_url() ?>plugins/select2/css/select2.min.css">
      <link rel="stylesheet" href="<?= base_url() ?>plugins/select2-bootstrap4-theme/select2-bootstrap4.min.css">
@@ -2517,16 +2516,29 @@
              });
          });
      </script>
-     <!-- Select2 -->
+     <div class="modal fade" id="appPopupModal" tabindex="-1" role="dialog" aria-labelledby="appPopupModalLabel" aria-hidden="true">
+         <div class="modal-dialog modal-dialog-centered" role="document">
+             <div class="modal-content">
+                 <div class="modal-header">
+                     <h5 class="modal-title" id="appPopupModalLabel"><span class="app-popup-title">Pesan</span></h5>
+                     <button type="button" class="close" data-dismiss="modal" aria-label="Tutup"><span aria-hidden="true">&times;</span></button>
+                 </div>
+                 <div class="modal-body app-popup-body"></div>
+                 <div class="modal-footer">
+                     <button type="button" class="btn btn-secondary app-popup-cancel">Batal</button>
+                     <button type="button" class="btn btn-primary app-popup-confirm">OK</button>
+                 </div>
+             </div>
+         </div>
+     </div>
+     <!-- Bootstrap -->
      <script src="<?= base_url() ?>plugins/bootstrap/js/bootstrap.bundle.min.js"></script>
-     <!-- <script src="<?= base_url() ?>plugins/jquery/jquery.min.js"></script> -->
-     <script src="<?= base_url() ?>plugins/bootstrap/js/bootstrap.bundle.min.js"></script>
-     <script src="<?= base_url() ?>plugins/sweetalert2/sweetalert2.min.js"></script>
+     <script src="<?= base_url() ?>js/bootstrap-popup.js"></script>
      <script src="<?= base_url() ?>dist/js/adminlte.min.js"></script>
      <?php if (session()->getFlashdata('access_denied')) : ?>
      <script>
          $(function() {
-             Swal.fire({
+             showBootstrapModal({
                  icon: 'warning',
                  title: 'Akses Ditolak',
                  text: <?= json_encode(session()->getFlashdata('access_denied')) ?>
@@ -5798,7 +5810,7 @@
                  }
              } catch (e) {}
 
-             Swal.fire({
+             showBootstrapModal({
                  icon: 'warning',
                  title: title,
                  text: message

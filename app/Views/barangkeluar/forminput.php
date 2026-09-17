@@ -189,7 +189,7 @@ Input Produk Keluar
             dataType: "json",
             success: function(response) {
                 if (response.error) {
-                    Swal.fire('Error', response.error, 'error');
+                    showBootstrapModal('Error', response.error, 'error');
                 }
 
                 if (response.sukses) {
@@ -241,7 +241,7 @@ Input Produk Keluar
         let jml = $('#jml').val();
 
         if (nopo.length == 0) {
-            Swal.fire('Error', 'No Surat Jalan dan No. PO tidak boleh kosong', 'error');
+            showBootstrapModal('Error', 'No Surat Jalan dan No. PO tidak boleh kosong', 'error');
             kosong();
         } else {
             $.ajax({
@@ -267,27 +267,27 @@ Input Produk Keluar
                 dataType: "json",
                 success: function(response) {
                     if (response.error) {
-                        Swal.fire('Error', response.error, 'error');
+                        showBootstrapModal('Error', response.error, 'error');
                         // kosong();
                     }
                     if (response.error1) {
-                        Swal.fire('Error', response.error1, 'error');
+                        showBootstrapModal('Error', response.error1, 'error');
                         // kosong();
                     }
                     if (response.error2) {
-                        Swal.fire('Error', response.error2, 'error');
+                        showBootstrapModal('Error', response.error2, 'error');
                         // kosong();
                     }
                     if (response.error3) {
-                        Swal.fire('Error', response.error3, 'error');
+                        showBootstrapModal('Error', response.error3, 'error');
                         // kosong();
                     }
                     if (response.error4) {
-                        Swal.fire('Error', response.error4, 'error');
+                        showBootstrapModal('Error', response.error4, 'error');
                         // kosong();
                     }
                     if (response.sukses) {
-                        Swal.fire('Berhasil', response.sukses, 'success');
+                        showBootstrapModal('Berhasil', response.sukses, 'success');
                         if (response.stokSisa !== undefined) {
                             $('#stok').val(response.stokSisa);
                         }
@@ -306,7 +306,7 @@ Input Produk Keluar
     function ambilDataPo() {
         let nopo = $('#nopo').val();
         if (nopo.length == 0) {
-            Swal.fire('Error', 'No Po harus di inputkan', 'error');
+            showBootstrapModal('Error', 'No Po harus di inputkan', 'error');
             kosong();
         } else {
             $.ajax({
@@ -319,7 +319,7 @@ Input Produk Keluar
                 dataType: "json",
                 success: function(response) {
                     if (response.error) {
-                        Swal.fire('Error', response.error, 'error');
+                        showBootstrapModal('Error', response.error, 'error');
                         kosong();
                     }
 
@@ -340,7 +340,7 @@ Input Produk Keluar
         let idmaterial = $('#idmaterial').val();
 
         if (kodebarang.length == 0) {
-            Swal.fire('Error', 'Kode Barang harus di inputkan', 'error');
+            showBootstrapModal('Error', 'Kode Barang harus di inputkan', 'error');
             kosong();
         } else {
             $.ajax({
@@ -357,7 +357,7 @@ Input Produk Keluar
                 dataType: "json",
                 success: function(response) {
                     if (response.error) {
-                        Swal.fire('Error', response.error, 'error');
+                        showBootstrapModal('Error', response.error, 'error');
                         kosong();
                     }
 
@@ -502,25 +502,25 @@ Input Produk Keluar
             let idmaterial = $('#idmaterial').val();
 
             if (nofaktur.length == 0) {
-                Swal.fire({
+                showBootstrapModal({
                     title: 'Pesan',
                     icon: 'warning',
                     text: 'Maaf No Surat Jalan tidak boleh kosong'
                 })
             } else if (nopo.length == 0) {
-                Swal.fire({
+                showBootstrapModal({
                     title: 'Pesan',
                     icon: 'warning',
                     text: 'Maaf No. PO tidak boleh kosong'
                 })
             } else if (idgudang.length == 0) {
-                Swal.fire({
+                showBootstrapModal({
                     title: 'Pesan',
                     icon: 'warning',
                     text: 'Maaf Gudang Belum Terpilih'
                 })
             } else {
-                Swal.fire({
+                showBootstrapModal({
                     title: 'Selesai Transaksi',
                     text: "Yakin transaksi ini di simpan ?",
                     icon: 'warning',
@@ -549,7 +549,7 @@ Input Produk Keluar
                             dataType: "json",
                             success: function(response) {
                                 if (response.error) {
-                                    Swal.fire({
+                                    showBootstrapModal({
                                         title: 'Error',
                                         icon: 'error',
                                         text: response.error
@@ -557,7 +557,7 @@ Input Produk Keluar
                                 }
 
                                 if (response.sukses) {
-                                    Swal.fire({
+                                    showBootstrapModal({
                                         title: 'Berhasil',
                                         icon: 'success',
                                         text: response.sukses

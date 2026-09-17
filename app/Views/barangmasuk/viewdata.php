@@ -1120,7 +1120,7 @@ Data Produk Masuk
     }
 
     function hapus(faktur) {
-        Swal.fire({
+        showBootstrapModal({
             title: 'Hapus Transaksi',
             text: "Yakin Hapus Transaksi ?",
             icon: 'warning',
@@ -1140,7 +1140,7 @@ Data Produk Masuk
                     dataType: "json",
                     success: function(response) {
                         if (response.sukses) {
-                            Swal.fire('Berhasil', response.sukses, 'success').then(() => {
+                            showBootstrapModal('Berhasil', response.sukses, 'success').then(() => {
                                 window.location.reload();
                             });
                         }
@@ -1162,7 +1162,7 @@ Data Produk Masuk
     }
 
     function hapusProduksi(produksiProdukId) {
-        Swal.fire({
+        showBootstrapModal({
             title: 'Hapus Data Produksi',
             text: "Stok material yang tadi dipakai akan dikembalikan, dan stok produk hasil produksi ini akan dikurangi lagi. Yakin hapus?",
             icon: 'warning',
@@ -1182,10 +1182,10 @@ Data Produk Masuk
                     dataType: "json",
                     success: function(response) {
                         if (response.sukses) {
-                            Swal.fire('Berhasil', response.sukses, 'success');
+                            showBootstrapModal('Berhasil', response.sukses, 'success');
                             tableProduksi.ajax.reload();
                         } else if (response.error) {
-                            Swal.fire('Gagal', response.error, 'error');
+                            showBootstrapModal('Gagal', response.error, 'error');
                         }
                     },
                     error: function(xhr, ajaxOptions, thrownError) {

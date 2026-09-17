@@ -109,12 +109,12 @@
      function editData(id, nama, hargaModal) {
          $.getJSON('/jasa/pemakaian', { id: id }).done(function(response) {
              if (response.pemakaian && response.pemakaian.length > 0) {
-                 Swal.fire('Catatan', 'Jasa sudah digunakan. Nama jasa jangan diubah, tapi harga modal masih bisa diperbarui untuk reporting.', 'info');
+                 showBootstrapModal('Catatan', 'Jasa sudah digunakan. Nama jasa jangan diubah, tapi harga modal masih bisa diperbarui untuk reporting.', 'info');
              }
 
              bukaEditJasa(id, nama, hargaModal);
          }).fail(function() {
-             Swal.fire('Kesalahan', 'Informasi pemakaian jasa gagal dimuat.', 'error');
+             showBootstrapModal('Kesalahan', 'Informasi pemakaian jasa gagal dimuat.', 'error');
          });
      }
 
@@ -152,8 +152,8 @@
                          $('.erroreditNamaJasa').html(err.errnamaJasa);
                      }
                  } else if (response.sukses) {
-                     // Menampilkan pesan sukses dengan Swal.fire
-                     Swal.fire({
+                     // Menampilkan pesan sukses dengan showBootstrapModal
+                     showBootstrapModal({
                          icon: 'success',
                          title: 'Update Data',
                          text: response.sukses
@@ -170,7 +170,7 @@
      }
 
      function hapus(id, nama) {
-         Swal.fire({
+         showBootstrapModal({
              title: 'Hapus Jasa ?',
              text: "Yakin menghapus Data Jasa dengan nama" + nama + "?",
              icon: 'warning',
@@ -190,7 +190,7 @@
                      dataType: "json",
                      success: function(response) {
                           if (response.sukses) {
-                             Swal.fire({
+                             showBootstrapModal({
                                  icon: 'success',
                                  title: 'Hapus data',
                                  text: response.sukses
@@ -198,7 +198,7 @@
 
                               $('#datajasa').DataTable().ajax.reload();
                           } else if (response.error) {
-                              Swal.fire({
+                              showBootstrapModal({
                                   icon: 'error',
                                   title: 'Tidak dapat dihapus',
                                   html: response.error

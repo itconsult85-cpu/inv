@@ -6,7 +6,6 @@ Dashboard
 
 <?= $this->section('isi'); ?>
 <script src="<?= base_url() ?>/plugins/npm/chart.js"></script>
-<script src="<?= base_url() ?>/plugins/npm/sweetalert211.js"></script>
 
 <?php
 $dashboardSummary = static function (array $chartData): array {

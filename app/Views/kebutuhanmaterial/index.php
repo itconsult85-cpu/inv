@@ -456,7 +456,7 @@ Forecast kebutuhan material berdasarkan outstanding dan stok produk
             const pesan = xhr.responseJSON && xhr.responseJSON.message
                 ? xhr.responseJSON.message
                 : 'Perhitungan kebutuhan material gagal dimuat.';
-            Swal.fire('Gagal', pesan, 'error');
+            showBootstrapModal('Gagal', pesan, 'error');
         }).always(() => {
             tombol.prop('disabled', false).html('<i class="fas fa-calculator"></i> Hitung Kebutuhan');
         });

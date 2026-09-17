@@ -767,7 +767,7 @@ $labelJenisPo = [
             const item = items.find(row => row.tipe_item === tipe && row.kode_item == kode);
 
             if (!item) {
-                Swal.fire('Pesan', 'Pilih item terlebih dahulu.', 'warning');
+                showBootstrapModal('Pesan', 'Pilih item terlebih dahulu.', 'warning');
                 return;
             }
             if (harga <= 0 && Number(item.harga_default || 0) > 0) {
@@ -775,11 +775,11 @@ $labelJenisPo = [
                 $('#hargaItem').val(harga);
             }
             if (qty <= 0) {
-                Swal.fire('Pesan', getQtyLabel(tipe) + ' harus lebih dari 0.', 'warning');
+                showBootstrapModal('Pesan', getQtyLabel(tipe) + ' harus lebih dari 0.', 'warning');
                 return;
             }
             if (harga < 0) {
-                Swal.fire('Pesan', 'Harga tidak boleh negatif.', 'warning');
+                showBootstrapModal('Pesan', 'Harga tidak boleh negatif.', 'warning');
                 return;
             }
 
@@ -813,25 +813,25 @@ $labelJenisPo = [
 
             if (!supplierValid || !$('#idsup').val()) {
                 e.preventDefault();
-                Swal.fire('Pesan', 'Supplier/Vendor harus dipilih dari daftar.', 'warning');
+                showBootstrapModal('Pesan', 'Supplier/Vendor harus dipilih dari daftar.', 'warning');
                 $('#supplierInput').focus();
                 return;
             }
             if (!poAsalValid) {
                 e.preventDefault();
-                Swal.fire('Pesan', 'PO Asal harus dipilih dari daftar atau dikosongkan.', 'warning');
+                showBootstrapModal('Pesan', 'PO Asal harus dipilih dari daftar atau dikosongkan.', 'warning');
                 $('#poAsalInput').focus();
                 return;
             }
             if (!poMasukValid) {
                 e.preventDefault();
-                Swal.fire('Pesan', 'PO Masuk Terkait harus dipilih dari daftar atau dikosongkan.', 'warning');
+                showBootstrapModal('Pesan', 'PO Masuk Terkait harus dipilih dari daftar atau dikosongkan.', 'warning');
                 $('#poMasukInput').focus();
                 return;
             }
             if (selectedRows.length === 0) {
                 e.preventDefault();
-                Swal.fire('Pesan', 'Minimal harus ada 1 item PO Keluar.', 'warning');
+                showBootstrapModal('Pesan', 'Minimal harus ada 1 item PO Keluar.', 'warning');
             }
         });
     });

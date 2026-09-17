@@ -282,7 +282,7 @@ Progress PO
             }).join('');
         }
 
-        Swal.fire({
+        showBootstrapModal({
             title: 'Dokumen BTB',
             html: `
                 <div class="text-left">

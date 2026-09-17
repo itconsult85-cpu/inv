@@ -410,26 +410,26 @@ Import PO dari PDF
 
                 if (!$('#idpelanggan').val()) {
                     event.preventDefault();
-                    Swal.fire('Pesan', 'Pelanggan harus dipilih dari daftar.', 'warning');
+                    showBootstrapModal('Pesan', 'Pelanggan harus dipilih dari daftar.', 'warning');
                     $('#pelangganInput').focus();
                     return;
                 }
 
                 if (hasEmptyProduct) {
                     event.preventDefault();
-                    Swal.fire('Pesan', 'Semua produk harus dipilih dari daftar produk di sistem.', 'warning');
+                    showBootstrapModal('Pesan', 'Semua produk harus dipilih dari daftar produk di sistem.', 'warning');
                     return;
                 }
 
                 if (hasInvalidMigrasiQty) {
                     event.preventDefault();
-                    Swal.fire('Pesan', 'Qty terkirim sebelum sistem tidak boleh lebih besar dari Qty PO.', 'warning');
+                    showBootstrapModal('Pesan', 'Qty terkirim sebelum sistem tidak boleh lebih besar dari Qty PO.', 'warning');
                     return;
                 }
 
                 if (hasInvalidMigrasiInvoiceQty) {
                     event.preventDefault();
-                    Swal.fire('Pesan', 'Nilai sudah ditagihkan tidak boleh lebih besar dari QTY terkirim dikali harga satuan.', 'warning');
+                    showBootstrapModal('Pesan', 'Nilai sudah ditagihkan tidak boleh lebih besar dari QTY terkirim dikali harga satuan.', 'warning');
                 }
             });
         });

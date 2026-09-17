@@ -449,7 +449,7 @@ Input PO
             return;
         }
 
-        Swal.fire('Request Gagal', message, 'warning');
+        showBootstrapModal('Request Gagal', message, 'warning');
     }
 
     function kosong() {
@@ -507,12 +507,12 @@ Input PO
         let invoiceAwal = $('#poMigrasi').is(':checked') ? $('#invoice_awal').val() : 0;
 
         if (kodebarang.length == 0) {
-            Swal.fire('Error', 'Kode Barang harus di inputkan', 'error');
+            showBootstrapModal('Error', 'Kode Barang harus di inputkan', 'error');
             kosong();
         } else if (parseFloat(terkirimAwal || 0) > parseFloat(jml || 0)) {
-            Swal.fire('Error', 'Qty terkirim sebelum sistem tidak boleh lebih besar dari Qty PO item.', 'error');
+            showBootstrapModal('Error', 'Qty terkirim sebelum sistem tidak boleh lebih besar dari Qty PO item.', 'error');
         } else if (parseFloat(invoiceAwal || 0) > (parseFloat(terkirimAwal || 0) * parseFloat(harga || 0))) {
-            Swal.fire('Error', 'Nilai sudah ditagihkan tidak boleh lebih besar dari QTY terkirim dikali harga satuan.', 'error');
+            showBootstrapModal('Error', 'Nilai sudah ditagihkan tidak boleh lebih besar dari QTY terkirim dikali harga satuan.', 'error');
         } else {
             $.ajax({
                 type: "post",
@@ -533,15 +533,15 @@ Input PO
                 dataType: "json",
                 success: function(response) {
                     if (response.error1) {
-                        Swal.fire('Error', response.error1, 'error');
+                        showBootstrapModal('Error', response.error1, 'error');
                         kosong();
                     }
                     if (response.error2) {
-                        Swal.fire('Error', response.error2, 'error');
+                        showBootstrapModal('Error', response.error2, 'error');
                         kosong();
                     }
                     if (response.sukses) {
-                        Swal.fire('Berhasil', response.sukses, 'success');
+                        showBootstrapModal('Berhasil', response.sukses, 'success');
                         // Beri kesempatan handler global menyimpan token CSRF
                         // terbaru sebelum request pemuatan ulang draft dijalankan.
                         setTimeout(tampilDataTemp, 0);
@@ -560,7 +560,7 @@ Input PO
         let kodebarang = $('#kodebarang').val();
         let harga = $('#harga').val();
         if (kodebarang.length == 0) {
-            Swal.fire('Error', 'Kode Barang harus di inputkan', 'error');
+            showBootstrapModal('Error', 'Kode Barang harus di inputkan', 'error');
             kosong();
         } else {
             $.ajax({
@@ -574,7 +574,7 @@ Input PO
                 dataType: "json",
                 success: function(response) {
                     if (response.error) {
-                        Swal.fire('Error', response.error, 'error');
+                        showBootstrapModal('Error', response.error, 'error');
                         kosong();
                     }
 
@@ -642,7 +642,7 @@ Input PO
         nopoDicek = nopo;
         tampilDataTemp(function(jumlah) {
             if (jumlah > 0) {
-                Swal.fire({
+                showBootstrapModal({
                     title: 'Draft Lama Ditemukan',
                     text: 'No. PO "' + nopo + '" masih punya ' + jumlah + ' item draft yang belum selesai disimpan. Lanjutkan draft ini atau mulai baru (draft lama dihapus)?',
                     icon: 'warning',
@@ -758,19 +758,19 @@ Input PO
             let hargapo = $('#hargapo').val();
 
             if (nopo.length == 0) {
-                Swal.fire({
+                showBootstrapModal({
                     title: 'Pesan',
                     icon: 'warning',
                     text: 'Maaf No PO tidak boleh kosong'
                 })
             } else if (idpelanggan.length == 0) {
-                Swal.fire({
+                showBootstrapModal({
                     title: 'Pesan',
                     icon: 'warning',
                     text: 'Maaf data pelanggan tidak boleh kosong'
                 })
             } else {
-                Swal.fire({
+                showBootstrapModal({
                     title: 'Selesai Transaksi',
                     text: "Yakin transaksi ini di simpan ?",
                     icon: 'warning',
@@ -800,7 +800,7 @@ Input PO
                             dataType: "json",
                             success: function(response) {
                                 if (response.error) {
-                                    Swal.fire({
+                                    showBootstrapModal({
                                         title: 'Error',
                                         icon: 'error',
                                         text: response.error
@@ -808,7 +808,7 @@ Input PO
                                 }
 
                                 if (response.sukses) {
-                                    Swal.fire({
+                                    showBootstrapModal({
                                         title: 'Berhasil',
                                         icon: 'success',
                                         text: response.sukses

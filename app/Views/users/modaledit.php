@@ -65,7 +65,7 @@
             e.preventDefault();
             let iduser = $('#iduser').val();
             let userid = $('#userid').val();
-            Swal.fire({
+            showBootstrapModal({
                 title: 'Reset Password',
                 html: `Anda Yakin Reset ID User <strong>${userid}</strong> Ini ?`,
                 icon: 'warning',
@@ -99,7 +99,7 @@
             e.preventDefault();
             let iduser = $('#iduser').val();
             let userid = $('#userid').val();
-            Swal.fire({
+            showBootstrapModal({
                 title: 'Hapus User',
                 html: `Anda Yakin Hapus ID User <strong>${userid}</strong> Ini ?`,
                 icon: 'warning',
@@ -120,7 +120,7 @@
                         dataType: "json",
                         success: function(response) {
                             if (response.sukses) {
-                                Swal.fire({
+                                showBootstrapModal({
                                     icon: 'success',
                                     title: 'Berhasil ',
                                     text: response.sukses,
@@ -175,7 +175,7 @@
                             .filter(Boolean)
                             .join('<br>');
 
-                        Swal.fire({
+                        showBootstrapModal({
                             icon: 'error',
                             title: 'Gagal',
                             html: errors
@@ -184,7 +184,7 @@
                     }
 
                     if (response.sukses) {
-                        Swal.fire({
+                        showBootstrapModal({
                             icon: 'success',
                             title: 'Berhasil',
                             text: response.sukses

@@ -57,7 +57,7 @@
 <script>
     $('#datadetail tbody').on('click', 'tr', function() {
         if (document.getElementById('gudang').value === "") {
-            Swal.fire('Maaf', 'Silahkan pilih lokasi gudang terlebih dahulu', 'error');
+            showBootstrapModal('Maaf', 'Silahkan pilih lokasi gudang terlebih dahulu', 'error');
             return; // Jika gudang belum dipilih, keluar dari fungsi
         }
 

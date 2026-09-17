@@ -333,7 +333,7 @@ Managemen Data Pelanggan
             const daftar = response.pemakaian
                 .map(item => `<li><strong>${item.label}</strong> (${item.jumlah} data)</li>`)
                 .join('');
-            Swal.fire({
+            showBootstrapModal({
                 title: 'Pelanggan Sedang Digunakan',
                 html: `<p>Pelanggan ini sedang dipakai di data lain. Datanya masih aman diedit.</p><ul style="text-align:left; margin:12px auto 0; width:fit-content;">${daftar}</ul>`,
                 icon: 'info',
@@ -346,7 +346,7 @@ Managemen Data Pelanggan
                 }
             });
         }).fail(function() {
-            Swal.fire('Kesalahan', 'Informasi pemakaian pelanggan gagal dimuat.', 'error');
+            showBootstrapModal('Kesalahan', 'Informasi pemakaian pelanggan gagal dimuat.', 'error');
         });
     }
 
@@ -471,7 +471,7 @@ Managemen Data Pelanggan
                         $('.errorEditGudang').html(err.errGudang);
                     }
                 } else if (response.sukses) {
-                    Swal.fire({
+                    showBootstrapModal({
                         icon: 'success',
                         title: 'Update Data',
                         text: response.sukses
@@ -494,7 +494,7 @@ Managemen Data Pelanggan
     }
 
     function hapus(id, nama) {
-        Swal.fire({
+        showBootstrapModal({
             title: 'Hapus Pelanggan ?',
             html: `Yakin menghapus Data Pelanggan dengan nama <strong>${nama}</strong> ?`,
             icon: 'warning',
@@ -514,7 +514,7 @@ Managemen Data Pelanggan
                     dataType: "json",
                     success: function(response) {
                         if (response.sukses) {
-                            Swal.fire({
+                            showBootstrapModal({
                                 icon: 'success',
                                 title: 'Hapus data',
                                 text: response.sukses
@@ -522,7 +522,7 @@ Managemen Data Pelanggan
                                 $('#datapelanggan').DataTable().ajax.reload();
                             });
                         } else if (response.error) {
-                            Swal.fire({
+                            showBootstrapModal({
                                 icon: 'error',
                                 title: 'Gagal',
                                 html: response.error

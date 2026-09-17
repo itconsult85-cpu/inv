@@ -674,12 +674,12 @@ Log Aktivitas
             dataType: 'json',
         }).done(function(res) {
             if (res.error) {
-                Swal.fire('Gagal', res.error, 'error');
+                showBootstrapModal('Gagal', res.error, 'error');
             } else {
-                Swal.fire('Berhasil', res.sukses, 'success');
+                showBootstrapModal('Berhasil', res.sukses, 'success');
             }
         }).fail(function() {
-            Swal.fire('Gagal', 'Terjadi kesalahan, coba lagi.', 'error');
+            showBootstrapModal('Gagal', 'Terjadi kesalahan, coba lagi.', 'error');
         }).always(function() {
             tombol.prop('disabled', false);
         });

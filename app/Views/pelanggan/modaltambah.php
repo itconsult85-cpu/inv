@@ -132,7 +132,7 @@
                     }
 
                     if (response.sukses) {
-                        Swal.fire({
+                        showBootstrapModal({
                             title: 'Berhasil',
                             html: response.sukses,
                             icon: 'success',

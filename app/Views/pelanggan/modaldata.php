@@ -174,7 +174,7 @@
              const daftar = response.pemakaian
                  .map(item => `<li><strong>${item.label}</strong> (${item.jumlah} data)</li>`)
                  .join('');
-             Swal.fire({
+             showBootstrapModal({
                  title: 'Pelanggan Sedang Digunakan',
                  html: `<p>Pelanggan ini sedang dipakai di data lain. Datanya masih aman diedit.</p><ul style="text-align:left; margin:12px auto 0; width:fit-content;">${daftar}</ul>`,
                  icon: 'info',
@@ -187,7 +187,7 @@
                  }
              });
          }).fail(function() {
-             Swal.fire('Kesalahan', 'Informasi pemakaian pelanggan gagal dimuat.', 'error');
+             showBootstrapModal('Kesalahan', 'Informasi pemakaian pelanggan gagal dimuat.', 'error');
          });
      }
 
@@ -272,8 +272,8 @@
                     }
 
                  } else if (response.sukses) {
-                     // Menampilkan pesan sukses dengan Swal.fire
-                     Swal.fire({
+                     // Menampilkan pesan sukses dengan showBootstrapModal
+                     showBootstrapModal({
                          icon: 'success',
                          title: 'Update Data',
                          text: response.sukses
@@ -290,7 +290,7 @@
      }
 
      function hapus(id, nama) {
-         Swal.fire({
+         showBootstrapModal({
              title: 'Hapus Pelanggan ?',
              text: "Yakin menghapus Data Pelanggan dengan nama" + nama + "?",
              icon: 'warning',
@@ -310,7 +310,7 @@
                      dataType: "json",
                      success: function(response) {
                          if (response.sukses) {
-                             Swal.fire({
+                             showBootstrapModal({
                                  icon: 'success',
                                  title: 'Hapus data',
                                  text: response.sukses
@@ -318,7 +318,7 @@
 
                              $('#datapelanggan').DataTable().ajax.reload();
                          } else if (response.error) {
-                             Swal.fire({
+                             showBootstrapModal({
                                  icon: 'error',
                                  title: 'Gagal',
                                  html: response.error

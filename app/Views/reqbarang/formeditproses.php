@@ -233,7 +233,7 @@ Edit Antar Gudang
             return;
         }
         if (!idgudang) {
-            Swal.fire('Error', 'Pilih Gudang Asal dulu', 'error');
+            showBootstrapModal('Error', 'Pilih Gudang Asal dulu', 'error');
             return;
         }
 
@@ -250,7 +250,7 @@ Edit Antar Gudang
             dataType: "json",
             success: function(response) {
                 if (response.error) {
-                    Swal.fire('Error', response.error, 'error');
+                    showBootstrapModal('Error', response.error, 'error');
                     return;
                 }
                 if (response.sukses) {
@@ -297,10 +297,10 @@ Edit Antar Gudang
             dataType: "json",
             success: function(response) {
                 if (response.error) {
-                    Swal.fire('Error', response.error, 'error');
+                    showBootstrapModal('Error', response.error, 'error');
                     return;
                 }
-                Swal.fire('Berhasil', response.sukses, 'success').then(() => {
+                showBootstrapModal('Berhasil', response.sukses, 'success').then(() => {
                     window.location.reload();
                 });
             },
@@ -413,11 +413,11 @@ Edit Antar Gudang
         let tanggal = $('#tanggal').val();
 
         if (kodebarang.length == 0) {
-            Swal.fire('Error', 'Kode item harus dipilih', 'error');
+            showBootstrapModal('Error', 'Kode item harus dipilih', 'error');
             return;
         }
         if (!idgudang) {
-            Swal.fire('Error', 'Gudang Asal wajib dipilih', 'error');
+            showBootstrapModal('Error', 'Gudang Asal wajib dipilih', 'error');
             return;
         }
 
@@ -441,11 +441,11 @@ Edit Antar Gudang
             dataType: "json",
             success: function(response) {
                 if (response.error) {
-                    Swal.fire('Error', response.error, 'error');
+                    showBootstrapModal('Error', response.error, 'error');
                     return;
                 }
                 if (response.sukses) {
-                    Swal.fire({
+                    showBootstrapModal({
                         title: 'Berhasil',
                         text: response.sukses,
                         icon: 'success',
@@ -526,9 +526,9 @@ Edit Antar Gudang
 
                     if (response.error || response.error1 || response.error2 || response.error3) {
                         let errorMessage = response.error || response.error1 || response.error2 || response.error3;
-                        Swal.fire('Error', errorMessage, 'error');
+                        showBootstrapModal('Error', errorMessage, 'error');
                     } else if (response.sukses) {
-                        Swal.fire({
+                        showBootstrapModal({
                             title: 'Berhasil',
                             text: response.sukses,
                             icon: 'success',

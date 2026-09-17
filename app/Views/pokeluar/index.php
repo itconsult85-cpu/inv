@@ -602,7 +602,7 @@ Data PO Keluar
         $('.form-batal').on('submit', function(e) {
             e.preventDefault();
             const form = this;
-            Swal.fire({
+            showBootstrapModal({
                 title: 'Batalkan PO Keluar?',
                 text: 'PO Keluar akan diberi status DIBATALKAN.',
                 icon: 'warning',
@@ -619,7 +619,7 @@ Data PO Keluar
         $('.form-hapus').on('submit', function(e) {
             e.preventDefault();
             const form = this;
-            Swal.fire({
+            showBootstrapModal({
                 title: 'Hapus PO Keluar?',
                 text: 'Data PO Keluar ini akan dihapus permanen dan tidak bisa dikembalikan.',
                 icon: 'warning',

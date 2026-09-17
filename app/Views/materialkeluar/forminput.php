@@ -185,7 +185,7 @@ Input Material Keluar
             dataType: "json",
             success: function(response) {
                 if (response.error) {
-                    Swal.fire('Error', response.error, 'error');
+                    showBootstrapModal('Error', response.error, 'error');
                 }
 
                 if (response.sukses) {
@@ -231,7 +231,7 @@ Input Material Keluar
             dataType: 'json',
             success: function(response) {
                 if (response.terpakai) {
-                    Swal.fire('No. Transaksi sudah digunakan', response.pesan, 'warning')
+                    showBootstrapModal('No. Transaksi sudah digunakan', response.pesan, 'warning')
                         .then(() => {
                             $('#nofaktur').val('').focus();
                         });
@@ -259,10 +259,10 @@ Input Material Keluar
         let jml = $('#jml').val();
 
         if (nofaktur.length == 0) {
-            Swal.fire('Error', 'No Faktur harus di inputkan', 'error');
+            showBootstrapModal('Error', 'No Faktur harus di inputkan', 'error');
             kosong();
         } else if (kodematerial.length == 0) {
-            Swal.fire('Error', 'Kode Material harus di inputkan', 'error');
+            showBootstrapModal('Error', 'Kode Material harus di inputkan', 'error');
             kosong();
         } else {
             $.ajax({
@@ -286,11 +286,11 @@ Input Material Keluar
                 dataType: "json",
                 success: function(response) {
                     if (response.error) {
-                        Swal.fire('Error', response.error, 'error');
+                        showBootstrapModal('Error', response.error, 'error');
                         kosong();
                     }
                     if (response.sukses) {
-                        Swal.fire('Berhasil', response.sukses, 'success');
+                        showBootstrapModal('Berhasil', response.sukses, 'success');
                         tampilDataTemp();
                         kosong();
                     }
@@ -308,7 +308,7 @@ Input Material Keluar
         let materialid = $('#materialid').val();
         let idmat = $('#idmat').val();
         if (kodematerial.length == 0) {
-            Swal.fire('Error', 'Kode Material harus di inputkan', 'error');
+            showBootstrapModal('Error', 'Kode Material harus di inputkan', 'error');
             kosong();
         } else {
             $.ajax({
@@ -324,7 +324,7 @@ Input Material Keluar
                 dataType: "json",
                 success: function(response) {
                     if (response.error) {
-                        Swal.fire('Error', response.error, 'error');
+                        showBootstrapModal('Error', response.error, 'error');
                         kosong();
                     }
 
@@ -472,31 +472,31 @@ Input Material Keluar
             // let jml = $('#jml').val();
 
             if (nofaktur.length == 0) {
-                Swal.fire({
+                showBootstrapModal({
                     title: 'Pesan',
                     icon: 'warning',
                     text: 'Maaf No. Transaksi tidak boleh kosong'
                 })
             } else if (idsupplier.length == 0) {
-                Swal.fire({
+                showBootstrapModal({
                     title: 'Pesan',
                     icon: 'warning',
                     text: 'Maaf data supplier tidak boleh kosong'
                 })
             } else if (idgudang.length == 0) {
-                Swal.fire({
+                showBootstrapModal({
                     title: 'Pesan',
                     icon: 'warning',
                     text: 'Maaf Gudang belum terpilih'
                 })
             } else if (keterangan.length == 0) {
-                Swal.fire({
+                showBootstrapModal({
                     title: 'Pesan',
                     icon: 'warning',
                     text: 'Maaf Kolom Keterangan belum terisi'
                 })
             } else {
-                Swal.fire({
+                showBootstrapModal({
                     title: 'Selesai Transaksi',
                     text: "Yakin transaksi ini di simpan ?",
                     icon: 'warning',
@@ -523,7 +523,7 @@ Input Material Keluar
                             dataType: "json",
                             success: function(response) {
                                 if (response.error) {
-                                    Swal.fire({
+                                    showBootstrapModal({
                                         title: 'Error',
                                         icon: 'error',
                                         text: response.error
@@ -531,7 +531,7 @@ Input Material Keluar
                                 }
 
                                 if (response.sukses) {
-                                    Swal.fire({
+                                    showBootstrapModal({
                                         title: 'Berhasil',
                                         icon: 'success',
                                         text: response.sukses

@@ -87,7 +87,7 @@ materialData.sort((a, b) => a.matstok - b.matstok);
 }
 
 if (stokKurang.length > 0) {
-            Swal.fire({
+            showBootstrapModal({
                 icon: 'info',
                 title: 'Stok hampir habis',
                 html: `
@@ -144,7 +144,7 @@ if (stokKurang.length > 0) {
         }
 
         if (barangStokKurang.length > 0) {
-            Swal.fire({
+            showBootstrapModal({
                 icon: 'info',
                 title: 'Stok barang hampir habis',
                 html: `
@@ -181,7 +181,6 @@ if (stokKurang.length > 0) {
     <!-- <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> -->
     <!-- <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0/dist/chartjs-plugin-datalabels.min.js"></script> -->
     <script src="<?= base_url() ?>/plugins/npm/chart.js"></script>
-    <!-- <script src="<?= base_url() ?>/plugins/npm/sweetalert211.js"></script> -->
     <!-- <script src="<?= base_url() ?>/plugins/chart.js/Chart.min.js"></script> -->
     <!-- <script src="<?= base_url() ?>/plugins/jquery/jquery.min.js"></script> -->
 
@@ -691,7 +690,7 @@ if (stokKurang.length > 0) {
         // }
 
         // if (stokKurang.length > 0) {
-        //     Swal.fire({
+        //     showBootstrapModal({
         //         icon: 'info',
         //         title: 'Stok hampir habis',
         //         html: `

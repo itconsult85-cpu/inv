@@ -234,7 +234,7 @@ Managemen Data Kategori
         ambilPemakaian(kode).done(function(response) {
             const dipakai = response.pemakaian && response.pemakaian.length > 0;
 
-            Swal.fire({
+            showBootstrapModal({
                 title: dipakai ? 'Kategori Sedang Digunakan' : 'Informasi Pemakaian Kategori',
                 html: `<p>Kategori <strong>${escapeHtml(nama)}</strong>${dipakai ? ' sedang dipakai di data lain. Mengganti namanya aman -- data yang memakainya otomatis ikut menampilkan nama baru.' : ''}</p>${htmlPemakaian(response.pemakaian)}`,
                 icon: 'info',
@@ -247,7 +247,7 @@ Managemen Data Kategori
                 }
             });
         }).fail(function() {
-            Swal.fire('Kesalahan', 'Informasi pemakaian kategori gagal dimuat', 'error');
+            showBootstrapModal('Kesalahan', 'Informasi pemakaian kategori gagal dimuat', 'error');
         });
     }
 
@@ -257,7 +257,7 @@ Managemen Data Kategori
 
         ambilPemakaian(kode).done(function(response) {
             if (response.digunakan) {
-                Swal.fire({
+                showBootstrapModal({
                     title: 'Kategori Tidak Bisa Dihapus',
                     html: `<p>Kategori <strong>${escapeHtml(nama)}</strong> masih digunakan.</p>${htmlPemakaian(response.pemakaian)}`,
                     icon: 'error'
@@ -267,12 +267,12 @@ Managemen Data Kategori
 
             konfirmasiHapus(kode, nama);
         }).fail(function() {
-            Swal.fire('Kesalahan', 'Informasi pemakaian kategori gagal dimuat', 'error');
+            showBootstrapModal('Kesalahan', 'Informasi pemakaian kategori gagal dimuat', 'error');
         });
     }
 
     function konfirmasiHapus(kode, nama) {
-        Swal.fire({
+        showBootstrapModal({
             title: 'Hapus Kategori',
             html: `Yakin data kategori dengan nama <strong>${escapeHtml(nama)}</strong> dihapus?`,
             icon: 'warning',
@@ -294,11 +294,11 @@ Managemen Data Kategori
                     dataType: "json",
                     success: function(response) {
                         if (response.sukses) {
-                            Swal.fire('Berhasil', response.sukses, 'success').then(() => {
+                            showBootstrapModal('Berhasil', response.sukses, 'success').then(() => {
                                 window.location.reload();
                             });
                         } else if (response.error) {
-                            Swal.fire({
+                            showBootstrapModal({
                                 icon: 'error',
                                 title: 'Gagal',
                                 html: `${response.error}${htmlPemakaian(response.pemakaian)}`
@@ -306,7 +306,7 @@ Managemen Data Kategori
                         }
                     },
                     error: function(xhr, ajaxOptions, thrownError) {
-                        Swal.fire({
+                        showBootstrapModal({
                             icon: 'error',
                             title: 'Kesalahan',
                             html: `Data Kategori <b>${nama}</b> tidak bisa dihapus karena masih terkait dengan data di tabel lain`

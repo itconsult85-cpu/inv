@@ -56,7 +56,7 @@ Pilih PO untuk Print
     $('#btnPrintPo').click(function() {
         const po = $('input[name="pilihan_po"]:checked').val();
         if (!po) {
-            Swal.fire('Pilih PO', 'Silakan pilih satu PO yang akan dicetak.', 'warning');
+            showBootstrapModal('Pilih PO', 'Silakan pilih satu PO yang akan dicetak.', 'warning');
             return;
         }
 

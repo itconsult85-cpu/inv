@@ -81,7 +81,7 @@ Managemen Data Gudang
     }
 
     function hapus(id, nama) {
-        Swal.fire({
+        showBootstrapModal({
             title: 'Hapus Gudang',
             html: `Yakin data gudang dengan nama <strong>${nama}</strong> di hapus ?`,
             icon: 'warning',
@@ -103,7 +103,7 @@ Managemen Data Gudang
                     dataType: "json",
                     success: function(response) {
                         if (response.sukses) {
-                            Swal.fire({
+                            showBootstrapModal({
                                 icon: 'success',
                                 title: 'Hapus data',
                                 text: response.sukses
@@ -111,7 +111,7 @@ Managemen Data Gudang
                                 window.location.reload();
                             });
                         } else if (response.error) {
-                            Swal.fire({
+                            showBootstrapModal({
                                 icon: 'error',
                                 title: 'Gagal',
                                 html: response.error
@@ -119,7 +119,7 @@ Managemen Data Gudang
                         }
                     },
                     error: function(xhr, ajaxOptions, thrownError) {
-                        Swal.fire({
+                        showBootstrapModal({
                             icon: 'error',
                             title: 'Gagal',
                             html: `Data Gudang <b>${nama}</b> tidak bisa dihapus karena masih terkait dengan data di tabel lain`

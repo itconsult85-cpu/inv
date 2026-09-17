@@ -440,7 +440,7 @@
         }, function(response) {
             const daftarPo = response.data || [];
 
-            Swal.fire({
+            showBootstrapModal({
                 title: 'Close Item',
                 width: 650,
                 html: `
@@ -483,23 +483,23 @@
                     alokasi: result.value
                 }, function(closeResponse) {
                     if (closeResponse.error) {
-                        Swal.fire('Gagal', closeResponse.error, 'error');
+                        showBootstrapModal('Gagal', closeResponse.error, 'error');
                         return;
                     }
-                    Swal.fire('Berhasil', closeResponse.sukses, 'success');
+                    showBootstrapModal('Berhasil', closeResponse.sukses, 'success');
                     tampilDataDetail();
                     ambilTotalBerat();
                 }, 'json').fail(function(xhr) {
-                    Swal.fire('Gagal', xhr.responseJSON?.error || 'Item PO gagal ditutup.', 'error');
+                    showBootstrapModal('Gagal', xhr.responseJSON?.error || 'Item PO gagal ditutup.', 'error');
                 });
             });
         }, 'json').fail(function(xhr) {
-            Swal.fire('Gagal', xhr.responseJSON?.error || 'Gagal memuat daftar PO tujuan.', 'error');
+            showBootstrapModal('Gagal', xhr.responseJSON?.error || 'Gagal memuat daftar PO tujuan.', 'error');
         });
     }
 
     function koreksiQtyItem(id, kodebarang, qtyLama, qtyTerkirim) {
-        Swal.fire({
+        showBootstrapModal({
             title: 'Koreksi Qty PO',
             width: 560,
             html: `
@@ -549,20 +549,20 @@
                 alasan: result.value.alasan
             }, function(response) {
                 if (response.error) {
-                    Swal.fire('Gagal', response.error, 'error');
+                    showBootstrapModal('Gagal', response.error, 'error');
                     return;
                 }
-                Swal.fire('Berhasil', response.sukses, 'success');
+                showBootstrapModal('Berhasil', response.sukses, 'success');
                 tampilDataDetail();
                 ambilTotalBerat();
             }, 'json').fail(function(xhr) {
-                Swal.fire('Gagal', xhr.responseJSON?.error || 'Qty PO gagal dikoreksi.', 'error');
+                showBootstrapModal('Gagal', xhr.responseJSON?.error || 'Qty PO gagal dikoreksi.', 'error');
             });
         });
     }
 
     function reopenCloseLog(id, kodebarang, qty) {
-        Swal.fire({
+        showBootstrapModal({
             title: 'Buka Close Item?',
             width: 560,
             html: `
@@ -594,20 +594,20 @@
                 note: result.value
             }, function(response) {
                 if (response.error) {
-                    Swal.fire('Gagal', response.error, 'error');
+                    showBootstrapModal('Gagal', response.error, 'error');
                     return;
                 }
-                Swal.fire('Berhasil', response.sukses, 'success');
+                showBootstrapModal('Berhasil', response.sukses, 'success');
                 tampilDataDetail();
                 ambilTotalBerat();
             }, 'json').fail(function(xhr) {
-                Swal.fire('Gagal', xhr.responseJSON?.error || 'Close gagal dibuka.', 'error');
+                showBootstrapModal('Gagal', xhr.responseJSON?.error || 'Close gagal dibuka.', 'error');
             });
         });
     }
 
     function hapusItem(id) {
-        Swal.fire({
+        showBootstrapModal({
             title: 'Hapus Item ?',
             text: "Yakin item ini dihapus ?",
             icon: 'warning',
@@ -627,7 +627,7 @@
                     dataType: "json",
                     success: function(response) {
                         if (response.sukses) {
-                            Swal.fire('Berhasil', response.sukses, 'success');
+                            showBootstrapModal('Berhasil', response.sukses, 'success');
                             tampilDataDetail();
                             ambilTotalBerat();
                             kosong();

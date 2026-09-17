@@ -515,7 +515,7 @@ Antar Gudang
         const gudang = $('#gudangPrint').val();
 
         if (!tanggalAwal || !tanggalAkhir || !gudang) {
-            Swal.fire(
+            showBootstrapModal(
                 'Data belum lengkap',
                 'Tanggal awal, tanggal akhir, dan asal gudang wajib dipilih.',
                 'warning'
@@ -525,7 +525,7 @@ Antar Gudang
         }
 
         if (tanggalAwal > tanggalAkhir) {
-            Swal.fire(
+            showBootstrapModal(
                 'Tanggal tidak valid',
                 'Tanggal awal tidak boleh melebihi tanggal akhir.',
                 'warning'
@@ -547,7 +547,7 @@ Antar Gudang
     }
 
     function hapus(faktur) {
-        Swal.fire({
+        showBootstrapModal({
             title: 'Hapus Transaksi',
             text: "Yakin Hapus Transaksi ?",
             icon: 'warning',
@@ -567,10 +567,10 @@ Antar Gudang
                     dataType: "json",
                     success: function(response) {
                         if (response.sukses) {
-                            Swal.fire('Berhasil', response.sukses, 'success');
+                            showBootstrapModal('Berhasil', response.sukses, 'success');
                             table.ajax.reload();
                         } else if (response.error) {
-                            Swal.fire('Gagal', response.error, 'error');
+                            showBootstrapModal('Gagal', response.error, 'error');
                         }
                     },
                     error: function(xhr, ajaxOptions, thrownError) {

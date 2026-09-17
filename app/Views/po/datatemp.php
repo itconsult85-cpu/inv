@@ -62,7 +62,7 @@
 
 <script>
     function hapusItem(id) {
-        Swal.fire({
+        showBootstrapModal({
             title: 'Hapus Item ?',
             text: "Yakin item ini dihapus ?",
             icon: 'warning',
@@ -82,7 +82,7 @@
                     dataType: "json",
                     success: function(response) {
                         if (response.sukses) {
-                            Swal.fire('Berhasil', response.sukses, 'success');
+                            showBootstrapModal('Berhasil', response.sukses, 'success');
                             tampilDataTemp();
                             kosong();
                         }

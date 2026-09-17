@@ -433,14 +433,14 @@
             success: function(response) {
                 if (response.error) {
                     resetMaterialProduksi();
-                    Swal.fire('Material Produk', response.error, 'warning');
+                    showBootstrapModal('Material Produk', response.error, 'warning');
                     return;
                 }
                 tampilkanMaterialProduksi(response.sukses || { materials: [], tanpa_berat: true });
             },
             error: function() {
                 resetMaterialProduksi();
-                Swal.fire('Material Produk', 'Data material produk tidak dapat dimuat.', 'error');
+                showBootstrapModal('Material Produk', 'Data material produk tidak dapat dimuat.', 'error');
             }
         });
     }
@@ -485,7 +485,7 @@
             dataType: "json",
             success: function(response) {
                 if (response.error) {
-                    Swal.fire('Error', response.error, 'error');
+                    showBootstrapModal('Error', response.error, 'error');
                 }
 
                 if (response.sukses) {
@@ -533,7 +533,7 @@
             dataType: "json",
             success: function(response) {
                 if (response.error) {
-                    Swal.fire('Error', response.error, 'error');
+                    showBootstrapModal('Error', response.error, 'error');
                     return;
                 }
                 let data = response.sukses;
@@ -564,7 +564,7 @@
     $(document).on('click', '.item-po-keluar-row', function() {
         let idgudang = $('#idgudang').val();
         if (!idgudang) {
-            Swal.fire('Pesan', 'Pilih Gudang Tujuan terlebih dahulu.', 'warning');
+            showBootstrapModal('Pesan', 'Pilih Gudang Tujuan terlebih dahulu.', 'warning');
             return;
         }
         $('#kodebarang').val($(this).data('kode'));
@@ -658,12 +658,12 @@
         let sumberProduk = $("#sumberProduk").val();
 
         if (kodebarang.length == 0) {
-            Swal.fire('Error', 'Kode Barang harus diinputkan', 'error');
+            showBootstrapModal('Error', 'Kode Barang harus diinputkan', 'error');
             kosong();
         } else if (sumberProduk === 'beli' && !poKeluarId) {
-            Swal.fire('Error', 'No PO wajib dipilih untuk sumber Beli dari Supplier', 'error');
+            showBootstrapModal('Error', 'No PO wajib dipilih untuk sumber Beli dari Supplier', 'error');
         } else if (poKeluarId && batasQtyPo && Number(jml) > Number(batasQtyPo)) {
-            Swal.fire('Error', 'Qty masuk tidak boleh lebih besar dari sisa PO Keluar', 'error');
+            showBootstrapModal('Error', 'Qty masuk tidak boleh lebih besar dari sisa PO Keluar', 'error');
         } else {
             $.ajax({
                 type: "post",
@@ -689,15 +689,15 @@
                 dataType: "json",
                 success: function(response) {
                     if (response.error1) {
-                        Swal.fire('Error', response.error1, 'error');
+                        showBootstrapModal('Error', response.error1, 'error');
                     } else if (response.error2) {
-                        Swal.fire('Error', response.error2, 'error');
+                        showBootstrapModal('Error', response.error2, 'error');
                         kosong();
                     } else if (response.sukses) {
                         if (response.nofaktur && !noPoDipilih()) {
                             $('#faktur_internal').val(response.nofaktur);
                         }
-                        Swal.fire({
+                        showBootstrapModal({
                             title: 'Berhasil',
                             icon: 'success',
                             text: response.sukses
@@ -723,7 +723,7 @@
         let idgudang = $('#idgudang').val();
         let idbarang = $('#idbarang').val();
         if (kodebarang.length == 0) {
-            Swal.fire('Error', 'Kode Barang harus di inputkan', 'error');
+            showBootstrapModal('Error', 'Kode Barang harus di inputkan', 'error');
             kosong();
         } else {
             $.ajax({
@@ -738,7 +738,7 @@
                 dataType: "json",
                 success: function(response) {
                     if (response.error) {
-                        Swal.fire('Error', response.error, 'error');
+                        showBootstrapModal('Error', response.error, 'error');
                         kosong();
                     }
 
@@ -823,7 +823,7 @@
             dataType: "json",
             success: function(response) {
                 if (response.error) {
-                    Swal.fire('Error', response.error, 'error');
+                    showBootstrapModal('Error', response.error, 'error');
                     return;
                 }
                 let data = response.sukses;
@@ -873,15 +873,15 @@
             : ($('#materialProduksi option:selected').text() || '');
 
         if (!kodebarang) {
-            Swal.fire('Pesan', 'Produk yang diproduksi belum dipilih.', 'warning');
+            showBootstrapModal('Pesan', 'Produk yang diproduksi belum dipilih.', 'warning');
             return;
         }
         if (!qtyProduk || qtyProduk <= 0) {
-            Swal.fire('Pesan', 'Qty Diproduksi harus lebih dari 0.', 'warning');
+            showBootstrapModal('Pesan', 'Qty Diproduksi harus lebih dari 0.', 'warning');
             return;
         }
         if (!$('#materialProduksi').prop('disabled') && !materialid) {
-            Swal.fire('Pesan', 'Material yang digunakan belum dipilih.', 'warning');
+            showBootstrapModal('Pesan', 'Material yang digunakan belum dipilih.', 'warning');
             return;
         }
 
@@ -909,7 +909,7 @@
 
     function simpanProduksiBerurutan(items, index, tglProduksi, gudang) {
         if (index >= items.length) {
-            Swal.fire({
+            showBootstrapModal({
                 title: 'Berhasil',
                 icon: 'success',
                 text: items.length + ' produk berhasil disimpan. Stok material berkurang, stok produk bertambah.'
@@ -936,7 +936,7 @@
             dataType: "json",
             success: function(response) {
                 if (response.error) {
-                    Swal.fire('Gagal', item.kodebarang + ': ' + response.error, 'error');
+                    showBootstrapModal('Gagal', item.kodebarang + ': ' + response.error, 'error');
                     return;
                 }
                 $('#noProduksiBatch').val(response.no_produksi);
@@ -1056,15 +1056,15 @@
             let tglProduksi = $('#tglfaktur').val();
 
             if (!gudang) {
-                Swal.fire('Pesan', 'Gudang Tujuan belum dipilih.', 'warning');
+                showBootstrapModal('Pesan', 'Gudang Tujuan belum dipilih.', 'warning');
                 return;
             }
             if (daftarProduk.length === 0) {
-                Swal.fire('Pesan', 'Belum ada produk di daftar. Isi form produk lalu klik tombol tambah dulu.', 'warning');
+                showBootstrapModal('Pesan', 'Belum ada produk di daftar. Isi form produk lalu klik tombol tambah dulu.', 'warning');
                 return;
             }
 
-            Swal.fire({
+            showBootstrapModal({
                 title: 'Selesai Transaksi',
                 text: "Stok material akan berkurang dan stok produk akan bertambah untuk " + daftarProduk.length + " produk. Yakin disimpan?",
                 icon: 'warning',
@@ -1169,25 +1169,25 @@
             let poKeluarId = $("#po_keluar_id").val();
             let sumberProduk = $("#sumberProduk").val();
             if (sumberProduk === 'beli' && !poKeluarId) {
-                Swal.fire({
+                showBootstrapModal({
                     title: 'Pesan',
                     icon: 'warning',
                     text: 'Maaf No PO wajib dipilih untuk sumber Beli dari Supplier'
                 })
             } else if (sumberProduk === 'beli' && idsupplier.length == 0) {
-                Swal.fire({
+                showBootstrapModal({
                     title: 'Pesan',
                     icon: 'warning',
                     text: 'Maaf data supplier tidak boleh kosong'
                 })
             } else if (gudang.length == 0) {
-                Swal.fire({
+                showBootstrapModal({
                     title: 'Pesan',
                     icon: 'warning',
                     text: 'Maaf Gudang belum dipilih'
                 })
             } else {
-                Swal.fire({
+                showBootstrapModal({
                     title: 'Selesai Transaksi',
                     text: "Yakin transaksi ini di simpan ?",
                     icon: 'warning',
@@ -1216,7 +1216,7 @@
                             dataType: "json",
                             success: function(response) {
                                 if (response.error) {
-                                    Swal.fire({
+                                    showBootstrapModal({
                                         title: 'Error',
                                         icon: 'error',
                                         text: response.error
@@ -1224,7 +1224,7 @@
                                 }
 
                                 if (response.sukses) {
-                                    Swal.fire({
+                                    showBootstrapModal({
                                         title: 'Berhasil',
                                         icon: 'success',
                                         text: response.sukses

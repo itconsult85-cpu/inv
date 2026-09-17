@@ -68,7 +68,7 @@ Pengiriman ke Pelanggan
     }
 
     function hapusPengiriman(id) {
-        Swal.fire({
+        showBootstrapModal({
             title: 'Hapus Permintaan?',
             icon: 'warning',
             showCancelButton: true,
@@ -80,7 +80,7 @@ Pengiriman ke Pelanggan
                 [csrfToken]: csrfHash,
                 id: id
             }, function(response) {
-                Swal.fire('Berhasil', response.sukses, 'success');
+                showBootstrapModal('Berhasil', response.sukses, 'success');
                 tablePengiriman.ajax.reload();
             }, 'json');
         });

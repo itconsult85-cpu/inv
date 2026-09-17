@@ -290,15 +290,15 @@ $pendingCount = count(array_filter($permintaan, static fn($row) => ($row['status
             const f = $(this);
             $.post('<?= site_url('baranghabispakai/updateBarang') ?>', f.serialize(), function(r) {
                 if (r.error) {
-                    Swal.fire('Gagal', r.error, 'error');
+                    showBootstrapModal('Gagal', r.error, 'error');
                     return;
                 }
-                Swal.fire('Berhasil', r.sukses, 'success').then(() => location.reload());
+                showBootstrapModal('Berhasil', r.sukses, 'success').then(() => location.reload());
             }, 'json');
         });
         $(document).on('click', '.btnNonaktifkanStok', function() {
             const b = $(this);
-            Swal.fire({
+            showBootstrapModal({
                 title: 'Nonaktifkan barang?',
                 text: 'Barang ' + b.data('nama') + ' tidak akan tampil untuk transaksi baru, tetapi histori tetap disimpan.',
                 icon: 'warning',
@@ -311,10 +311,10 @@ $pendingCount = count(array_filter($permintaan, static fn($row) => ($row['status
                     id: b.data('id')
                 }, function(r) {
                     if (r.error) {
-                        Swal.fire('Gagal', r.error, 'error');
+                        showBootstrapModal('Gagal', r.error, 'error');
                         return;
                     }
-                    Swal.fire('Berhasil', r.sukses, 'success').then(() => location.reload());
+                    showBootstrapModal('Berhasil', r.sukses, 'success').then(() => location.reload());
                 }, 'json');
             });
         });
@@ -338,10 +338,10 @@ $pendingCount = count(array_filter($permintaan, static fn($row) => ($row['status
                 nomor_surat_jalan: surat
             }, function(r) {
                 if (r.error) {
-                    Swal.fire('Gagal', r.error, 'error');
+                    showBootstrapModal('Gagal', r.error, 'error');
                     return;
                 }
-                Swal.fire('Berhasil', r.sukses, 'success').then(() => location.reload());
+                showBootstrapModal('Berhasil', r.sukses, 'success').then(() => location.reload());
             }, 'json');
         });
         $('.ajaxForm').on('submit', function(e) {
@@ -349,20 +349,20 @@ $pendingCount = count(array_filter($permintaan, static fn($row) => ($row['status
             const f = $(this);
             $.post(f.attr('action'), f.serialize(), function(r) {
                 if (r.error) {
-                    Swal.fire('Gagal', r.error, 'error');
+                    showBootstrapModal('Gagal', r.error, 'error');
                     return;
                 }
-                Swal.fire('Berhasil', r.sukses, 'success').then(() => location.reload());
+                showBootstrapModal('Berhasil', r.sukses, 'success').then(() => location.reload());
             }, 'json');
         });
         $('#formPermintaan').on('submit', function(e) {
             e.preventDefault();
             $.post('<?= site_url('baranghabispakai/simpanPermintaan') ?>', $(this).serialize(), function(r) {
                 if (r.error) {
-                    Swal.fire('Gagal', r.error, 'error');
+                    showBootstrapModal('Gagal', r.error, 'error');
                     return;
                 }
-                Swal.fire('Berhasil', r.sukses, 'success').then(() => location.reload());
+                showBootstrapModal('Berhasil', r.sukses, 'success').then(() => location.reload());
             }, 'json');
         });
         $('.btnPersetujuan').on('click', function() {
@@ -373,10 +373,10 @@ $pendingCount = count(array_filter($permintaan, static fn($row) => ($row['status
                 catatan: note
             }, function(r) {
                 if (r.error) {
-                    Swal.fire('Gagal', r.error, 'error');
+                    showBootstrapModal('Gagal', r.error, 'error');
                     return;
                 }
-                Swal.fire('Berhasil', r.sukses, 'success').then(() => location.reload());
+                showBootstrapModal('Berhasil', r.sukses, 'success').then(() => location.reload());
             }, 'json');
         });
     });

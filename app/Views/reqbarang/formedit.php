@@ -167,7 +167,7 @@ Edit Permintaan Transfer
         let kodebarang = $('#kodebarang').val();
         let harga = $('#harga').val();
         if (kodebarang.length == 0) {
-            Swal.fire('Error', 'Kode Produk harus di inputkan', 'error');
+            showBootstrapModal('Error', 'Kode Produk harus di inputkan', 'error');
             kosong();
         } else {
             $.ajax({
@@ -181,7 +181,7 @@ Edit Permintaan Transfer
                 dataType: "json",
                 success: function(response) {
                     if (response.error) {
-                        Swal.fire('Error', response.error, 'error');
+                        showBootstrapModal('Error', response.error, 'error');
                         kosong();
                     }
 
@@ -256,7 +256,7 @@ Edit Permintaan Transfer
         let jml = $('#jml').val();
 
         if (kodebarang.length == 0) {
-            Swal.fire('Error', 'Kode Produk harus di inputkan', 'error');
+            showBootstrapModal('Error', 'Kode Produk harus di inputkan', 'error');
             kosong();
         } else {
             $.ajax({
@@ -274,11 +274,11 @@ Edit Permintaan Transfer
                 dataType: "json",
                 success: function(response) {
                     if (response.error) {
-                        Swal.fire('Error', response.error, 'error');
+                        showBootstrapModal('Error', response.error, 'error');
                         kosong();
                     }
                     if (response.sukses) {
-                        Swal.fire('Berhasil', response.sukses, 'success');
+                        showBootstrapModal('Berhasil', response.sukses, 'success');
                         tampilDataDetail();
                         ambilTotalQty();
                         kosong();
@@ -350,9 +350,9 @@ Edit Permintaan Transfer
                 dataType: "json",
                 success: function(response) {
                     if (response.error) {
-                        Swal.fire('Error', response.error, 'error');
+                        showBootstrapModal('Error', response.error, 'error');
                     } else {
-                        Swal.fire('Berhasil', response.sukses, 'success').then(() => {});
+                        showBootstrapModal('Berhasil', response.sukses, 'success').then(() => {});
                         $('#permintaan').val(newPermintaan);
                         $('#permintaanText').text(newPermintaan);
                         $('#permintaanInput').hide();
@@ -385,7 +385,7 @@ Edit Permintaan Transfer
                 dataType: "json",
                 success: function(response) {
                     if (response.error) {
-                        Swal.fire('Error', response.error, 'error');
+                        showBootstrapModal('Error', response.error, 'error');
                         tampilDataDetail();
                         ambilTotalQty();
                         kosong();
@@ -396,7 +396,7 @@ Edit Permintaan Transfer
                         $('#tombolBatal').fadeOut();
                     }
                     if (response.sukses) {
-                        Swal.fire({
+                        showBootstrapModal({
                             'icon': 'success',
                             'title': 'Berhasil',
                             'text': response.sukses

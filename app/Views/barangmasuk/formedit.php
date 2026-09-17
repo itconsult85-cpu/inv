@@ -161,7 +161,7 @@ Edit Produk Masuk
         let idbarang = $('#idbarang').val();
         let stok = $('#stok1').val();
         if (kodebarang.length == 0) {
-            Swal.fire('Error', 'Kode Barang harus di inputkan', 'error');
+            showBootstrapModal('Error', 'Kode Barang harus di inputkan', 'error');
             kosong();
         } else {
             $.ajax({
@@ -177,7 +177,7 @@ Edit Produk Masuk
                 dataType: "json",
                 success: function(response) {
                     if (response.error) {
-                        Swal.fire('Error', response.error, 'error');
+                        showBootstrapModal('Error', response.error, 'error');
                         kosong();
                     }
 
@@ -261,7 +261,7 @@ Edit Produk Masuk
         let jml = $('#jml').val();
 
         if (kodebarang.length == 0) {
-            Swal.fire('Error', 'Kode Barang harus di inputkan', 'error');
+            showBootstrapModal('Error', 'Kode Barang harus di inputkan', 'error');
             kosong();
         } else {
             $.ajax({
@@ -285,11 +285,11 @@ Edit Produk Masuk
                 dataType: "json",
                 success: function(response) {
                     if (response.error) {
-                        Swal.fire('Error', response.error, 'error');
+                        showBootstrapModal('Error', response.error, 'error');
                         kosong();
                     }
                     if (response.sukses) {
-                        Swal.fire('Berhasil', response.sukses, 'success');
+                        showBootstrapModal('Berhasil', response.sukses, 'success');
                         tampilDataDetail();
                         ambilTotalBerat();
                         kosong();
@@ -350,7 +350,7 @@ Edit Produk Masuk
             var jml = $('#jml').val();
             var namabarang = $('#namabarang').val();
             if (kodebarang.length == 0) {
-                Swal.fire('Error', 'Kode Barang harus di inputkan', 'error');
+                showBootstrapModal('Error', 'Kode Barang harus di inputkan', 'error');
                 kosong();
             } else {
                 $.ajax({
@@ -367,11 +367,11 @@ Edit Produk Masuk
                     dataType: "json",
                     success: function(response) {
                         if (response.error) {
-                            Swal.fire('Error', response.error, 'error');
+                            showBootstrapModal('Error', response.error, 'error');
                             kosong();
                         }
                         if (response.sukses) {
-                            Swal.fire({
+                            showBootstrapModal({
                                 'icon': 'success',
                                 'title': 'Berhasil',
                                 'text': response.sukses

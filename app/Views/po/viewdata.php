@@ -574,7 +574,7 @@ Data PO Masuk
     });
 
     function hapus(nopo) {
-        Swal.fire({
+        showBootstrapModal({
             title: 'Hapus Transaksi',
             text: "Yakin Hapus Transaksi ?",
             icon: 'warning',
@@ -594,14 +594,14 @@ Data PO Masuk
                     dataType: "json",
                     success: function(response) {
                         if (response.sukses) {
-                            Swal.fire('Berhasil', response.sukses, 'success');
+                            showBootstrapModal('Berhasil', response.sukses, 'success');
                             table.ajax.reload();
                         } else if (response.error) {
-                            Swal.fire('Gagal', response.error, 'error');
+                            showBootstrapModal('Gagal', response.error, 'error');
                         }
                     },
                     error: function(xhr, ajaxOptions, thrownError) {
-                        Swal.fire('Gagal', thrownError || 'Request gagal diproses.', 'error');
+                        showBootstrapModal('Gagal', thrownError || 'Request gagal diproses.', 'error');
                     }
                 });
             }

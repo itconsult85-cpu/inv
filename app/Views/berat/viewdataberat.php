@@ -89,7 +89,7 @@ Managemen Data Berat/Ukuran
     }
 
     function hapus(kode) {
-        Swal.fire({
+        showBootstrapModal({
             title: 'Hapus Data Berat',
             html: `Yakin data Beratdengan nama <strong>${kode}</strong> di hapus ?`,
             icon: 'warning',
@@ -111,7 +111,7 @@ Managemen Data Berat/Ukuran
                     success: function(response) {
                         console.log(response);
                         if (response.sukses) {
-                            Swal.fire({
+                            showBootstrapModal({
                                 icon: 'success',
                                 title: 'Hapus data',
                                 text: response.sukses
@@ -119,7 +119,7 @@ Managemen Data Berat/Ukuran
                                 window.location.reload();
                             });
                         } else if (response.error) {
-                            Swal.fire({
+                            showBootstrapModal({
                                 icon: 'error',
                                 title: 'Gagal',
                                 html: response.error
@@ -127,7 +127,7 @@ Managemen Data Berat/Ukuran
                         }
                     },
                     error: function(xhr, ajaxOptions, thrownError) {
-                        Swal.fire({
+                        showBootstrapModal({
                             icon: 'error',
                             title: 'Gagal',
                             html: `Data Berat tidak bisa dihapus karena masih terkait dengan data di tabel lain`

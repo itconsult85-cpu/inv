@@ -488,7 +488,7 @@ Data Material Masuk
     }
 
     function hapus(faktur) {
-        Swal.fire({
+        showBootstrapModal({
             title: 'Hapus Transaksi',
             text: "Yakin Hapus Transaksi ?",
             icon: 'warning',
@@ -508,7 +508,7 @@ Data Material Masuk
                     dataType: "json",
                     success: function(response) {
                         if (response.sukses) {
-                            Swal.fire('Berhasil', response.sukses, 'success');
+                            showBootstrapModal('Berhasil', response.sukses, 'success');
                             table.ajax.reload();
                         }
                     },

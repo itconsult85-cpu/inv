@@ -414,7 +414,7 @@ Estimasi waste material berdasarkan outstanding, Berat Material Terpakai, dan Wi
             const pesan = xhr.responseJSON && xhr.responseJSON.message
                 ? xhr.responseJSON.message
                 : 'Perhitungan waste material gagal dimuat.';
-            Swal.fire('Gagal', pesan, 'error');
+            showBootstrapModal('Gagal', pesan, 'error');
         }).always(() => {
             tombol.prop('disabled', false).html('<i class="fas fa-calculator"></i> Hitung Waste');
         });

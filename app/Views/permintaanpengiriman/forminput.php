@@ -100,7 +100,7 @@ Input Permintaan Pengiriman
             [csrfToken]: csrfHash,
             kodebarang: $('#kodebarang').val()
         }, function(response) {
-            if (response.error) return Swal.fire('Error', response.error, 'error');
+            if (response.error) return showBootstrapModal('Error', response.error, 'error');
             $('#namabarang').val(response.sukses.namabarang);
             $('#stok').val(response.sukses.stok);
             $('#berat').val(response.sukses.berat);
@@ -137,7 +137,7 @@ Input Permintaan Pengiriman
                 berat: $('#berat').val(),
                 qty: $('#qty').val()
             }, function(response) {
-                if (response.error) return Swal.fire('Error', response.error, 'error');
+                if (response.error) return showBootstrapModal('Error', response.error, 'error');
                 tampilTempPengiriman();
                 $('#kodebarangInput,#namabarang,#stok,#berat').val('');
                 $('#kodebarang').val('');
@@ -154,8 +154,8 @@ Input Permintaan Pengiriman
                 tanggal: $('#tanggal').val(),
                 keterangan: $('#keteranganPengiriman').val()
             }, function(response) {
-                if (response.error) return Swal.fire('Error', response.error, 'error');
-                Swal.fire('Berhasil', response.sukses, 'success').then(() => location.href='/barangkeluar/data#permintaan');
+                if (response.error) return showBootstrapModal('Error', response.error, 'error');
+                showBootstrapModal('Berhasil', response.sukses, 'success').then(() => location.href='/barangkeluar/data#permintaan');
             }, 'json');
         });
     });

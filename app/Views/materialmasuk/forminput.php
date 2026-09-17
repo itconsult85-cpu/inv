@@ -317,7 +317,7 @@
             dataType: "json",
             success: function(response) {
                 if (response.error) {
-                    Swal.fire('Error', response.error, 'error');
+                    showBootstrapModal('Error', response.error, 'error');
                 }
 
                 if (response.sukses) {
@@ -367,7 +367,7 @@
             dataType: "json",
             success: function(response) {
                 if (response.error) {
-                    Swal.fire('Error', response.error, 'error');
+                    showBootstrapModal('Error', response.error, 'error');
                     return;
                 }
                 let data = response.sukses;
@@ -402,7 +402,7 @@
     $(document).on('click', '.item-po-keluar-row', function() {
         let idgudang = $('#idgudang').val();
         if (!idgudang) {
-            Swal.fire('Pesan', 'Pilih Lokasi Gudang terlebih dahulu.', 'warning');
+            showBootstrapModal('Pesan', 'Pilih Lokasi Gudang terlebih dahulu.', 'warning');
             return;
         }
         $('#materialid').val($(this).data('matid'));
@@ -470,7 +470,7 @@
             dataType: 'json',
             success: function(response) {
                 if (response.terpakai) {
-                    Swal.fire('No. Invoice sudah digunakan', response.pesan, 'warning')
+                    showBootstrapModal('No. Invoice sudah digunakan', response.pesan, 'warning')
                         .then(() => {
                             $('#nofaktur').val('').focus();
                         });
@@ -498,7 +498,7 @@
             dataType: 'json',
             success: function(response) {
                 if (response.terpakai) {
-                    Swal.fire('No Surat Jalan sudah digunakan', response.pesan, 'warning')
+                    showBootstrapModal('No Surat Jalan sudah digunakan', response.pesan, 'warning')
                         .then(() => $('#no_do').val('').focus());
                 }
             },
@@ -529,12 +529,12 @@
         let poKeluarId = $('#po_keluar_id').val();
 
         if (kodematerial.length == 0) {
-            Swal.fire('Error', 'Kode material harus diinputkan', 'error');
+            showBootstrapModal('Error', 'Kode material harus diinputkan', 'error');
             kosong();
         } else if (gudang.length == 0) {
-            Swal.fire('Error', 'Lokasi gudang harus dipilih terlebih dahulu', 'error');
+            showBootstrapModal('Error', 'Lokasi gudang harus dipilih terlebih dahulu', 'error');
         } else if (materialid.length == 0) {
-            Swal.fire('Error', 'Pilih material dari dropdown terlebih dahulu', 'error');
+            showBootstrapModal('Error', 'Pilih material dari dropdown terlebih dahulu', 'error');
         } else {
             $.ajax({
                 type: "post",
@@ -563,15 +563,15 @@
                 dataType: "json",
                 success: function(response) {
                     if (response.error) {
-                        Swal.fire('Error', response.error, 'error');
+                        showBootstrapModal('Error', response.error, 'error');
                     } else if (response.error2) {
-                        Swal.fire('Error', response.error2, 'error');
+                        showBootstrapModal('Error', response.error2, 'error');
                         kosong();
                     } else if (response.sukses) {
                         if (response.faktur_internal) {
                             $('#faktur_internal').val(response.faktur_internal);
                         }
-                        Swal.fire({
+                        showBootstrapModal({
                             title: 'Berhasil',
                             icon: 'success',
                             text: response.sukses
@@ -597,12 +597,12 @@
         let materialid = $('#materialid').val();
         let idmat = $('#idmat').val();
         if (kodematerial.length == 0) {
-            Swal.fire('Error', 'Kode Material harus di inputkan', 'error');
+            showBootstrapModal('Error', 'Kode Material harus di inputkan', 'error');
             kosong();
         } else if (idgudang.length == 0) {
-            Swal.fire('Error', 'Pilih Lokasi Gudang terlebih dahulu.', 'error');
+            showBootstrapModal('Error', 'Pilih Lokasi Gudang terlebih dahulu.', 'error');
         } else if (materialid.length == 0) {
-            Swal.fire('Error', 'Pilih material dari dropdown terlebih dahulu.', 'error');
+            showBootstrapModal('Error', 'Pilih material dari dropdown terlebih dahulu.', 'error');
         } else {
             $.ajax({
                 type: "post",
@@ -617,7 +617,7 @@
                 dataType: "json",
                 success: function(response) {
                     if (response.error) {
-                        Swal.fire('Error', response.error, 'error');
+                        showBootstrapModal('Error', response.error, 'error');
                         kosong();
                     }
 
@@ -802,25 +802,25 @@
             let idpelanggan = $('#idpelanggan').val();
 
             if (sumber !== 'adjustment' && noDo.length == 0) {
-                Swal.fire({
+                showBootstrapModal({
                     title: 'Pesan',
                     icon: 'warning',
                     text: 'Maaf No Surat Jalan tidak boleh kosong'
                 })
             } else if (sumber === 'konsinyasi' && idpelanggan.length == 0) {
-                Swal.fire({
+                showBootstrapModal({
                     title: 'Pesan',
                     icon: 'warning',
                     text: 'Maaf data pelanggan (sumber konsinyasi) tidak boleh kosong'
                 })
             } else if ((sumber === 'beli' || sumber === 'retur_ng') && idsupplier.length == 0) {
-                Swal.fire({
+                showBootstrapModal({
                     title: 'Pesan',
                     icon: 'warning',
                     text: 'Maaf data supplier tidak boleh kosong'
                 })
             } else {
-                Swal.fire({
+                showBootstrapModal({
                     title: 'Selesai Transaksi',
                     text: "Yakin transaksi ini di simpan ?",
                     icon: 'warning',
@@ -850,7 +850,7 @@
                             dataType: "json",
                             success: function(response) {
                                 if (response.error) {
-                                    Swal.fire({
+                                    showBootstrapModal({
                                         title: 'Error',
                                         icon: 'error',
                                         text: response.error
@@ -858,7 +858,7 @@
                                 }
 
                                 if (response.sukses) {
-                                    Swal.fire({
+                                    showBootstrapModal({
                                         title: 'Berhasil',
                                         icon: 'success',
                                         text: response.sukses

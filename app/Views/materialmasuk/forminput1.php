@@ -143,10 +143,10 @@ Input Material Masuk
         let jml = $('#jml').val();
 
         if (nofaktur.length == 0) {
-            Swal.fire('Error', 'No. Invoice harus diinputkan', 'error');
+            showBootstrapModal('Error', 'No. Invoice harus diinputkan', 'error');
             kosong();
         } else if (kodematerial.length == 0) {
-            Swal.fire('Error', 'Kode Material harus di inputkan', 'error');
+            showBootstrapModal('Error', 'Kode Material harus di inputkan', 'error');
             kosong();
         } else {
             $.ajax({
@@ -166,11 +166,11 @@ Input Material Masuk
                 dataType: "json",
                 success: function(response) {
                     if (response.error) {
-                        Swal.fire('Error', response.error, 'error');
+                        showBootstrapModal('Error', response.error, 'error');
                         kosong();
                     }
                     if (response.sukses) {
-                        Swal.fire('Berhasil', response.sukses, 'success');
+                        showBootstrapModal('Berhasil', response.sukses, 'success');
                         tampilDataTemp();
                         kosong();
                     }
@@ -186,7 +186,7 @@ Input Material Masuk
         let kodematerial = $('#kodematerial').val();
         let idmaterial = $('#idmaterial').val();
         if (kodematerial.length == 0) {
-            Swal.fire('Error', 'Kode Material harus di inputkan', 'error');
+            showBootstrapModal('Error', 'Kode Material harus di inputkan', 'error');
             kosong();
         } else {
             $.ajax({
@@ -200,7 +200,7 @@ Input Material Masuk
                 dataType: "json",
                 success: function(response) {
                     if (response.error) {
-                        Swal.fire('Error', response.error, 'error');
+                        showBootstrapModal('Error', response.error, 'error');
                         kosong();
                     }
 
@@ -327,19 +327,19 @@ Input Material Masuk
             let jml = $('#jml').val();
 
             if (nofaktur.length == 0) {
-                Swal.fire({
+                showBootstrapModal({
                     title: 'Pesan',
                     icon: 'warning',
                     text: 'Maaf No. Invoice tidak boleh kosong'
                 })
             } else if (idsupplier.length == 0) {
-                Swal.fire({
+                showBootstrapModal({
                     title: 'Pesan',
                     icon: 'warning',
                     text: 'Maaf data supplier tidak boleh kosong'
                 })
             } else {
-                Swal.fire({
+                showBootstrapModal({
                     title: 'Selesai Transaksi',
                     text: "Yakin transaksi ini di simpan ?",
                     icon: 'warning',
@@ -363,7 +363,7 @@ Input Material Masuk
                             dataType: "json",
                             success: function(response) {
                                 if (response.error) {
-                                    Swal.fire({
+                                    showBootstrapModal({
                                         title: 'Error',
                                         icon: 'error',
                                         text: response.error
@@ -371,7 +371,7 @@ Input Material Masuk
                                 }
 
                                 if (response.sukses) {
-                                    Swal.fire({
+                                    showBootstrapModal({
                                         title: 'Berhasil',
                                         icon: 'success',
                                         text: response.sukses

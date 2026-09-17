@@ -304,7 +304,7 @@ Managemen Data Supplier
 
             bukaEditSupplier(id, nama, pic, email, telp, alamat);
         }).fail(function() {
-            Swal.fire('Kesalahan', 'Informasi pemakaian supplier gagal dimuat.', 'error');
+            showBootstrapModal('Kesalahan', 'Informasi pemakaian supplier gagal dimuat.', 'error');
         });
     }
 
@@ -367,8 +367,8 @@ Managemen Data Supplier
                         $('.errorEditAlamat').html(err.errAlamat);
                     }
                 } else if (response.sukses) {
-                    // Menampilkan pesan sukses dengan Swal.fire
-                    Swal.fire({
+                    // Menampilkan pesan sukses dengan showBootstrapModal
+                    showBootstrapModal({
                         icon: 'success',
                         title: 'Update Data',
                         text: response.sukses
@@ -385,7 +385,7 @@ Managemen Data Supplier
     }
 
     function hapus(id, nama) {
-        Swal.fire({
+        showBootstrapModal({
             title: 'Hapus Supplier?',
             html: `Yakin menghapus Data Supplier dengan nama <strong>${nama}</strong>`,
             icon: 'warning',
@@ -405,7 +405,7 @@ Managemen Data Supplier
                     dataType: "json",
                     success: function(response) {
                         if (response.sukses) {
-                            Swal.fire({
+                            showBootstrapModal({
                                 icon: 'success',
                                 title: 'Hapus data',
                                 text: response.sukses
@@ -416,7 +416,7 @@ Managemen Data Supplier
                                 }
                             });
                         } else if (response.error) {
-                            Swal.fire({
+                            showBootstrapModal({
                                 icon: 'error',
                                 title: 'Gagal',
                                 html: response.error

@@ -297,7 +297,7 @@ Input Pengiriman
             no_po: noPo
         }, function(response) {
             if (response.error) {
-                Swal.fire('PO Tidak Ditemukan', response.error, 'error');
+                showBootstrapModal('PO Tidak Ditemukan', response.error, 'error');
                 return;
             }
 
@@ -338,7 +338,7 @@ Input Pengiriman
             $('#tabelItemPo').html(baris);
             $('#areaItemPo').show();
         }, 'json').fail(function(xhr) {
-            Swal.fire('Error', xhr.responseJSON?.error || 'Gagal mengambil data PO', 'error');
+            showBootstrapModal('Error', xhr.responseJSON?.error || 'Gagal mengambil data PO', 'error');
         });
     }
 
@@ -476,7 +476,7 @@ Input Pengiriman
         const rencanaId = $(this).data('rencana-id');
         const tombol = $(this);
 
-        Swal.fire({
+        showBootstrapModal({
             title: 'Hapus item ini?',
             text: 'Item akan dihapus dari daftar dan tidak ikut dikirim.',
             icon: 'warning',
@@ -502,7 +502,7 @@ Input Pengiriman
                 renderDaftarKirim();
             }, 'json').fail(function() {
                 tombol.prop('disabled', false);
-                Swal.fire('Error', 'Gagal menghapus item', 'error');
+                showBootstrapModal('Error', 'Gagal menghapus item', 'error');
             });
         });
     });
@@ -512,17 +512,17 @@ Input Pengiriman
 
         const kodeProduk = $('#kodeProduk').val();
         if (!kodeProduk) {
-            Swal.fire('Error', 'Pilih salah satu item PO terlebih dahulu', 'error');
+            showBootstrapModal('Error', 'Pilih salah satu item PO terlebih dahulu', 'error');
             return;
         }
 
         if (!$('#gudangId').val()) {
-            Swal.fire('Error', 'Pilih Asal Gudang terlebih dahulu', 'error');
+            showBootstrapModal('Error', 'Pilih Asal Gudang terlebih dahulu', 'error');
             return;
         }
 
         if (!$('#noDoKirim').val().trim()) {
-            Swal.fire('Error', 'No. Surat Jalan wajib diisi', 'error');
+            showBootstrapModal('Error', 'No. Surat Jalan wajib diisi', 'error');
             return;
         }
 
@@ -550,7 +550,7 @@ Input Pengiriman
             $('#simpanRencana').prop('disabled', false);
 
             if (response.error) {
-                return Swal.fire('Error', response.error, 'error');
+                return showBootstrapModal('Error', response.error, 'error');
             }
 
             $('#permintaanId').val(response.permintaan_id);
@@ -579,7 +579,7 @@ Input Pengiriman
             }
             renderDaftarKirim();
 
-            Swal.fire({
+            showBootstrapModal({
                 title: 'Ditambahkan',
                 icon: 'success',
                 text: 'Item masuk ke daftar. Klik "Save dan Kirim" kalau semua item sudah lengkap.',
@@ -604,17 +604,17 @@ Input Pengiriman
     $('#tombolSelesaiKirim').click(function(e) {
         e.preventDefault();
         if (daftarKirim.length === 0) {
-            Swal.fire('Pesan', 'Belum ada item yang ditambahkan.', 'warning');
+            showBootstrapModal('Pesan', 'Belum ada item yang ditambahkan.', 'warning');
             return;
         }
 
         const permintaanId = $('#permintaanId').val();
         if (!permintaanId) {
-            Swal.fire('Pesan', 'Belum ada item yang ditambahkan.', 'warning');
+            showBootstrapModal('Pesan', 'Belum ada item yang ditambahkan.', 'warning');
             return;
         }
 
-        Swal.fire({
+        showBootstrapModal({
             title: 'Kirim semua item sekarang?',
             text: 'Stok untuk item "Baru" akan langsung berkurang dan surat jalan akan tercatat.',
             icon: 'question',
@@ -634,11 +634,11 @@ Input Pengiriman
                 $('#tombolSelesaiKirim').prop('disabled', false);
 
                 if (kirimResponse.error) {
-                    Swal.fire('Belum Terkirim', kirimResponse.error, 'warning');
+                    showBootstrapModal('Belum Terkirim', kirimResponse.error, 'warning');
                     return;
                 }
 
-                Swal.fire({
+                showBootstrapModal({
                     title: 'Berhasil',
                     icon: 'success',
                     text: kirimResponse.sukses

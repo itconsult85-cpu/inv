@@ -137,7 +137,7 @@ Managemen Data Produk
     $(document).ready(function() {
         <?php $flashSukses = session()->getFlashdata('message') ?: session()->getFlashdata('sukses'); ?>
         <?php if ($flashSukses) : ?>
-            Swal.fire({
+            showBootstrapModal({
                 title: 'Berhasil',
                 html: <?= json_encode(is_array($flashSukses) ? implode('<br>', array_map('esc', $flashSukses)) : strip_tags((string) $flashSukses), JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) ?>,
                 icon: 'success',
@@ -147,7 +147,7 @@ Managemen Data Produk
         <?php endif ?>
         <?php $flashError = session()->getFlashdata('error'); ?>
         <?php if ($flashError) : ?>
-            Swal.fire({
+            showBootstrapModal({
                 title: 'Gagal',
                 html: <?= json_encode(is_array($flashError) ? implode('<br>', array_map('esc', $flashError)) : strip_tags((string) $flashError), JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) ?>,
                 icon: 'error'
@@ -286,7 +286,7 @@ Managemen Data Produk
     }
 
     function hapus(kode) {
-        Swal.fire({
+        showBootstrapModal({
             title: 'Hapus Produk',
             html: `Yakin data Produk dengan nama <strong>${kode}</strong> di hapus ?`,
             icon: 'warning',
@@ -308,7 +308,7 @@ Managemen Data Produk
                     success: function(response) {
                         console.log(response);
                         if (response.sukses) {
-                            Swal.fire({
+                            showBootstrapModal({
                                 icon: 'success',
                                 title: 'Hapus data',
                                 html: response.sukses
@@ -316,7 +316,7 @@ Managemen Data Produk
                                 window.location.reload();
                             });
                         } else if (response.error) {
-                            Swal.fire({
+                            showBootstrapModal({
                                 icon: 'error',
                                 title: 'Gagal',
                                 html: response.error
@@ -324,7 +324,7 @@ Managemen Data Produk
                         }
                     },
                     error: function(xhr, ajaxOptions, thrownError) {
-                        Swal.fire({
+                        showBootstrapModal({
                             icon: 'error',
                             title: 'Kesalahan',
                             html: `Data Produk <b>${kode}</b> tidak bisa dihapus karena masih terkait dengan data di tabel lain`

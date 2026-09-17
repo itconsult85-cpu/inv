@@ -76,12 +76,12 @@ Form Tambah Data Material
                 dataType: "json",
                 success: function(response) {
                     if (kodematerial.length == 0) {
-                        Swal.fire('Error', 'Kode Material harus diinputkan', 'error');
+                        showBootstrapModal('Error', 'Kode Material harus diinputkan', 'error');
                         kosong();
                         return;
                     }
                     if (response.existKode) {
-                        Swal.fire('Error', 'Kode Material sudah terpakai', 'error');
+                        showBootstrapModal('Error', 'Kode Material sudah terpakai', 'error');
                     } else {
                         // Validasi Nama Material di sisi server
                         $.ajax({
@@ -94,15 +94,15 @@ Form Tambah Data Material
                             dataType: "json",
                             success: function(response) {
                                 if (namamaterial.length == 0) {
-                                    Swal.fire('Error', 'Nama Material harus diinputkan', 'error');
+                                    showBootstrapModal('Error', 'Nama Material harus diinputkan', 'error');
                                     kosong();
                                     return;
                                 }
                                 if (response.existNama) {
-                                    Swal.fire('Error', 'Nama Material sudah terpakai', 'error');
+                                    showBootstrapModal('Error', 'Nama Material sudah terpakai', 'error');
                                 } else {
                                     
-                                    Swal.fire({
+                                    showBootstrapModal({
                                         title: 'Selesai Transaksi',
                                         text: "Yakin transaksi ini disimpan?",
                                         icon: 'warning',
@@ -126,13 +126,13 @@ Form Tambah Data Material
                                                 dataType: "json",
                                                 success: function(response) {
                                                     if (response.error) {
-                                                        Swal.fire({
+                                                        showBootstrapModal({
                                                             title: 'Error',
                                                             icon: 'error',
                                                             html: response.error
                                                         });
                                                     } else if (response.sukses) {
-                                                        Swal.fire({
+                                                        showBootstrapModal({
                                                             title: 'Berhasil',
                                                             icon: 'success',
                                                             text: response.sukses

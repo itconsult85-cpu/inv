@@ -186,7 +186,7 @@ Edit Produk Keluar
     function ambilDataPo() {
         let nopo = $('#nopo').val();
         if (nopo.length == 0) {
-            Swal.fire('Error', 'No Po harus di inputkan', 'error');
+            showBootstrapModal('Error', 'No Po harus di inputkan', 'error');
             kosong();
         } else {
             $.ajax({
@@ -199,7 +199,7 @@ Edit Produk Keluar
                 dataType: "json",
                 success: function(response) {
                     if (response.error) {
-                        Swal.fire('Error', response.error, 'error');
+                        showBootstrapModal('Error', response.error, 'error');
                         kosong();
                     }
 
@@ -304,7 +304,7 @@ Edit Produk Keluar
         console.log("Tanggal: ", tanggal);
 
         if (kodebarang.length == 0) {
-            Swal.fire('Error', 'Kode Produk harus di inputkan', 'error');
+            showBootstrapModal('Error', 'Kode Produk harus di inputkan', 'error');
             kosong();
         } else {
             $.ajax({
@@ -331,20 +331,20 @@ Edit Produk Keluar
                 dataType: "json",
                 success: function(response) {
                     if (response.error) {
-                        Swal.fire('Error', response.error, 'error');
+                        showBootstrapModal('Error', response.error, 'error');
                         kosong();
                     }
                     if (response.error1) {
-                        Swal.fire('Error', response.error1, 'error');
+                        showBootstrapModal('Error', response.error1, 'error');
                     }
                     if (response.error2) {
-                        Swal.fire('Error', response.error2, 'error');
+                        showBootstrapModal('Error', response.error2, 'error');
                     }
                     if (response.error3) {
-                        Swal.fire('Error', response.error3, 'error');
+                        showBootstrapModal('Error', response.error3, 'error');
                     }
                     if (response.sukses) {
-                        Swal.fire({
+                        showBootstrapModal({
                             title: 'Berhasil',
                             text: response.sukses,
                             icon: 'success',
@@ -419,14 +419,14 @@ Edit Produk Keluar
             let fakturBaru = $('#nofakturBaru').val().trim();
 
             if (fakturBaru === '') {
-                Swal.fire('Error', 'No Surat Jalan tidak boleh kosong', 'error');
+                showBootstrapModal('Error', 'No Surat Jalan tidak boleh kosong', 'error');
                 return;
             }
             if (fakturBaru === fakturLama) {
                 return;
             }
 
-            Swal.fire({
+            showBootstrapModal({
                 title: 'Ubah No Surat Jalan?',
                 text: 'Dari "' + fakturLama + '" menjadi "' + fakturBaru + '"',
                 icon: 'warning',
@@ -448,9 +448,9 @@ Edit Produk Keluar
                     dataType: "json",
                     success: function(response) {
                         if (response.error) {
-                            Swal.fire('Error', response.error, 'error');
+                            showBootstrapModal('Error', response.error, 'error');
                         } else if (response.sukses) {
-                            Swal.fire({
+                            showBootstrapModal({
                                 title: 'Berhasil',
                                 text: response.sukses,
                                 icon: 'success',
@@ -493,9 +493,9 @@ Edit Produk Keluar
 
                     if (response.error || response.error1 || response.error2 || response.error3) {
                         let errorMessage = response.error || response.error1 || response.error2 || response.error3;
-                        Swal.fire('Error', errorMessage, 'error');
+                        showBootstrapModal('Error', errorMessage, 'error');
                     } else if (response.sukses) {
-                        Swal.fire({
+                        showBootstrapModal({
                             title: 'Berhasil',
                             text: response.sukses,
                             icon: 'success',

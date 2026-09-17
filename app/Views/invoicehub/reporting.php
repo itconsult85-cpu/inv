@@ -593,7 +593,7 @@ Reporting
                 }
             },
             error: function () {
-                Swal.fire('Gagal', 'Terjadi kesalahan saat mengambil data reporting.', 'error');
+                showBootstrapModal('Gagal', 'Terjadi kesalahan saat mengambil data reporting.', 'error');
             },
             complete: function () {
                 $button.prop('disabled', false).html(originalHtml);

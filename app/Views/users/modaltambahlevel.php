@@ -50,7 +50,7 @@
                         $('#msg-levelnama').html(msg);
                     } else {
                         $('#levelnama').removeClass('is-invalid');
-                        Swal.fire({
+                        showBootstrapModal({
                             icon: 'success',
                             title: 'Berhasil',
                             text: response.sukses

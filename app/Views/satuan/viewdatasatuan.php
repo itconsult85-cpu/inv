@@ -235,7 +235,7 @@ Managemen Data Satuan
         ambilPemakaian(kode).done(function(response) {
             const dipakai = response.pemakaian && response.pemakaian.length > 0;
 
-            Swal.fire({
+            showBootstrapModal({
                 title: dipakai ? 'Satuan Sedang Digunakan' : 'Informasi Pemakaian Satuan',
                 html: `<p>Satuan <strong>${escapeHtml(nama)}</strong>${dipakai ? ' sedang dipakai di data lain. Mengganti namanya aman -- data yang memakainya otomatis ikut menampilkan nama baru.' : ''}</p>${htmlPemakaian(response.pemakaian)}`,
                 icon: 'info',
@@ -248,7 +248,7 @@ Managemen Data Satuan
                 }
             });
         }).fail(function() {
-            Swal.fire('Kesalahan', 'Informasi pemakaian satuan gagal dimuat', 'error');
+            showBootstrapModal('Kesalahan', 'Informasi pemakaian satuan gagal dimuat', 'error');
         });
     }
 
@@ -258,7 +258,7 @@ Managemen Data Satuan
 
         ambilPemakaian(kode).done(function(response) {
             if (response.digunakan) {
-                Swal.fire({
+                showBootstrapModal({
                     title: 'Satuan Tidak Bisa Dihapus',
                     html: `<p>Satuan <strong>${escapeHtml(nama)}</strong> masih digunakan.</p>${htmlPemakaian(response.pemakaian)}`,
                     icon: 'error'
@@ -268,12 +268,12 @@ Managemen Data Satuan
 
             konfirmasiHapus(kode, nama);
         }).fail(function() {
-            Swal.fire('Kesalahan', 'Informasi pemakaian satuan gagal dimuat', 'error');
+            showBootstrapModal('Kesalahan', 'Informasi pemakaian satuan gagal dimuat', 'error');
         });
     }
 
     function konfirmasiHapus(kode, nama) {
-        Swal.fire({
+        showBootstrapModal({
             title: 'Hapus Satuan',
             html: `Yakin data satuan dengan nama <strong>${escapeHtml(nama)}</strong> dihapus?`,
             icon: 'warning',
@@ -295,7 +295,7 @@ Managemen Data Satuan
                     dataType: "json",
                     success: function(response) {
                         if (response.sukses) {
-                            Swal.fire({
+                            showBootstrapModal({
                                 icon: 'success',
                                 title: 'Hapus data',
                                 html: response.sukses
@@ -303,7 +303,7 @@ Managemen Data Satuan
                                 window.location.reload();
                             });
                         } else if (response.error) {
-                            Swal.fire({
+                            showBootstrapModal({
                                 icon: 'error',
                                 title: 'Gagal',
                                 html: `${response.error}${htmlPemakaian(response.pemakaian)}`
@@ -312,7 +312,7 @@ Managemen Data Satuan
                     },
                     error: function(xhr, ajaxOptions, thrownError) {
                         alert(xhr.status + '\n' + thrownError);
-                        // Swal.fire({
+                        // showBootstrapModal({
                         //     icon: 'error',
                         //     title: 'Kesalahan',
                         //     html: `Data Satuan <b>${nama}</b> tidak bisa dihapus karena masih terkait dengan data di tabel lain`,

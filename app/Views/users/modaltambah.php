@@ -399,7 +399,7 @@ foreach ($permissionsBySection as $sectionKey => $section) {
                             return !!m;
                         });
                         if (messages.length) {
-                            Swal.fire({
+                            showBootstrapModal({
                                 icon: 'error',
                                 title: 'Gagal Menyimpan',
                                 html: messages.join('<br>')
@@ -447,7 +447,7 @@ foreach ($permissionsBySection as $sectionKey => $section) {
                             $('#msg-password_confirm').html('');
                         }
                     } else {
-                        Swal.fire({
+                        showBootstrapModal({
                             icon: 'success',
                             title: 'Berhasil',
                             text: response.sukses

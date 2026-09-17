@@ -203,7 +203,7 @@ Edit Produksi
             success: function(response) {
                 if (response.error) {
                     $('#materialProduksi').prop('disabled', true).html('<option value="">Material belum tersedia</option>').trigger('change');
-                    Swal.fire('Material Produk', response.error, 'warning');
+                    showBootstrapModal('Material Produk', response.error, 'warning');
                     return;
                 }
                 let data = response.sukses;
@@ -217,7 +217,7 @@ Edit Produksi
             },
             error: function() {
                 $('#materialProduksi').prop('disabled', true).html('<option value="">Material belum tersedia</option>').trigger('change');
-                Swal.fire('Material Produk', 'Data material produk tidak dapat dimuat.', 'error');
+                showBootstrapModal('Material Produk', 'Data material produk tidak dapat dimuat.', 'error');
             }
         });
     }
@@ -297,7 +297,7 @@ Edit Produksi
             dataType: 'json',
             success: function(response) {
                 if (response.error) {
-                    Swal.fire('Error', response.error, 'error');
+                    showBootstrapModal('Error', response.error, 'error');
                     kosongProduk();
                     return;
                 }
@@ -386,7 +386,7 @@ Edit Produksi
     }
 
     function hapusProduksi(produksiProdukId) {
-        Swal.fire({
+        showBootstrapModal({
             title: 'Hapus Produksi Ini?',
             text: 'Stok material yang tadi dipakai akan dikembalikan, dan stok produk hasil produksi ini akan dikurangi lagi. Yakin dihapus?',
             icon: 'warning',
@@ -409,11 +409,11 @@ Edit Produksi
                 dataType: 'json',
                 success: function(response) {
                     if (response.error) {
-                        Swal.fire('Gagal', response.error, 'error');
+                        showBootstrapModal('Gagal', response.error, 'error');
                         return;
                     }
                     if (response.batch_dihapus) {
-                        Swal.fire('Berhasil', response.sukses, 'success').then(() => {
+                        showBootstrapModal('Berhasil', response.sukses, 'success').then(() => {
                             window.location.href = '/barangmasuk/data#tab-produksi';
                         });
                         return;
@@ -424,7 +424,7 @@ Edit Produksi
                         produksiProdukIdAktif = null;
                         kosongProduk();
                     }
-                    Swal.fire('Berhasil', response.sukses, 'success');
+                    showBootstrapModal('Berhasil', response.sukses, 'success');
                 },
                 error: function(xhr, ajaxOptions, thrownError) {
                     alert(xhr.status + '\n' + thrownError);
@@ -459,23 +459,23 @@ Edit Produksi
         let materialid = $('#materialProduksi').prop('disabled') ? '' : ($('#materialProduksi').val() || materialIdAktif || '');
 
         if (!tglProduksi) {
-            Swal.fire('Pesan', 'Tanggal Produksi belum diisi.', 'warning');
+            showBootstrapModal('Pesan', 'Tanggal Produksi belum diisi.', 'warning');
             return;
         }
         if (!gudang) {
-            Swal.fire('Pesan', 'Gudang belum dipilih.', 'warning');
+            showBootstrapModal('Pesan', 'Gudang belum dipilih.', 'warning');
             return;
         }
         if (!kodebarang) {
-            Swal.fire('Pesan', 'Produk yang diproduksi belum dipilih.', 'warning');
+            showBootstrapModal('Pesan', 'Produk yang diproduksi belum dipilih.', 'warning');
             return;
         }
         if (!qtyProduk || Number(qtyProduk) <= 0) {
-            Swal.fire('Pesan', 'Qty Diproduksi harus lebih dari 0.', 'warning');
+            showBootstrapModal('Pesan', 'Qty Diproduksi harus lebih dari 0.', 'warning');
             return;
         }
         if (!$('#materialProduksi').prop('disabled') && !materialid) {
-            Swal.fire('Pesan', 'Material yang digunakan belum dipilih.', 'warning');
+            showBootstrapModal('Pesan', 'Material yang digunakan belum dipilih.', 'warning');
             return;
         }
 
@@ -500,7 +500,7 @@ Edit Produksi
             'Stok lama akan dikoreksi, lalu stok baru akan diterapkan. Yakin simpan perubahan?' :
             'Produk ini akan disimpan sebagai transaksi produksi baru. Stok material akan berkurang, stok produk akan bertambah. Yakin simpan?';
 
-        Swal.fire({
+        showBootstrapModal({
             title: 'Simpan Produksi',
             text: teksKonfirmasi,
             icon: 'warning',
@@ -523,7 +523,7 @@ Edit Produksi
                 },
                 success: function(response) {
                     if (response.error) {
-                        Swal.fire('Gagal', response.error, 'error');
+                        showBootstrapModal('Gagal', response.error, 'error');
                         return;
                     }
 
@@ -540,7 +540,7 @@ Edit Produksi
                     if (response.peringatan && response.peringatan.length) {
                         pesan += '<br><br><small class="text-warning">' + response.peringatan.join('<br>') + '</small>';
                     }
-                    Swal.fire({
+                    showBootstrapModal({
                         title: 'Berhasil',
                         icon: response.peringatan && response.peringatan.length ? 'warning' : 'success',
                         html: pesan

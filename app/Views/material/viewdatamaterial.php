@@ -221,7 +221,7 @@ Managemen Data Material
                 const daftar = response.pemakaian
                     .map(item => `<li><strong>${item.label}</strong> (${item.jumlah} data)</li>`)
                     .join('');
-                Swal.fire({
+                showBootstrapModal({
                     title: 'Material Sedang Digunakan',
                     html: `<p>Material ini sedang dipakai di data lain. Mengganti namanya aman -- data yang memakainya otomatis ikut menampilkan nama baru.</p><ul style="text-align:left; margin:12px auto 0; width:fit-content;">${daftar}</ul>`,
                     icon: 'info',
@@ -235,7 +235,7 @@ Managemen Data Material
                 });
             })
             .fail(function() {
-                Swal.fire('Kesalahan', 'Informasi pemakaian material gagal dimuat.', 'error');
+                showBootstrapModal('Kesalahan', 'Informasi pemakaian material gagal dimuat.', 'error');
             });
     }
 
@@ -252,7 +252,7 @@ Managemen Data Material
     }
 
     function labelSupplier(hash) {
-        Swal.fire({
+        showBootstrapModal({
             title: 'Memuat data...',
             allowOutsideClick: false,
             didOpen: () => Swal.showLoading()
@@ -268,7 +268,7 @@ Managemen Data Material
             dataType: 'json',
             success: function(response) {
                 if (response.error) {
-                    Swal.fire('Gagal', response.error, 'error');
+                    showBootstrapModal('Gagal', response.error, 'error');
                     return;
                 }
 
@@ -289,7 +289,7 @@ Managemen Data Material
                         `).join('') + '</tbody></table>';
                 };
 
-                Swal.fire({
+                showBootstrapModal({
                     title: 'Label Nama per Supplier',
                     html: `
                         <div class="text-left">
@@ -320,11 +320,11 @@ Managemen Data Material
                             const labelNama = $('#labelSupplierNama').val().trim();
 
                             if (!supplierId) {
-                                Swal.fire('Gagal', 'Pilih supplier terlebih dahulu.', 'error');
+                                showBootstrapModal('Gagal', 'Pilih supplier terlebih dahulu.', 'error');
                                 return;
                             }
                             if (!labelNama) {
-                                Swal.fire('Gagal', 'Label Nama tidak boleh kosong.', 'error');
+                                showBootstrapModal('Gagal', 'Label Nama tidak boleh kosong.', 'error');
                                 return;
                             }
 
@@ -341,13 +341,13 @@ Managemen Data Material
                                 dataType: 'json',
                                 success: function(saveResponse) {
                                     if (saveResponse.error) {
-                                        Swal.fire('Gagal', saveResponse.error, 'error').then(() => labelSupplier(hash));
+                                        showBootstrapModal('Gagal', saveResponse.error, 'error').then(() => labelSupplier(hash));
                                         return;
                                     }
-                                    Swal.fire('Berhasil', saveResponse.sukses, 'success').then(() => labelSupplier(hash));
+                                    showBootstrapModal('Berhasil', saveResponse.sukses, 'success').then(() => labelSupplier(hash));
                                 },
                                 error: function(xhr, ajaxOptions, thrownError) {
-                                    Swal.fire('Gagal', xhr.status + ' ' + thrownError, 'error').then(() => labelSupplier(hash));
+                                    showBootstrapModal('Gagal', xhr.status + ' ' + thrownError, 'error').then(() => labelSupplier(hash));
                                 }
                             });
                         });
@@ -355,13 +355,13 @@ Managemen Data Material
                 });
             },
             error: function(xhr, ajaxOptions, thrownError) {
-                Swal.fire('Gagal', xhr.status + '\n' + thrownError, 'error');
+                showBootstrapModal('Gagal', xhr.status + '\n' + thrownError, 'error');
             }
         });
     }
 
     function hapusLabelSupplier(id, hash) {
-        Swal.fire({
+        showBootstrapModal({
             title: 'Hapus Label Nama?',
             text: 'Label Nama untuk supplier ini akan dihapus.',
             icon: 'warning',
@@ -376,16 +376,16 @@ Managemen Data Material
                 id: id
             }, function(response) {
                 if (response.error) {
-                    Swal.fire('Gagal', response.error, 'error');
+                    showBootstrapModal('Gagal', response.error, 'error');
                     return;
                 }
-                Swal.fire('Berhasil', response.sukses, 'success').then(() => labelSupplier(hash));
+                showBootstrapModal('Berhasil', response.sukses, 'success').then(() => labelSupplier(hash));
             }, 'json');
         });
     }
 
     function hapus(kode, nama) {
-        Swal.fire({
+        showBootstrapModal({
             title: 'Hapus Material',
             html: `Yakin data material dengan nama <strong>${nama}</strong> di hapus ?`,
             icon: 'warning',
@@ -408,7 +408,7 @@ Managemen Data Material
                     success: function(response) {
                         console.log(response);
                         if (response.sukses) {
-                            Swal.fire({
+                            showBootstrapModal({
                                 icon: 'success',
                                 title: 'Hapus data',
                                 html: response.sukses
@@ -416,7 +416,7 @@ Managemen Data Material
                                 window.location.reload();
                             });
                         } else if (response.error) {
-                            Swal.fire({
+                            showBootstrapModal({
                                 icon: 'error',
                                 title: 'Gagal',
                                 html: response.error
@@ -424,7 +424,7 @@ Managemen Data Material
                         }
                     },
                     error: function(xhr, ajaxOptions, thrownError) {
-                        Swal.fire({
+                        showBootstrapModal({
                             icon: 'error',
                             title: 'Kesalahan',
                             html: `Data Material <b>${nama}</b> tidak bisa dihapus karena masih terkait dengan data di tabel lain`

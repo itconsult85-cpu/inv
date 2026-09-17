@@ -187,7 +187,7 @@ $('#formPembayaran').on('submit', function(event) {
     hitungTotalAlokasi();
     if ($('#btnSimpanPembayaran').prop('disabled')) {
         event.preventDefault();
-        Swal.fire('Cek Pembayaran', 'Total alokasi harus sama dengan nominal pembayaran.', 'warning');
+        showBootstrapModal('Cek Pembayaran', 'Total alokasi harus sama dengan nominal pembayaran.', 'warning');
     }
 });
 

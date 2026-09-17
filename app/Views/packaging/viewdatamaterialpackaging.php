@@ -80,7 +80,7 @@ Managemen Data Material
     }
 
     function hapus(kode, nama) {
-        Swal.fire({
+        showBootstrapModal({
             title: 'Hapus Material',
             html: `Yakin data material dengan kode <strong>${nama}</strong> di hapus ?`,
             icon: 'warning',
@@ -100,7 +100,7 @@ Managemen Data Material
                     dataType: "json",
                     success: function(response) {
                         if (response.sukses) {
-                            Swal.fire('Berhasil', response.sukses, 'success').then(() => {
+                            showBootstrapModal('Berhasil', response.sukses, 'success').then(() => {
                                 window.location.reload();
                             });
                         }

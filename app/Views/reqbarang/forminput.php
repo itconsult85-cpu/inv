@@ -196,10 +196,10 @@ Input Antar Gudang
         let idgudang = $('#gudang').val();
 
         if (kodebarang.length == 0) {
-            Swal.fire('Error', 'Kode item harus dipilih', 'error');
+            showBootstrapModal('Error', 'Kode item harus dipilih', 'error');
             kosong();
         } else if (!idgudang) {
-            Swal.fire('Error', 'Gudang Asal harus dipilih', 'error');
+            showBootstrapModal('Error', 'Gudang Asal harus dipilih', 'error');
         } else {
             $.ajax({
                 type: "post",
@@ -219,15 +219,15 @@ Input Antar Gudang
                 dataType: "json",
                 success: function(response) {
                     if (response.error1) {
-                        Swal.fire('Error', response.error1, 'error');
+                        showBootstrapModal('Error', response.error1, 'error');
                         kosong();
                     }
                     if (response.error2) {
-                        Swal.fire('Error', response.error2, 'error');
+                        showBootstrapModal('Error', response.error2, 'error');
                         kosong();
                     }
                     if (response.sukses) {
-                        Swal.fire('Berhasil', response.sukses, 'success');
+                        showBootstrapModal('Berhasil', response.sukses, 'success');
                         tampilDataTemp();
                         kosong();
                     }
@@ -244,10 +244,10 @@ Input Antar Gudang
         let kodebarang = $('#kodebarang').val();
         let idgudang = $('#gudang').val();
         if (kodebarang.length == 0) {
-            Swal.fire('Error', 'Kode item harus dipilih', 'error');
+            showBootstrapModal('Error', 'Kode item harus dipilih', 'error');
             kosong();
         } else if (!idgudang) {
-            Swal.fire('Error', 'Pilih Gudang Asal dulu', 'error');
+            showBootstrapModal('Error', 'Pilih Gudang Asal dulu', 'error');
         } else {
             $.ajax({
                 type: "post",
@@ -262,7 +262,7 @@ Input Antar Gudang
                 dataType: "json",
                 success: function(response) {
                     if (response.error) {
-                        Swal.fire('Error', response.error, 'error');
+                        showBootstrapModal('Error', response.error, 'error');
                         kosong();
                     }
 
@@ -365,7 +365,7 @@ Input Antar Gudang
             let permintaan = $('#permintaan').val();
 
             if (permintaan.length == 0) {
-                Swal.fire({
+                showBootstrapModal({
                     title: 'Pesan',
                     icon: 'warning',
                     text: 'Maaf No Surat Jalan tidak boleh kosong'
@@ -382,7 +382,7 @@ Input Antar Gudang
                     dataType: "json",
                     success: function(response) {
                         if (response.error) {
-                            Swal.fire({
+                            showBootstrapModal({
                                 title: 'Error',
                                 icon: 'error',
                                 text: response.error
@@ -391,7 +391,7 @@ Input Antar Gudang
                         }
 
                         if (response.sukses) {
-                            Swal.fire({
+                            showBootstrapModal({
                                 title: 'Berhasil',
                                 icon: 'success',
                                 text: response.sukses

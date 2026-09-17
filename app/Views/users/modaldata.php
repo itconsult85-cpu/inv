@@ -105,8 +105,8 @@
                          $('.errorEditTelp').html(err.errTelp);
                      }
                  } else if (response.sukses) {
-                     // Menampilkan pesan sukses dengan Swal.fire
-                     Swal.fire({
+                     // Menampilkan pesan sukses dengan showBootstrapModal
+                     showBootstrapModal({
                          icon: 'success',
                          title: 'Update Data',
                          text: response.sukses
@@ -123,7 +123,7 @@
      }
 
      function hapus(id, nama) {
-         Swal.fire({
+         showBootstrapModal({
              title: 'Hapus User ?',
              text: "Yakin menghapus Data User dengan nama" + nama + "?",
              icon: 'warning',
@@ -143,7 +143,7 @@
                      dataType: "json",
                      success: function(response) {
                          if (response.sukses) {
-                             Swal.fire({
+                             showBootstrapModal({
                                  icon: 'success',
                                  title: 'Hapus data',
                                  text: response.sukses
@@ -151,7 +151,7 @@
 
                              listDataUser();
                          } else if (response.error) {
-                             Swal.fire({
+                             showBootstrapModal({
                                  icon: 'error',
                                  title: 'Gagal',
                                  text: response.error

@@ -234,7 +234,7 @@ $formatTanggalInput = static function ($value): string {
     $(document).on('click', '.btn-hapus-riwayat', function() {
         const rencanaId = $(this).data('id');
 
-        Swal.fire({
+        showBootstrapModal({
             title: 'Hapus item pengiriman ini?',
             text: 'Stok akan dikembalikan dan qty di permintaan ini bakal balik jadi belum terkirim.',
             icon: 'warning',
@@ -249,13 +249,13 @@ $formatTanggalInput = static function ($value): string {
                 rencana_id: rencanaId
             }, function(response) {
                 if (response.error) {
-                    Swal.fire('Error', response.error, 'error');
+                    showBootstrapModal('Error', response.error, 'error');
                     return;
                 }
 
-                Swal.fire('Berhasil', response.sukses, 'success').then(() => location.reload());
+                showBootstrapModal('Berhasil', response.sukses, 'success').then(() => location.reload());
             }, 'json').fail(function(xhr) {
-                Swal.fire('Error', xhr.responseJSON?.error || 'Gagal menghapus riwayat pengiriman', 'error');
+                showBootstrapModal('Error', xhr.responseJSON?.error || 'Gagal menghapus riwayat pengiriman', 'error');
             });
         });
     });
@@ -269,14 +269,14 @@ $formatTanggalInput = static function ($value): string {
         }, function(response) {
             const daftarPo = response.data || [];
             if (daftarPo.length === 0) {
-                Swal.fire('Tidak bisa dipisahkan', 'Tidak ada PO lain milik pelanggan ini yang sudah memiliki item ' + kodeProduk + '.', 'info');
+                showBootstrapModal('Tidak bisa dipisahkan', 'Tidak ada PO lain milik pelanggan ini yang sudah memiliki item ' + kodeProduk + '.', 'info');
                 return;
             }
 
             const safeNoPoLama = $('<div>').text(noPoLama).html();
             const opsiPo = daftarPo.map(po => `<option value="${$('<div>').text(po.nopo).html()}">${$('<div>').text(po.nopo).html()}</option>`).join('');
 
-            Swal.fire({
+            showBootstrapModal({
                 title: 'Pisahkan ke PO yang sudah ada',
                 html: `
                     <div class="text-left">
@@ -341,17 +341,17 @@ $formatTanggalInput = static function ($value): string {
                     no_do_baru: result.value.no_do_baru
                 }, function(response) {
                     if (response.error) {
-                        return Swal.fire('Tidak dapat memisahkan PO', response.error, 'error');
+                        return showBootstrapModal('Tidak dapat memisahkan PO', response.error, 'error');
                     }
 
-                    Swal.fire({
+                    showBootstrapModal({
                         title: 'PO berhasil dipisahkan',
                         html: 'PO tujuan: <b>' + response.no_po_tujuan + '</b><br>' +
                             'No Surat Jalan: <b>' + response.no_do_baru + '</b>',
                         icon: 'success'
                     }).then(() => location.reload());
                 }, 'json').fail(function(xhr) {
-                    Swal.fire('Error', xhr.responseJSON?.error || 'Pemisahan PO gagal diproses', 'error');
+                    showBootstrapModal('Error', xhr.responseJSON?.error || 'Pemisahan PO gagal diproses', 'error');
                 });
             });
         }, 'json');
@@ -432,7 +432,7 @@ $formatTanggalInput = static function ($value): string {
             return;
         }
 
-        Swal.fire({
+        showBootstrapModal({
             title: 'Hapus item ini?',
             text: 'Sisa qty yang belum terkirim untuk produk ini akan dibatalkan/dihapus dari permintaan.',
             icon: 'warning',
@@ -447,13 +447,13 @@ $formatTanggalInput = static function ($value): string {
                 detail_id: detailId
             }, function(response) {
                 if (response.error) {
-                    Swal.fire('Gagal', response.error, 'error');
+                    showBootstrapModal('Gagal', response.error, 'error');
                     return;
                 }
 
-                Swal.fire('Berhasil', response.sukses, 'success').then(() => location.reload());
+                showBootstrapModal('Berhasil', response.sukses, 'success').then(() => location.reload());
             }, 'json').fail(function(xhr) {
-                Swal.fire('Gagal', xhr.responseJSON?.error || 'Item gagal dihapus', 'error');
+                showBootstrapModal('Gagal', xhr.responseJSON?.error || 'Item gagal dihapus', 'error');
             });
         });
     });
@@ -490,7 +490,7 @@ $formatTanggalInput = static function ($value): string {
             detail_id: detailId,
             idpelanggan: $opt.data('idpel') || ''
         }, function(response) {
-            if (response.error) Swal.fire('Error', response.error, 'error');
+            if (response.error) showBootstrapModal('Error', response.error, 'error');
         }, 'json');
 
         $.post('/permintaanPengiriman/updateDetailTanggalPo', {
@@ -499,7 +499,7 @@ $formatTanggalInput = static function ($value): string {
             tanggal_po: formatTanggalServer(tglpo),
             no_po: dipilih
         }, function(response) {
-            if (response.error) Swal.fire('Error', response.error, 'error');
+            if (response.error) showBootstrapModal('Error', response.error, 'error');
         }, 'json');
     });
 
@@ -553,7 +553,7 @@ $formatTanggalInput = static function ($value): string {
             kodebarang: kode
         }, function(response) {
             if (response.error) {
-                Swal.fire('Error', response.error, 'error');
+                showBootstrapModal('Error', response.error, 'error');
                 return;
             }
 
@@ -602,12 +602,12 @@ $formatTanggalInput = static function ($value): string {
         const idPelanggan = $poOpt ? ($poOpt.data('idpel') || '') : '';
 
         if (!kodeProduk) {
-            Swal.fire('Error', 'Klik produk dari tabel atau cari produk terlebih dahulu', 'error');
+            showBootstrapModal('Error', 'Klik produk dari tabel atau cari produk terlebih dahulu', 'error');
             return;
         }
 
         if (!noPo) {
-            Swal.fire('Error', 'Pilih No. PO untuk produk ini terlebih dahulu', 'error');
+            showBootstrapModal('Error', 'Pilih No. PO untuk produk ini terlebih dahulu', 'error');
             return;
         }
 
@@ -623,8 +623,8 @@ $formatTanggalInput = static function ($value): string {
             tanggal_pengiriman: $('#tanggalPengiriman').val(),
             idpelanggan: idPelanggan
         }, function(response) {
-            if (response.error) return Swal.fire('Error', response.error, 'error');
-            Swal.fire('Berhasil', response.sukses, 'success').then(() => location.reload());
+            if (response.error) return showBootstrapModal('Error', response.error, 'error');
+            showBootstrapModal('Berhasil', response.sukses, 'success').then(() => location.reload());
         }, 'json');
     });
 
@@ -636,7 +636,7 @@ $formatTanggalInput = static function ($value): string {
             value: $(this).data('field') === 'tanggal_po' ? formatTanggalServer($(this).val()) : $(this).val()
         }, function(response) {
             if (response.error) {
-                Swal.fire('Error', response.error, 'error');
+                showBootstrapModal('Error', response.error, 'error');
             }
         }, 'json');
     });
@@ -648,7 +648,7 @@ $formatTanggalInput = static function ($value): string {
             tanggal_pengiriman: $(this).val()
         }, function(response) {
             if (response.error) {
-                Swal.fire('Error', response.error, 'error');
+                showBootstrapModal('Error', response.error, 'error');
             }
         }, 'json');
     });
@@ -660,7 +660,7 @@ $formatTanggalInput = static function ($value): string {
     $(document).on('click', '#kirimProduk', function(e) {
         e.preventDefault();
 
-        Swal.fire({
+        showBootstrapModal({
             title: 'Kirim produk?',
             text: 'Pastikan Tanggal Pengiriman, No. PO dan No Surat Jalan sudah diisi.',
             icon: 'question',
@@ -675,8 +675,8 @@ $formatTanggalInput = static function ($value): string {
                 permintaan_id: $('#permintaanId').val(),
                 tanggal_pengiriman: $('#tanggalPengiriman').val()
             }, function(response) {
-                if (response.error) return Swal.fire('Error', response.error, 'error');
-                Swal.fire('Berhasil', response.sukses, 'success').then(() => location.href = '/barangkeluar/data#riwayat');
+                if (response.error) return showBootstrapModal('Error', response.error, 'error');
+                showBootstrapModal('Berhasil', response.sukses, 'success').then(() => location.href = '/barangkeluar/data#riwayat');
             }, 'json');
         });
     });

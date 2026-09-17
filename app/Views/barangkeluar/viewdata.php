@@ -833,7 +833,7 @@ Pengiriman
     }
 
     function hapusPengiriman(id) {
-        Swal.fire({
+        showBootstrapModal({
             title: 'Hapus Permintaan?',
             icon: 'warning',
             showCancelButton: true,
@@ -845,7 +845,7 @@ Pengiriman
                 [csrfToken]: csrfHash,
                 id: id
             }, function(response) {
-                Swal.fire('Berhasil', response.sukses, 'success');
+                showBootstrapModal('Berhasil', response.sukses, 'success');
                 tablePermintaan.ajax.reload();
                 tableDaftar.ajax.reload();
             }, 'json');
@@ -862,7 +862,7 @@ Pengiriman
     }
 
     function editDokumenPengiriman(noDoHash) {
-        Swal.fire({
+        showBootstrapModal({
             title: 'Memuat dokumen...',
             allowOutsideClick: false,
             didOpen: () => Swal.showLoading()
@@ -878,13 +878,13 @@ Pengiriman
             dataType: 'json',
             success: function(response) {
                 if (response.error) {
-                    Swal.fire('Gagal', response.error, 'error');
+                    showBootstrapModal('Gagal', response.error, 'error');
                     return;
                 }
 
                 const daftarItem = response.data || [];
                 if (daftarItem.length === 0) {
-                    Swal.fire('Gagal', 'Data dokumen pengiriman tidak ditemukan.', 'error');
+                    showBootstrapModal('Gagal', 'Data dokumen pengiriman tidak ditemukan.', 'error');
                     return;
                 }
 
@@ -924,7 +924,7 @@ Pengiriman
                     </div>
                 `;
 
-                Swal.fire({
+                showBootstrapModal({
                     title: 'Dokumen BTB',
                     html: `
                         <div class="text-left">
@@ -1034,7 +1034,7 @@ Pengiriman
                         $('#btnSimpanBtb').on('click', function() {
                             const ids = idTerpilih();
                             if (ids.length === 0) {
-                                Swal.fire('Gagal', 'Pilih minimal 1 item.', 'error');
+                                showBootstrapModal('Gagal', 'Pilih minimal 1 item.', 'error');
                                 return;
                             }
 
@@ -1060,17 +1060,17 @@ Pengiriman
                                 contentType: false,
                                 success: function(saveResponse) {
                                     if (saveResponse.error) {
-                                        Swal.fire('Gagal', saveResponse.error, 'error').then(() => editDokumenPengiriman(noDoHash));
+                                        showBootstrapModal('Gagal', saveResponse.error, 'error').then(() => editDokumenPengiriman(noDoHash));
                                         return;
                                     }
 
                                     if (tableDaftar) tableDaftar.ajax.reload(null, false);
                                     if (tableRiwayat) tableRiwayat.ajax.reload(null, false);
 
-                                    Swal.fire('Berhasil', saveResponse.sukses, 'success').then(() => editDokumenPengiriman(noDoHash));
+                                    showBootstrapModal('Berhasil', saveResponse.sukses, 'success').then(() => editDokumenPengiriman(noDoHash));
                                 },
                                 error: function(xhr, ajaxOptions, thrownError) {
-                                    Swal.fire('Gagal', xhr.status + ' ' + thrownError, 'error').then(() => editDokumenPengiriman(noDoHash));
+                                    showBootstrapModal('Gagal', xhr.status + ' ' + thrownError, 'error').then(() => editDokumenPengiriman(noDoHash));
                                 }
                             });
                         });
@@ -1078,11 +1078,11 @@ Pengiriman
                         $('#btnHapusBtb').on('click', function() {
                             const ids = idTerpilih();
                             if (ids.length === 0) {
-                                Swal.fire('Gagal', 'Pilih minimal 1 item.', 'error');
+                                showBootstrapModal('Gagal', 'Pilih minimal 1 item.', 'error');
                                 return;
                             }
 
-                            Swal.fire({
+                            showBootstrapModal({
                                 title: 'Hapus Dokumen BTB?',
                                 text: 'No BTB & file BTB untuk ' + ids.length + ' item terpilih akan dihapus.',
                                 icon: 'warning',
@@ -1100,14 +1100,14 @@ Pengiriman
 
                                 $.post('/barangkeluar/hapus-dokumen-pengiriman', dataHapus, function(hapusResponse) {
                                     if (hapusResponse.error) {
-                                        Swal.fire('Gagal', hapusResponse.error, 'error');
+                                        showBootstrapModal('Gagal', hapusResponse.error, 'error');
                                         return;
                                     }
 
                                     if (tableDaftar) tableDaftar.ajax.reload(null, false);
                                     if (tableRiwayat) tableRiwayat.ajax.reload(null, false);
 
-                                    Swal.fire('Berhasil', hapusResponse.sukses, 'success').then(() => editDokumenPengiriman(noDoHash));
+                                    showBootstrapModal('Berhasil', hapusResponse.sukses, 'success').then(() => editDokumenPengiriman(noDoHash));
                                 }, 'json');
                             });
                         });
@@ -1115,7 +1115,7 @@ Pengiriman
                 });
             },
             error: function(xhr, ajaxOptions, thrownError) {
-                Swal.fire('Gagal', xhr.status + '\n' + thrownError, 'error');
+                showBootstrapModal('Gagal', xhr.status + '\n' + thrownError, 'error');
             }
         });
     }
@@ -1133,7 +1133,7 @@ Pengiriman
             .replace(/"/g, '&quot;')
             .replace(/'/g, '&#039;');
 
-        Swal.fire({
+        showBootstrapModal({
             title: 'Memuat data DO...',
             allowOutsideClick: false,
             didOpen: () => Swal.showLoading()
@@ -1145,7 +1145,7 @@ Pengiriman
             dataType: "json",
             success: function(response) {
                 if (response.error) {
-                    Swal.fire('Gagal', response.error, 'error');
+                    showBootstrapModal('Gagal', response.error, 'error');
                     return;
                 }
 
@@ -1159,7 +1159,7 @@ Pengiriman
                     </div>
                 `).join('');
 
-                Swal.fire({
+                showBootstrapModal({
                     title: 'Print Delivery Order',
                     html: `
                         <div class="text-left">
@@ -1236,13 +1236,13 @@ Pengiriman
                 });
             },
             error: function(xhr, ajaxOptions, thrownError) {
-                Swal.fire('Gagal', xhr.status + '\n' + thrownError, 'error');
+                showBootstrapModal('Gagal', xhr.status + '\n' + thrownError, 'error');
             }
         });
     }
 
     function hapusPengirimanLangsung(id) {
-        Swal.fire({
+        showBootstrapModal({
             title: 'Hapus Pengiriman?',
             text: "Stok yang tadi terkirim akan dikembalikan, dan surat jalannya ikut terhapus. Yakin dihapus?",
             icon: 'warning',
@@ -1262,10 +1262,10 @@ Pengiriman
                     dataType: "json",
                     success: function(response) {
                         if (response.error) {
-                            Swal.fire('Gagal', response.error, 'error');
+                            showBootstrapModal('Gagal', response.error, 'error');
                             return;
                         }
-                        Swal.fire('Berhasil', response.sukses, 'success');
+                        showBootstrapModal('Berhasil', response.sukses, 'success');
                         tableDaftar.ajax.reload();
                         tableRiwayat.ajax.reload();
                     },
@@ -1278,7 +1278,7 @@ Pengiriman
     }
 
     function hapusSuratJalan(hash) {
-        Swal.fire({
+        showBootstrapModal({
             title: 'Hapus Surat Jalan ini?',
             text: "Cuma surat jalan ini yang dihapus & stoknya dikembalikan -- surat jalan lain dalam sesi input yang sama (kalau ada) tidak ikut terhapus. Yakin dihapus?",
             icon: 'warning',
@@ -1298,10 +1298,10 @@ Pengiriman
                     dataType: "json",
                     success: function(response) {
                         if (response.error) {
-                            Swal.fire('Gagal', response.error, 'error');
+                            showBootstrapModal('Gagal', response.error, 'error');
                             return;
                         }
-                        Swal.fire('Berhasil', response.sukses, 'success');
+                        showBootstrapModal('Berhasil', response.sukses, 'success');
                         tableDaftar.ajax.reload();
                         tableRiwayat.ajax.reload();
                     },

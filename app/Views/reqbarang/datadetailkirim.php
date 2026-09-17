@@ -98,7 +98,7 @@
 
 <script>
     function hapusItem(id) {
-        Swal.fire({
+        showBootstrapModal({
             title: 'Hapus Item ?',
             text: "Yakin item ini dihapus ?",
             icon: 'warning',
@@ -118,7 +118,7 @@
                     dataType: "json",
                     success: function(response) {
                         if (response.sukses) {
-                            Swal.fire('Berhasil', response.sukses, 'success').then((result) => {
+                            showBootstrapModal('Berhasil', response.sukses, 'success').then((result) => {
                                 if (result.isConfirmed) {
                                     window.location.reload();
                                     $('#kodebarang').prop('readonly', false);

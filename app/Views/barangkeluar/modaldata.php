@@ -110,7 +110,7 @@
 
     function pilih(id, napel, nama, gudangPelanggan) {
         if (!gudangPelanggan) {
-            Swal.fire(
+            showBootstrapModal(
                 'Gudang belum ditentukan',
                 'Silakan tentukan gudang pelanggan pada menu Pelanggan terlebih dahulu.',
                 'warning'

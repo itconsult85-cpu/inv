@@ -155,7 +155,7 @@ Data Produksi
         window.location.href = ('/produksi/edit/') + hashProduksi;
     }
     function hapusProduksi(produksiProdukId) {
-        Swal.fire({
+        showBootstrapModal({
             title: 'Hapus Data Produksi',
             text: "Stok material yang tadi dipakai akan dikembalikan, dan stok produk hasil produksi ini akan dikurangi lagi. Yakin hapus?",
             icon: 'warning',
@@ -175,10 +175,10 @@ Data Produksi
                     dataType: "json",
                     success: function(response) {
                         if (response.sukses) {
-                            Swal.fire('Berhasil', response.sukses, 'success');
+                            showBootstrapModal('Berhasil', response.sukses, 'success');
                             table.ajax.reload();
                         } else if (response.error) {
-                            Swal.fire('Gagal', response.error, 'error');
+                            showBootstrapModal('Gagal', response.error, 'error');
                         }
                     },
                     error: function(xhr, ajaxOptions, thrownError) {

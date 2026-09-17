@@ -498,7 +498,7 @@ Ubah PO
 
     function guardPoEditLocked() {
         if (poEditLocked) {
-            Swal.fire('PO Terkunci', 'PO sudah dipakai transaksi lanjutan sehingga tidak bisa diedit.', 'warning');
+            showBootstrapModal('PO Terkunci', 'PO sudah dipakai transaksi lanjutan sehingga tidak bisa diedit.', 'warning');
             return true;
         }
         return false;
@@ -572,7 +572,7 @@ Ubah PO
             return;
         }
 
-        Swal.fire('Request Gagal', message, 'warning');
+        showBootstrapModal('Request Gagal', message, 'warning');
     }
 
     function kosong() {
@@ -594,7 +594,7 @@ Ubah PO
         let kodebarang = $('#kodebarang').val();
         let harga = $('#harga').val();
         if (kodebarang.length == 0) {
-            Swal.fire('Error', 'Kode Barang harus di inputkan', 'error');
+            showBootstrapModal('Error', 'Kode Barang harus di inputkan', 'error');
             kosong();
         } else {
             $.ajax({
@@ -608,7 +608,7 @@ Ubah PO
                 dataType: "json",
                 success: function(response) {
                     if (response.error) {
-                        Swal.fire('Error', response.error, 'error');
+                        showBootstrapModal('Error', response.error, 'error');
                         kosong();
                     }
 
@@ -708,12 +708,12 @@ Ubah PO
         let invoiceAwal = $('#invoice_awal').val();
 
         if (kodebarang.length == 0) {
-            Swal.fire('Error', 'Kode Barang harus di inputkan', 'error');
+            showBootstrapModal('Error', 'Kode Barang harus di inputkan', 'error');
             kosong();
         } else if (parseFloat(terkirimAwal || 0) > parseFloat(jml || 0)) {
-            Swal.fire('Error', 'Qty terkirim tidak boleh lebih besar dari Qty PO item.', 'error');
+            showBootstrapModal('Error', 'Qty terkirim tidak boleh lebih besar dari Qty PO item.', 'error');
         } else if (parseFloat(invoiceAwal || 0) > (parseFloat(terkirimAwal || 0) * parseFloat(harga || 0))) {
-            Swal.fire('Error', 'Nilai sudah ditagihkan tidak boleh lebih besar dari QTY terkirim dikali harga satuan.', 'error');
+            showBootstrapModal('Error', 'Nilai sudah ditagihkan tidak boleh lebih besar dari QTY terkirim dikali harga satuan.', 'error');
         } else {
             $.ajax({
                 type: "post",
@@ -734,11 +734,11 @@ Ubah PO
                 dataType: "json",
                 success: function(response) {
                     if (response.error) {
-                        Swal.fire('Error', response.error, 'error');
+                        showBootstrapModal('Error', response.error, 'error');
                         kosong();
                     }
                     if (response.sukses) {
-                        Swal.fire('Berhasil', response.sukses, 'success');
+                        showBootstrapModal('Berhasil', response.sukses, 'success');
                         tampilDataDetail();
                         ambilTotalBerat();
                         kosong();
@@ -824,7 +824,7 @@ Ubah PO
             e.preventDefault();
             const tanggalServer = formatTanggalServer($('#tanggalInputTampil').val());
             if (!/^\d{4}-\d{2}-\d{2}$/.test(tanggalServer)) {
-                Swal.fire('Error', 'Format tanggal harus dd-MM-YYYY', 'error');
+                showBootstrapModal('Error', 'Format tanggal harus dd-MM-YYYY', 'error');
                 return;
             }
             $.ajax({
@@ -838,7 +838,7 @@ Ubah PO
                 dataType: "json",
                 success: function(response) {
                     if (response.error) {
-                        Swal.fire('Error', response.error, 'error');
+                        showBootstrapModal('Error', response.error, 'error');
                         return;
                     }
                     $('#tglfaktur').val(tanggalServer);
@@ -847,7 +847,7 @@ Ubah PO
                     $('#editTanggalBtn').show();
                     $('#saveTanggalBtn').hide();
                     $('#cancelTanggalBtn').hide();
-                    Swal.fire('Berhasil', response.sukses, 'success');
+                    showBootstrapModal('Berhasil', response.sukses, 'success');
                     tampilDataDetail();
                 },
                 error: function(xhr, ajaxOptions, thrownError) {
@@ -893,7 +893,7 @@ Ubah PO
                 dataType: "json",
                 success: function(response) {
                     if (response.error) {
-                        Swal.fire('Error', response.error, 'error');
+                        showBootstrapModal('Error', response.error, 'error');
                         return;
                     }
 
@@ -903,7 +903,7 @@ Ubah PO
                     $('#editPelangganBtn').show();
                     $('#savePelangganBtn').hide();
                     $('#cancelPelangganBtn').hide();
-                    Swal.fire('Berhasil', response.sukses, 'success');
+                    showBootstrapModal('Berhasil', response.sukses, 'success');
                     tampilDataDetail();
                 },
                 error: function(xhr, ajaxOptions, thrownError) {
@@ -929,9 +929,9 @@ Ubah PO
                 dataType: "json",
                 success: function(response) {
                     if (response.error) {
-                        Swal.fire('Error', response.error, 'error');
+                        showBootstrapModal('Error', response.error, 'error');
                     } else {
-                        Swal.fire('Berhasil', response.sukses, 'success').then(() => {
+                        showBootstrapModal('Berhasil', response.sukses, 'success').then(() => {
                             // Update originalNopoSha1 with the new value
                             $('#originalNopoSha1').val(response.newNopoSha1);
                             const nextUrl = '/po/edit/' + response.newNopoSha1;
@@ -962,11 +962,11 @@ Ubah PO
             let editInvoiceAwal = $('#invoice_awal').val();
 
             if (parseFloat(editTerkirimAwal || 0) > parseFloat(editQty || 0)) {
-                Swal.fire('Error', 'Qty terkirim tidak boleh lebih besar dari Qty PO item.', 'error');
+                showBootstrapModal('Error', 'Qty terkirim tidak boleh lebih besar dari Qty PO item.', 'error');
                 return;
             }
             if (parseFloat(editInvoiceAwal || 0) > (parseFloat(editTerkirimAwal || 0) * parseFloat(editHarga || 0))) {
-                Swal.fire('Error', 'Nilai sudah ditagihkan tidak boleh lebih besar dari QTY terkirim dikali harga satuan.', 'error');
+                showBootstrapModal('Error', 'Nilai sudah ditagihkan tidak boleh lebih besar dari QTY terkirim dikali harga satuan.', 'error');
                 return;
             }
 
@@ -987,7 +987,7 @@ Ubah PO
                 dataType: "json",
                 success: function(response) {
                     if (response.error) {
-                        Swal.fire('Error', response.error, 'error');
+                        showBootstrapModal('Error', response.error, 'error');
                         tampilDataDetail();
                         ambilTotalBerat();
                         kosong();
@@ -996,7 +996,7 @@ Ubah PO
                         $('#tombolBatal').fadeOut();
                     }
                     if (response.sukses) {
-                        Swal.fire({
+                        showBootstrapModal({
                             'icon': 'success',
                             'title': 'Berhasil',
                             'text': response.sukses
@@ -1041,7 +1041,7 @@ Ubah PO
             });
 
             if (items.length === 0) {
-                Swal.fire('Tidak ada yang perlu ditutup', 'Tidak ada sisa qty yang perlu ditutup di PO ini.', 'info');
+                showBootstrapModal('Tidak ada yang perlu ditutup', 'Tidak ada sisa qty yang perlu ditutup di PO ini.', 'info');
                 return;
             }
 
@@ -1074,7 +1074,7 @@ Ubah PO
                     </div>
                 `).join('');
 
-                Swal.fire({
+                showBootstrapModal({
                     title: 'Close PO',
                     width: 650,
                     html: `
@@ -1135,18 +1135,18 @@ Ubah PO
                         items: result.value
                     }, function(closeResponse) {
                         if (closeResponse.error) {
-                            Swal.fire('Gagal', closeResponse.error, 'error');
+                            showBootstrapModal('Gagal', closeResponse.error, 'error');
                             return;
                         }
-                        Swal.fire('Berhasil', closeResponse.sukses, 'success');
+                        showBootstrapModal('Berhasil', closeResponse.sukses, 'success');
                         tampilDataDetail();
                         ambilTotalBerat();
                     }, 'json').fail(function(xhr) {
-                        Swal.fire('Gagal', xhr.responseJSON?.error || 'PO gagal ditutup.', 'error');
+                        showBootstrapModal('Gagal', xhr.responseJSON?.error || 'PO gagal ditutup.', 'error');
                     });
                 });
             }).fail(function(xhr) {
-                Swal.fire('Gagal', xhr.responseJSON?.error || 'Gagal memuat daftar PO tujuan.', 'error');
+                showBootstrapModal('Gagal', xhr.responseJSON?.error || 'Gagal memuat daftar PO tujuan.', 'error');
             });
         });
     });

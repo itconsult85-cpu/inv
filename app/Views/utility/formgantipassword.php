@@ -89,7 +89,7 @@ Form Ganti Password
                             $('#msg-confirmpassbaru').html('');
                         }
                     } else {
-                        Swal.fire({
+                        showBootstrapModal({
                             icon: 'success',
                             title: 'Ganti Password',
                             text: response.sukses,
