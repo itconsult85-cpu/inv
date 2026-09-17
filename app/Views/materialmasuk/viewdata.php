@@ -13,6 +13,12 @@ Data Material Masuk
 <?= $this->endSection('subjudul') ?>
 
 <?= $this->section('isi') ?>
+<?php if ($message = session()->getFlashdata('success')) : ?>
+    <div class="alert alert-success"><?= esc($message) ?></div>
+<?php endif ?>
+<?php if ($message = session()->getFlashdata('error')) : ?>
+    <div class="alert alert-danger"><?= esc($message) ?></div>
+<?php endif ?>
 <style>
     .mm-toolbar {
         align-items: flex-start;
@@ -513,6 +519,10 @@ Data Material Masuk
 
     function edit(faktur) {
         window.location.href = ('/materialmasuk/edit/') + faktur;
+    }
+
+    function returMaterial(faktur) {
+        window.location.href = ('/materialmasuk/retur/') + faktur;
     }
 </script>
 

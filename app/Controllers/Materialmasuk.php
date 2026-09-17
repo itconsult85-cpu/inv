@@ -184,8 +184,12 @@ class Materialmasuk extends BaseController
                     return $this->namaSupplierPerItem($db, $row->faktur);
                 })
                 ->add('aksi', function ($row) {
-                    return "<button type=\"button\" class=\"btn btn-sm btn-primary\" onclick=\"edit('" . sha1($row->faktur) . "')\"><i class=\"fa fa-edit\"></i></button>&nbsp
-                    <button type=\"button\" class=\"btn btn-sm btn-danger\" onclick=\"hapus('" . $row->faktur . "')\"><i class=\"fa fa-trash-alt\"></i></button>";
+                    $returButton = \App\Libraries\AccessControl::can('material.masuk.return_ng')
+                        ? "<button type=\"button\" class=\"btn btn-sm btn-warning\" title=\"Retur Material NG\" onclick=\"returMaterial('" . sha1($row->faktur) . "')\"><i class=\"fa fa-undo\"></i></button>&nbsp"
+                        : '';
+                    return "<button type=\"button\" class=\"btn btn-sm btn-primary\" onclick=\"edit('" . sha1($row->faktur) . "')\"><i class=\"fa fa-edit\"></i></button>&nbsp"
+                        . $returButton
+                        . "<button type=\"button\" class=\"btn btn-sm btn-danger\" onclick=\"hapus('" . $row->faktur . "')\"><i class=\"fa fa-trash-alt\"></i></button>";
                 })
                 ->format('totalberatmaterial', function ($value) {
                     return number_format($value, 2, ',', '.');
