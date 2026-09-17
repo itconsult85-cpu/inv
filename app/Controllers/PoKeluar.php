@@ -32,6 +32,13 @@ class PoKeluar extends BaseController
             ->findAll();
 
         foreach ($rows as &$row) {
+            if (strtoupper((string) ($row['status'] ?? '')) === 'NG') {
+                $this->refreshStatusAfterReplacement((int) $row['id']);
+                $freshRow = $this->poModel->find((int) $row['id']);
+                if ($freshRow) {
+                    $row = $freshRow;
+                }
+            }
             $row['status_penerimaan'] = $this->hitungStatusPenerimaan($row);
         }
 
