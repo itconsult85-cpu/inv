@@ -6,22 +6,60 @@ $canManage = \App\Libraries\AccessControl::can('master.stok_habis_pakai.manage_s
 $canRequest = \App\Libraries\AccessControl::can('master.stok_habis_pakai.request');
 $canApprove = \App\Libraries\AccessControl::can('master.stok_habis_pakai.approve') && in_array((int) session()->get('idlevel'), [1, 4, 5], true);
 $canReceive = \App\Libraries\AccessControl::can('master.stok_habis_pakai.receive');
-$pendingCount = count(array_filter($permintaan, static fn ($row) => ($row['status'] ?? '') === 'DIAJUKAN'));
+$pendingCount = count(array_filter($permintaan, static fn($row) => ($row['status'] ?? '') === 'DIAJUKAN'));
 ?>
 <link rel="stylesheet" href="<?= base_url() ?>/plugins/datatables-bs4/css/dataTables.bootstrap4.min.css">
 <script src="<?= base_url() ?>/plugins/datatables/jquery.dataTables.min.js"></script>
 <script src="<?= base_url() ?>/plugins/datatables-bs4/js/dataTables.bootstrap4.min.js"></script>
 <style>
-    .bhp-tabs { border-bottom: 2px solid #dee2e6; margin-bottom: 1.25rem; }
-    .bhp-tabs .nav-link { color: #495057; font-weight: 600; border: 0; border-bottom: 3px solid transparent; padding: .8rem 1rem; }
-    .bhp-tabs .nav-link:hover { color: #007bff; border-bottom-color: #b8daff; }
-    .bhp-tabs .nav-link.active { color: #007bff; background: transparent; border-bottom-color: #007bff; }
-    .bhp-tabs .badge { vertical-align: middle; }
-    .bhp-tab-card { border-top: 0; box-shadow: 0 2px 8px rgba(0,0,0,.06); }
-    .bhp-tab-card .card-header { background: #fff; }
+    .bhp-tabs {
+        border-bottom: 2px solid #dee2e6;
+        margin-bottom: 1.25rem;
+    }
+
+    .bhp-tabs .nav-link {
+        color: #495057;
+        font-weight: 600;
+        border: 0;
+        border-bottom: 3px solid transparent;
+        padding: .8rem 1rem;
+    }
+
+    .bhp-tabs .nav-link:hover {
+        color: #007bff;
+        border-bottom-color: #b8daff;
+    }
+
+    .bhp-tabs .nav-link.active {
+        color: #007bff;
+        background: transparent;
+        border-bottom-color: #007bff;
+    }
+
+    .bhp-tabs .badge {
+        vertical-align: middle;
+    }
+
+    .bhp-tab-card {
+        border-top: 0;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, .06);
+    }
+
+    .bhp-tab-card .card-header {
+        background: #fff;
+    }
+
     @media (max-width: 767.98px) {
-        .bhp-tabs { overflow-x: auto; flex-wrap: nowrap; white-space: nowrap; }
-        .bhp-tabs .nav-link { padding-left: .75rem; padding-right: .75rem; }
+        .bhp-tabs {
+            overflow-x: auto;
+            flex-wrap: nowrap;
+            white-space: nowrap;
+        }
+
+        .bhp-tabs .nav-link {
+            padding-left: .75rem;
+            padding-right: .75rem;
+        }
     }
 </style>
 <div class="card bhp-tab-card">
@@ -37,42 +75,310 @@ $pendingCount = count(array_filter($permintaan, static fn ($row) => ($row['statu
     <div class="card-body">
         <div class="tab-content" id="bhpTabsContent">
             <div class="tab-pane fade show active" id="tab-master" role="tabpanel" aria-labelledby="tab-master-link">
-                <div class="d-flex justify-content-between align-items-center mb-3"><div><h5 class="mb-1">Master Stok Barang Habis Pakai</h5><small class="text-muted">Kelola daftar perlengkapan produksi. Saldo stok hanya bertambah melalui Penerimaan Vendor.</small></div><?php if ($canManage): ?><button class="btn btn-primary btn-sm" data-toggle="modal" data-target="#modalStok"><i class="fas fa-plus"></i> Tambah Barang</button><?php endif; ?></div>
-                <div class="table-responsive"><table id="tabelStokBhp" class="table table-bordered table-striped table-hover" style="width:100%"><thead><tr><th>No</th><th>Kode</th><th>Nama Barang</th><th>Satuan</th><th>Stok</th><th>Minimum</th><th>Status</th><th>Aksi</th></tr></thead><tbody><?php foreach ($stok as $i => $item): ?><tr><td><?= $i + 1 ?></td><td><?= esc($item['kode']) ?></td><td><?= esc($item['nama']) ?></td><td><?= esc($item['satuan']) ?></td><td class="text-right <?= (float)$item['stok'] <= (float)$item['stok_minimum'] ? 'text-danger font-weight-bold' : '' ?>"><?= number_format((float)$item['stok'], 2, ',', '.') ?></td><td class="text-right"><?= number_format((float)$item['stok_minimum'], 2, ',', '.') ?></td><td><?= (float)$item['stok'] <= (float)$item['stok_minimum'] ? '<span class="badge badge-warning">Perlu Restok</span>' : '<span class="badge badge-success">Aman</span>' ?></td><td class="text-nowrap"><button type="button" class="btn btn-sm btn-outline-primary btnEditStok" data-id="<?= $item['id'] ?>" data-kode="<?= esc($item['kode'], 'attr') ?>" data-nama="<?= esc($item['nama'], 'attr') ?>" data-satuan="<?= esc($item['satuan'], 'attr') ?>" data-minimum="<?= (float) $item['stok_minimum'] ?>" title="Edit"><i class="fas fa-edit"></i></button> <button type="button" class="btn btn-sm btn-outline-danger btnNonaktifkanStok" data-id="<?= $item['id'] ?>" data-nama="<?= esc($item['nama'], 'attr') ?>" title="Nonaktifkan"><i class="fas fa-ban"></i></button></td></tr><?php endforeach; ?></tbody></table></div>
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div>
+                        <h5 class="mb-1">Master Stok Barang Habis Pakai</h5><small class="text-muted">Kelola daftar perlengkapan produksi. Saldo stok hanya bertambah melalui Penerimaan Vendor.</small>
+                    </div><?php if ($canManage): ?><button class="btn btn-primary btn-sm" data-toggle="modal" data-target="#modalStok"><i class="fas fa-plus"></i> Tambah Barang</button><?php endif; ?>
+                </div>
+                <div class="table-responsive">
+                    <table id="tabelStokBhp" class="table table-bordered table-striped table-hover" style="width:100%">
+                        <thead>
+                            <tr>
+                                <th>No</th>
+                                <th>Kode</th>
+                                <th>Nama Barang</th>
+                                <th>Satuan</th>
+                                <th>Stok</th>
+                                <th>Minimum</th>
+                                <th>Status</th>
+                                <th>Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody><?php foreach ($stok as $i => $item): ?><tr>
+                                    <td><?= $i + 1 ?></td>
+                                    <td><?= esc($item['kode']) ?></td>
+                                    <td><?= esc($item['nama']) ?></td>
+                                    <td><?= esc($item['satuan']) ?></td>
+                                    <td class="text-right <?= (float)$item['stok'] <= (float)$item['stok_minimum'] ? 'text-danger font-weight-bold' : '' ?>"><?= number_format((float)$item['stok'], 2, ',', '.') ?></td>
+                                    <td class="text-right"><?= number_format((float)$item['stok_minimum'], 2, ',', '.') ?></td>
+                                    <td><?= (float)$item['stok'] <= (float)$item['stok_minimum'] ? '<span class="badge badge-warning">Perlu Restok</span>' : '<span class="badge badge-success">Aman</span>' ?></td>
+                                    <td class="text-nowrap"><button type="button" class="btn btn-sm btn-outline-primary btnEditStok" data-id="<?= $item['id'] ?>" data-kode="<?= esc($item['kode'], 'attr') ?>" data-nama="<?= esc($item['nama'], 'attr') ?>" data-satuan="<?= esc($item['satuan'], 'attr') ?>" data-minimum="<?= (float) $item['stok_minimum'] ?>" title="Edit"><i class="fas fa-edit"></i></button> <button type="button" class="btn btn-sm btn-outline-danger btnNonaktifkanStok" data-id="<?= $item['id'] ?>" data-nama="<?= esc($item['nama'], 'attr') ?>" title="Nonaktifkan"><i class="fas fa-ban"></i></button></td>
+                                </tr><?php endforeach; ?></tbody>
+                    </table>
+                </div>
             </div>
-            <?php if ($canReceive): ?><div class="tab-pane fade" id="tab-receive" role="tabpanel" aria-labelledby="tab-receive-link"><div class="mb-3"><h5 class="mb-1">Penerimaan Barang dari Vendor</h5><small class="text-muted">Pilih PO barang habis pakai yang dikirim vendor. Nomor Invoice wajib diisi sebelum stok bertambah.</small></div><div class="table-responsive"><table id="tabelPenerimaanBhp" class="table table-bordered table-striped table-hover" style="width:100%"><thead><tr><th>No</th><th>PO</th><th>Vendor</th><th>Barang</th><th>Qty PO</th><th>Sudah Masuk</th><th>Sisa</th><th>Aksi</th></tr></thead><tbody><?php foreach ($poPenerimaan as $i => $row): ?><tr><td><?= $i+1 ?></td><td><?= esc($row['no_po']) ?><br><small><?= date('d-m-Y', strtotime($row['tgl_po'])) ?></small></td><td><?= esc($row['supplier_nama']) ?></td><td><?= esc($row['nama_item']) ?><br><small><?= esc($row['kode_item']) ?> (<?= esc($row['satuan']) ?>)</small></td><td class="text-right"><?= number_format((float)$row['qty_pesan'], 2, ',', '.') ?></td><td class="text-right"><?= number_format((float)$row['qty_masuk'], 2, ',', '.') ?></td><td class="text-right font-weight-bold"><?= number_format((float)$row['qty_pesan'] - (float)$row['qty_masuk'], 2, ',', '.') ?></td><td><button class="btn btn-primary btn-sm btnTerima" data-detail="<?= $row['po_detail_id'] ?>" data-item="<?= esc($row['nama_item']) ?>" data-sisa="<?= (float)$row['qty_pesan'] - (float)$row['qty_masuk'] ?>"><i class="fas fa-check"></i> Terima</button></td></tr><?php endforeach; ?></tbody></table></div></div><?php endif; ?>
-            <?php if ($canRequest): ?><div class="tab-pane fade" id="tab-request" role="tabpanel" aria-labelledby="tab-request-link"><div class="mb-3"><h5 class="mb-1">Ajukan Permintaan Stok</h5><small class="text-muted">Permintaan akan berstatus DIAJUKAN dan menunggu pemeriksaan serta persetujuan Supervisor.</small></div><form id="formPermintaan"><div class="form-row"><div class="form-group col-md-3"><label>Tanggal</label><input type="date" class="form-control" name="tanggal" value="<?= date('Y-m-d') ?>" readonly></div><div class="form-group col-md-9"><label>Catatan Produksi</label><input type="text" class="form-control" name="catatan" placeholder="Keperluan penggunaan barang..."></div></div><div class="table-responsive"><table class="table table-sm table-bordered"><thead><tr><th>Barang</th><th>Satuan</th><th>Stok Saat Ini</th><th width="180">Qty Diminta</th></tr></thead><tbody><?php foreach ($stok as $item): ?><tr><td><?= esc($item['nama']) ?><input type="hidden" name="stok_id[]" value="<?= $item['id'] ?>"></td><td><?= esc($item['satuan']) ?></td><td><?= number_format((float)$item['stok'], 2, ',', '.') ?></td><td><input type="number" class="form-control form-control-sm" name="qty[]" min="0" step="0.01" value="0"></td></tr><?php endforeach; ?></tbody></table></div><button class="btn btn-warning" type="submit"><i class="fas fa-paper-plane"></i> Ajukan Permintaan</button></form></div><?php endif; ?>
-            <?php if ($canApprove): ?><div class="tab-pane fade" id="tab-approval" role="tabpanel" aria-labelledby="tab-approval-link"><div class="mb-3"><h5 class="mb-1">Persetujuan Supervisor</h5><small class="text-muted">Periksa permintaan Produksi sebelum stok dikeluarkan.</small></div><?php if ($pendingCount > 0): ?><div class="alert alert-warning"><i class="fas fa-exclamation-circle mr-1"></i> Ada <strong><?= $pendingCount ?></strong> permintaan yang menunggu persetujuan.</div><?php endif; ?><div class="table-responsive"><table id="tabelPermintaanBhp" class="table table-bordered table-striped table-hover" style="width:100%"><thead><tr><th>No</th><th>Nomor</th><th>Tanggal</th><th>Peminta</th><th>Item</th><th>Status</th><th>Catatan</th><th>Aksi</th></tr></thead><tbody><?php foreach ($permintaan as $i => $row): ?><tr><td><?= $i+1 ?></td><td><?= esc($row['nomor']) ?></td><td><?= date('d-m-Y', strtotime($row['tanggal'])) ?></td><td><?= esc($row['peminta_id'] ?: '-') ?></td><td><?= (int)$row['jumlah_item'] ?></td><td><span class="badge badge-<?= $row['status']==='DISETUJUI'?'success':($row['status']==='DITOLAK'?'danger':'warning') ?>"><?= esc($row['status']) ?></span></td><td><?= esc($row['catatan'] ?: '-') ?></td><td><?php if ($row['status']==='DIAJUKAN'): ?><button class="btn btn-success btn-sm btnPersetujuan" data-url="<?= site_url('baranghabispakai/setujui/'.$row['id']) ?>">Setujui</button> <button class="btn btn-danger btn-sm btnPersetujuan" data-url="<?= site_url('baranghabispakai/tolak/'.$row['id']) ?>">Tolak</button><?php else: ?>-<?php endif; ?></td></tr><?php endforeach; ?></tbody></table></div></div><?php endif; ?>
-            <div class="tab-pane fade" id="tab-log" role="tabpanel" aria-labelledby="tab-log-link"><div class="mb-3"><h5 class="mb-1">Log Mutasi Stok</h5><small class="text-muted">Riwayat penambahan dan pengeluaran stok barang habis pakai.</small></div><div class="table-responsive"><table id="tabelLogBhp" class="table table-bordered table-striped table-hover" style="width:100%"><thead><tr><th>No</th><th>Waktu</th><th>Barang</th><th>Jenis</th><th>Qty</th><th>Sebelum</th><th>Sesudah</th><th>Catatan</th></tr></thead><tbody><?php foreach ($log as $i => $row): ?><tr><td><?= $i+1 ?></td><td><?= esc($row['created_at']) ?></td><td><?= esc(($row['kode'] ?? '') . ' - ' . ($row['nama'] ?? '')) ?></td><td><?= esc($row['jenis']) ?></td><td class="text-right"><?= number_format((float)$row['qty'], 2, ',', '.') ?> <?= esc($row['satuan'] ?? '') ?></td><td class="text-right"><?= number_format((float)$row['stok_sebelum'], 2, ',', '.') ?></td><td class="text-right"><?= number_format((float)$row['stok_sesudah'], 2, ',', '.') ?></td><td><?= esc($row['catatan'] ?: '-') ?></td></tr><?php endforeach; ?></tbody></table></div></div>
+            <?php if ($canReceive): ?><div class="tab-pane fade" id="tab-receive" role="tabpanel" aria-labelledby="tab-receive-link">
+                    <div class="mb-3">
+                        <h5 class="mb-1">Penerimaan Barang dari Vendor</h5><small class="text-muted">Pilih PO barang habis pakai yang dikirim vendor. Nomor Invoice wajib diisi sebelum stok bertambah.</small>
+                    </div>
+                    <div class="table-responsive">
+                        <table id="tabelPenerimaanBhp" class="table table-bordered table-striped table-hover" style="width:100%">
+                            <thead>
+                                <tr>
+                                    <th>No</th>
+                                    <th>PO</th>
+                                    <th>Vendor</th>
+                                    <th>Barang</th>
+                                    <th>Qty PO</th>
+                                    <th>Sudah Masuk</th>
+                                    <th>Sisa</th>
+                                    <th>Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody><?php foreach ($poPenerimaan as $i => $row): ?><tr>
+                                        <td><?= $i + 1 ?></td>
+                                        <td><?= esc($row['no_po']) ?><br><small><?= date('d-m-Y', strtotime($row['tgl_po'])) ?></small></td>
+                                        <td><?= esc($row['supplier_nama']) ?></td>
+                                        <td><?= esc($row['nama_item']) ?><br><small><?= esc($row['kode_item']) ?> (<?= esc($row['satuan']) ?>)</small></td>
+                                        <td class="text-right"><?= number_format((float)$row['qty_pesan'], 2, ',', '.') ?></td>
+                                        <td class="text-right"><?= number_format((float)$row['qty_masuk'], 2, ',', '.') ?></td>
+                                        <td class="text-right font-weight-bold"><?= number_format((float)$row['qty_pesan'] - (float)$row['qty_masuk'], 2, ',', '.') ?></td>
+                                        <td><button class="btn btn-primary btn-sm btnTerima" data-detail="<?= $row['po_detail_id'] ?>" data-item="<?= esc($row['nama_item']) ?>" data-sisa="<?= (float)$row['qty_pesan'] - (float)$row['qty_masuk'] ?>"><i class="fas fa-check"></i> Terima</button></td>
+                                    </tr><?php endforeach; ?></tbody>
+                        </table>
+                    </div>
+                </div><?php endif; ?>
+            <?php if ($canRequest): ?><div class="tab-pane fade" id="tab-request" role="tabpanel" aria-labelledby="tab-request-link">
+                    <div class="mb-3">
+                        <h5 class="mb-1">Ajukan Permintaan Stok</h5><small class="text-muted">Permintaan akan berstatus DIAJUKAN dan menunggu pemeriksaan serta persetujuan Supervisor.</small>
+                    </div>
+                    <form id="formPermintaan">
+                        <div class="form-row">
+                            <div class="form-group col-md-3"><label>Tanggal</label><input type="date" class="form-control" name="tanggal" value="<?= date('Y-m-d') ?>" readonly></div>
+                            <div class="form-group col-md-9"><label>Catatan Produksi</label><input type="text" class="form-control" name="catatan" placeholder="Keperluan penggunaan barang..."></div>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table table-sm table-bordered">
+                                <thead>
+                                    <tr>
+                                        <th>Barang</th>
+                                        <th>Satuan</th>
+                                        <th>Stok Saat Ini</th>
+                                        <th width="180">Qty Diminta</th>
+                                    </tr>
+                                </thead>
+                                <tbody><?php foreach ($stok as $item): ?><tr>
+                                            <td><?= esc($item['nama']) ?><input type="hidden" name="stok_id[]" value="<?= $item['id'] ?>"></td>
+                                            <td><?= esc($item['satuan']) ?></td>
+                                            <td><?= number_format((float)$item['stok'], 2, ',', '.') ?></td>
+                                            <td><input type="number" class="form-control form-control-sm" name="qty[]" min="0" step="0.01" value="0"></td>
+                                        </tr><?php endforeach; ?></tbody>
+                            </table>
+                        </div><button class="btn btn-warning" type="submit"><i class="fas fa-paper-plane"></i> Ajukan Permintaan</button>
+                    </form>
+                </div><?php endif; ?>
+            <?php if ($canApprove): ?><div class="tab-pane fade" id="tab-approval" role="tabpanel" aria-labelledby="tab-approval-link">
+                    <div class="mb-3">
+                        <h5 class="mb-1">Persetujuan Supervisor</h5><small class="text-muted">Periksa permintaan Produksi sebelum stok dikeluarkan.</small>
+                    </div><?php if ($pendingCount > 0): ?><div class="alert alert-warning"><i class="fas fa-exclamation-circle mr-1"></i> Ada <strong><?= $pendingCount ?></strong> permintaan yang menunggu persetujuan.</div><?php endif; ?><div class="table-responsive">
+                        <table id="tabelPermintaanBhp" class="table table-bordered table-striped table-hover" style="width:100%">
+                            <thead>
+                                <tr>
+                                    <th>No</th>
+                                    <th>Nomor</th>
+                                    <th>Tanggal</th>
+                                    <th>Peminta</th>
+                                    <th>Item</th>
+                                    <th>Status</th>
+                                    <th>Catatan</th>
+                                    <th>Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody><?php foreach ($permintaan as $i => $row): ?><tr>
+                                        <td><?= $i + 1 ?></td>
+                                        <td><?= esc($row['nomor']) ?></td>
+                                        <td><?= date('d-m-Y', strtotime($row['tanggal'])) ?></td>
+                                        <td><?= esc($row['peminta_id'] ?: '-') ?></td>
+                                        <td><?= (int)$row['jumlah_item'] ?></td>
+                                        <td><span class="badge badge-<?= $row['status'] === 'DISETUJUI' ? 'success' : ($row['status'] === 'DITOLAK' ? 'danger' : 'warning') ?>"><?= esc($row['status']) ?></span></td>
+                                        <td><?= esc($row['catatan'] ?: '-') ?></td>
+                                        <td><?php if ($row['status'] === 'DIAJUKAN'): ?><button class="btn btn-success btn-sm btnPersetujuan" data-url="<?= site_url('baranghabispakai/setujui/' . $row['id']) ?>">Setujui</button> <button class="btn btn-danger btn-sm btnPersetujuan" data-url="<?= site_url('baranghabispakai/tolak/' . $row['id']) ?>">Tolak</button><?php else: ?>-<?php endif; ?></td>
+                                    </tr><?php endforeach; ?></tbody>
+                        </table>
+                    </div>
+                </div><?php endif; ?>
+            <div class="tab-pane fade" id="tab-log" role="tabpanel" aria-labelledby="tab-log-link">
+                <div class="mb-3">
+                    <h5 class="mb-1">Log Mutasi Stok</h5><small class="text-muted">Riwayat penambahan dan pengeluaran stok barang habis pakai.</small>
+                </div>
+                <div class="table-responsive">
+                    <table id="tabelLogBhp" class="table table-bordered table-striped table-hover" style="width:100%">
+                        <thead>
+                            <tr>
+                                <th>No</th>
+                                <th>Waktu</th>
+                                <th>Barang</th>
+                                <th>Jenis</th>
+                                <th>Qty</th>
+                                <th>Sebelum</th>
+                                <th>Sesudah</th>
+                                <th>Catatan</th>
+                            </tr>
+                        </thead>
+                        <tbody><?php foreach ($log as $i => $row): ?><tr>
+                                    <td><?= $i + 1 ?></td>
+                                    <td><?= esc($row['created_at']) ?></td>
+                                    <td><?= esc(($row['kode'] ?? '') . ' - ' . ($row['nama'] ?? '')) ?></td>
+                                    <td><?= esc($row['jenis']) ?></td>
+                                    <td class="text-right"><?= number_format((float)$row['qty'], 2, ',', '.') ?> <?= esc($row['satuan'] ?? '') ?></td>
+                                    <td class="text-right"><?= number_format((float)$row['stok_sebelum'], 2, ',', '.') ?></td>
+                                    <td class="text-right"><?= number_format((float)$row['stok_sesudah'], 2, ',', '.') ?></td>
+                                    <td><?= esc($row['catatan'] ?: '-') ?></td>
+                                </tr><?php endforeach; ?></tbody>
+                    </table>
+                </div>
+            </div>
         </div>
     </div>
 </div>
-<?php if ($canManage): ?><div class="modal fade" id="modalStok"><div class="modal-dialog"><form class="modal-content ajaxForm" action="<?= site_url('baranghabispakai/simpanBarang') ?>"><div class="modal-header"><h5 class="modal-title">Tambah Barang Habis Pakai</h5><button type="button" class="close" data-dismiss="modal">&times;</button></div><div class="modal-body"><div class="form-group"><label>Kode Barang</label><input class="form-control" name="kode" maxlength="100" placeholder="Contoh: BHP-GPA-001"><small class="form-text text-muted">Boleh dikosongkan; sistem akan membuat kode otomatis.</small></div><div class="form-group"><label>Nama Barang</label><input class="form-control" name="nama" required></div><div class="form-group"><label>Satuan</label><input class="form-control" name="satuan" placeholder="pcs, liter, box" required></div><div class="form-group"><label>Stok Minimum</label><input type="number" step="0.01" min="0" class="form-control" name="stok_minimum" value="0"></div></div><div class="modal-footer"><button class="btn btn-primary">Simpan</button></div></form></div></div><div class="modal fade" id="modalEditStok"><div class="modal-dialog"><form class="modal-content" id="formEditStok"><div class="modal-header"><h5 class="modal-title">Edit Barang Habis Pakai</h5><button type="button" class="close" data-dismiss="modal">&times;</button></div><div class="modal-body"><input type="hidden" name="id" id="editStokId"><div class="form-group"><label>Kode Barang</label><input class="form-control" name="kode" id="editStokKode" maxlength="100" required></div><div class="form-group"><label>Nama Barang</label><input class="form-control" name="nama" id="editStokNama" required></div><div class="form-group"><label>Satuan</label><input class="form-control" name="satuan" id="editStokSatuan" required></div><div class="form-group"><label>Stok Minimum</label><input type="number" step="0.01" min="0" class="form-control" name="stok_minimum" id="editStokMinimum" required></div><small class="text-muted">Saldo stok aktual tidak diubah melalui form ini.</small></div><div class="modal-footer"><button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button><button class="btn btn-primary" type="submit">Simpan Perubahan</button></div></form></div></div><?php endif; ?>
+<?php if ($canManage): ?><div class="modal fade" id="modalStok">
+        <div class="modal-dialog">
+            <form class="modal-content ajaxForm" action="<?= site_url('baranghabispakai/simpanBarang') ?>">
+                <div class="modal-header">
+                    <h5 class="modal-title">Tambah Barang Habis Pakai</h5><button type="button" class="close" data-dismiss="modal">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group"><label>Kode Barang</label><input class="form-control" name="kode" maxlength="100" placeholder="Contoh: BHP-GPA-001"><small class="form-text text-muted">Boleh dikosongkan; sistem akan membuat kode otomatis.</small></div>
+                    <div class="form-group"><label>Nama Barang</label><input class="form-control" name="nama" required></div>
+                    <div class="form-group"><label>Satuan</label><input class="form-control" name="satuan" placeholder="pcs, liter, box" required></div>
+                    <div class="form-group"><label>Stok Minimum</label><input type="number" step="0.01" min="0" class="form-control" name="stok_minimum" value="0"></div>
+                </div>
+                <div class="modal-footer"><button class="btn btn-primary">Simpan</button></div>
+            </form>
+        </div>
+    </div>
+    <div class="modal fade" id="modalEditStok">
+        <div class="modal-dialog">
+            <form class="modal-content" id="formEditStok">
+                <div class="modal-header">
+                    <h5 class="modal-title">Edit Barang Habis Pakai</h5><button type="button" class="close" data-dismiss="modal">&times;</button>
+                </div>
+                <div class="modal-body"><input type="hidden" name="id" id="editStokId">
+                    <div class="form-group"><label>Kode Barang</label><input class="form-control" name="kode" id="editStokKode" maxlength="100" required></div>
+                    <div class="form-group"><label>Nama Barang</label><input class="form-control" name="nama" id="editStokNama" required></div>
+                    <div class="form-group"><label>Satuan</label><input class="form-control" name="satuan" id="editStokSatuan" required></div>
+                    <div class="form-group"><label>Stok Minimum</label><input type="number" step="0.01" min="0" class="form-control" name="stok_minimum" id="editStokMinimum" required></div><small class="text-muted">Saldo stok aktual tidak diubah melalui form ini.</small>
+                </div>
+                <div class="modal-footer"><button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button><button class="btn btn-primary" type="submit">Simpan Perubahan</button></div>
+            </form>
+        </div>
+    </div><?php endif; ?>
 <script>
-$(function(){
-  // Token CSRF diregenerasi setiap request oleh CodeIgniter.
-  // Semua operasi CRUD di halaman ini dikirim melalui AJAX, sehingga token
-  // harus dikirim lewat header dan diperbarui dari response terakhir.
-  let csrfHash = '<?= csrf_hash() ?>';
-  $.ajaxSetup({
-    beforeSend: function(xhr){
-      xhr.setRequestHeader('<?= config('Security')->headerName ?>', csrfHash);
-    },
-    complete: function(xhr){
-      const nextHash = xhr.getResponseHeader('<?= config('Security')->headerName ?>');
-      if (nextHash) csrfHash = nextHash;
-    }
-  });
-  const tables={};
-  $('#tabelStokBhp,#tabelPenerimaanBhp,#tabelPermintaanBhp,#tabelLogBhp').each(function(){tables[this.id]=$(this).DataTable({pageLength:10,lengthChange:false,order:[[0,'asc']],responsive:true});});
-  $(document).on('click','.btnEditStok',function(){const b=$(this);$('#editStokId').val(b.data('id'));$('#editStokKode').val(b.data('kode'));$('#editStokNama').val(b.data('nama'));$('#editStokSatuan').val(b.data('satuan'));$('#editStokMinimum').val(b.data('minimum'));$('#modalEditStok').modal('show');});
-  $('#formEditStok').on('submit',function(e){e.preventDefault();const f=$(this);$.post('<?= site_url('baranghabispakai/updateBarang') ?>',f.serialize(),function(r){if(r.error){Swal.fire('Gagal',r.error,'error');return;}Swal.fire('Berhasil',r.sukses,'success').then(()=>location.reload());},'json');});
-  $(document).on('click','.btnNonaktifkanStok',function(){const b=$(this);Swal.fire({title:'Nonaktifkan barang?',text:'Barang '+b.data('nama')+' tidak akan tampil untuk transaksi baru, tetapi histori tetap disimpan.',icon:'warning',showCancelButton:true,confirmButtonText:'Ya, Nonaktifkan',cancelButtonText:'Batal'}).then(function(result){if(!result.isConfirmed)return;$.post('<?= site_url('baranghabispakai/hapusBarang') ?>',{id:b.data('id')},function(r){if(r.error){Swal.fire('Gagal',r.error,'error');return;}Swal.fire('Berhasil',r.sukses,'success').then(()=>location.reload());},'json');});});
-  $('a[data-toggle="tab"]').on('shown.bs.tab',function(){ $.fn.dataTable.tables({visible:true,api:true}).columns.adjust().responsive.recalc(); });
-  $('.btnTerima').on('click',function(){const b=$(this);const qty=prompt('Qty diterima untuk '+b.data('item')+' (maksimal '+b.data('sisa')+'):',b.data('sisa'));if(qty===null)return;const invoice=prompt('Nomor Invoice vendor (wajib):','');if(invoice===null)return;const surat=prompt('Nomor Surat Jalan (opsional):','')||'';$.post('<?= site_url('baranghabispakai/terimaBarangVendor') ?>',{po_detail_id:b.data('detail'),qty_diterima:qty,nomor_invoice:invoice,nomor_surat_jalan:surat},function(r){if(r.error){Swal.fire('Gagal',r.error,'error');return;}Swal.fire('Berhasil',r.sukses,'success').then(()=>location.reload());},'json');});
-  $('.ajaxForm').on('submit',function(e){e.preventDefault();const f=$(this);$.post(f.attr('action'),f.serialize(),function(r){if(r.error){Swal.fire('Gagal',r.error,'error');return;}Swal.fire('Berhasil',r.sukses,'success').then(()=>location.reload());},'json');});
-  $('#formPermintaan').on('submit',function(e){e.preventDefault();$.post('<?= site_url('baranghabispakai/simpanPermintaan') ?>',$(this).serialize(),function(r){if(r.error){Swal.fire('Gagal',r.error,'error');return;}Swal.fire('Berhasil',r.sukses,'success').then(()=>location.reload());},'json');});
-  $('.btnPersetujuan').on('click',function(){const url=$(this).data('url');const note=prompt('Catatan Supervisor (opsional):','');if(note===null)return;$.post(url,{catatan:note},function(r){if(r.error){Swal.fire('Gagal',r.error,'error');return;}Swal.fire('Berhasil',r.sukses,'success').then(()=>location.reload());},'json');});
-});
+    $(function() {
+        const tables = {};
+        $('#tabelStokBhp,#tabelPenerimaanBhp,#tabelPermintaanBhp,#tabelLogBhp').each(function() {
+            tables[this.id] = $(this).DataTable({
+                pageLength: 10,
+                lengthChange: false,
+                order: [
+                    [0, 'asc']
+                ],
+                responsive: true
+            });
+        });
+        $(document).on('click', '.btnEditStok', function() {
+            const b = $(this);
+            $('#editStokId').val(b.data('id'));
+            $('#editStokKode').val(b.data('kode'));
+            $('#editStokNama').val(b.data('nama'));
+            $('#editStokSatuan').val(b.data('satuan'));
+            $('#editStokMinimum').val(b.data('minimum'));
+            $('#modalEditStok').modal('show');
+        });
+        $('#formEditStok').on('submit', function(e) {
+            e.preventDefault();
+            const f = $(this);
+            $.post('<?= site_url('baranghabispakai/updateBarang') ?>', f.serialize(), function(r) {
+                if (r.error) {
+                    Swal.fire('Gagal', r.error, 'error');
+                    return;
+                }
+                Swal.fire('Berhasil', r.sukses, 'success').then(() => location.reload());
+            }, 'json');
+        });
+        $(document).on('click', '.btnNonaktifkanStok', function() {
+            const b = $(this);
+            Swal.fire({
+                title: 'Nonaktifkan barang?',
+                text: 'Barang ' + b.data('nama') + ' tidak akan tampil untuk transaksi baru, tetapi histori tetap disimpan.',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Ya, Nonaktifkan',
+                cancelButtonText: 'Batal'
+            }).then(function(result) {
+                if (!result.isConfirmed) return;
+                $.post('<?= site_url('baranghabispakai/hapusBarang') ?>', {
+                    id: b.data('id')
+                }, function(r) {
+                    if (r.error) {
+                        Swal.fire('Gagal', r.error, 'error');
+                        return;
+                    }
+                    Swal.fire('Berhasil', r.sukses, 'success').then(() => location.reload());
+                }, 'json');
+            });
+        });
+        $('a[data-toggle="tab"]').on('shown.bs.tab', function() {
+            $.fn.dataTable.tables({
+                visible: true,
+                api: true
+            }).columns.adjust().responsive.recalc();
+        });
+        $('.btnTerima').on('click', function() {
+            const b = $(this);
+            const qty = prompt('Qty diterima untuk ' + b.data('item') + ' (maksimal ' + b.data('sisa') + '):', b.data('sisa'));
+            if (qty === null) return;
+            const invoice = prompt('Nomor Invoice vendor (wajib):', '');
+            if (invoice === null) return;
+            const surat = prompt('Nomor Surat Jalan (opsional):', '') || '';
+            $.post('<?= site_url('baranghabispakai/terimaBarangVendor') ?>', {
+                po_detail_id: b.data('detail'),
+                qty_diterima: qty,
+                nomor_invoice: invoice,
+                nomor_surat_jalan: surat
+            }, function(r) {
+                if (r.error) {
+                    Swal.fire('Gagal', r.error, 'error');
+                    return;
+                }
+                Swal.fire('Berhasil', r.sukses, 'success').then(() => location.reload());
+            }, 'json');
+        });
+        $('.ajaxForm').on('submit', function(e) {
+            e.preventDefault();
+            const f = $(this);
+            $.post(f.attr('action'), f.serialize(), function(r) {
+                if (r.error) {
+                    Swal.fire('Gagal', r.error, 'error');
+                    return;
+                }
+                Swal.fire('Berhasil', r.sukses, 'success').then(() => location.reload());
+            }, 'json');
+        });
+        $('#formPermintaan').on('submit', function(e) {
+            e.preventDefault();
+            $.post('<?= site_url('baranghabispakai/simpanPermintaan') ?>', $(this).serialize(), function(r) {
+                if (r.error) {
+                    Swal.fire('Gagal', r.error, 'error');
+                    return;
+                }
+                Swal.fire('Berhasil', r.sukses, 'success').then(() => location.reload());
+            }, 'json');
+        });
+        $('.btnPersetujuan').on('click', function() {
+            const url = $(this).data('url');
+            const note = prompt('Catatan Supervisor (opsional):', '');
+            if (note === null) return;
+            $.post(url, {
+                catatan: note
+            }, function(r) {
+                if (r.error) {
+                    Swal.fire('Gagal', r.error, 'error');
+                    return;
+                }
+                Swal.fire('Berhasil', r.sukses, 'success').then(() => location.reload());
+            }, 'json');
+        });
+    });
 </script>
 <?= $this->endSection('isi') ?>
