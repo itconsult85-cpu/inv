@@ -50,6 +50,19 @@ $pendingCount = count(array_filter($permintaan, static fn ($row) => ($row['statu
 <?php if ($canManage): ?><div class="modal fade" id="modalStok"><div class="modal-dialog"><form class="modal-content ajaxForm" action="<?= site_url('baranghabispakai/simpanBarang') ?>"><div class="modal-header"><h5 class="modal-title">Tambah Barang Habis Pakai</h5><button type="button" class="close" data-dismiss="modal">&times;</button></div><div class="modal-body"><div class="form-group"><label>Kode Barang</label><input class="form-control" name="kode" maxlength="100" placeholder="Contoh: BHP-GPA-001"><small class="form-text text-muted">Boleh dikosongkan; sistem akan membuat kode otomatis.</small></div><div class="form-group"><label>Nama Barang</label><input class="form-control" name="nama" required></div><div class="form-group"><label>Satuan</label><input class="form-control" name="satuan" placeholder="pcs, liter, box" required></div><div class="form-group"><label>Stok Minimum</label><input type="number" step="0.01" min="0" class="form-control" name="stok_minimum" value="0"></div></div><div class="modal-footer"><button class="btn btn-primary">Simpan</button></div></form></div></div><div class="modal fade" id="modalEditStok"><div class="modal-dialog"><form class="modal-content" id="formEditStok"><div class="modal-header"><h5 class="modal-title">Edit Barang Habis Pakai</h5><button type="button" class="close" data-dismiss="modal">&times;</button></div><div class="modal-body"><input type="hidden" name="id" id="editStokId"><div class="form-group"><label>Kode Barang</label><input class="form-control" name="kode" id="editStokKode" maxlength="100" required></div><div class="form-group"><label>Nama Barang</label><input class="form-control" name="nama" id="editStokNama" required></div><div class="form-group"><label>Satuan</label><input class="form-control" name="satuan" id="editStokSatuan" required></div><div class="form-group"><label>Stok Minimum</label><input type="number" step="0.01" min="0" class="form-control" name="stok_minimum" id="editStokMinimum" required></div><small class="text-muted">Saldo stok aktual tidak diubah melalui form ini.</small></div><div class="modal-footer"><button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button><button class="btn btn-primary" type="submit">Simpan Perubahan</button></div></form></div></div><?php endif; ?>
 <script>
 $(function(){
+  // Token CSRF diregenerasi setiap request oleh CodeIgniter.
+  // Semua operasi CRUD di halaman ini dikirim melalui AJAX, sehingga token
+  // harus dikirim lewat header dan diperbarui dari response terakhir.
+  let csrfHash = '<?= csrf_hash() ?>';
+  $.ajaxSetup({
+    beforeSend: function(xhr){
+      xhr.setRequestHeader('<?= config('Security')->headerName ?>', csrfHash);
+    },
+    complete: function(xhr){
+      const nextHash = xhr.getResponseHeader('<?= config('Security')->headerName ?>');
+      if (nextHash) csrfHash = nextHash;
+    }
+  });
   const tables={};
   $('#tabelStokBhp,#tabelPenerimaanBhp,#tabelPermintaanBhp,#tabelLogBhp').each(function(){tables[this.id]=$(this).DataTable({pageLength:10,lengthChange:false,order:[[0,'asc']],responsive:true});});
   $(document).on('click','.btnEditStok',function(){const b=$(this);$('#editStokId').val(b.data('id'));$('#editStokKode').val(b.data('kode'));$('#editStokNama').val(b.data('nama'));$('#editStokSatuan').val(b.data('satuan'));$('#editStokMinimum').val(b.data('minimum'));$('#modalEditStok').modal('show');});
