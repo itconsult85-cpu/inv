@@ -853,6 +853,14 @@ class Barangmasuk extends BaseController
         }
     }
 
+    /**
+     * Kompatibilitas untuk halaman lama yang masih memanggil /barangmasuk/store.
+     */
+    public function store()
+    {
+        return $this->selesaiTransaksi();
+    }
+
     private function detailError(string $message, ?object $model = null): string
     {
         $errors = $model && method_exists($model, 'errors') ? $model->errors() : [];

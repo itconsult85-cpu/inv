@@ -172,6 +172,7 @@ $routes->post('baranghabispakai/simpanPermintaan', 'BarangHabisPakai::simpanPerm
 $routes->post('baranghabispakai/setujui/(:num)', 'BarangHabisPakai::setujui/$1');
 $routes->post('baranghabispakai/tolak/(:num)', 'BarangHabisPakai::tolak/$1');
 $routes->get('barangmasuk/pilihanPoKeluarAktif', 'Barangmasuk::pilihanPoKeluarAktif');
+$routes->post('barangmasuk/store', 'Barangmasuk::store');
 
 $routes->post('cari-barang-masuk', 'BarangMasukController::cariBarangMasuk');
 
