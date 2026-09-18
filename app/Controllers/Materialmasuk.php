@@ -81,7 +81,9 @@ class Materialmasuk extends BaseController
     private function buatNomorMaterialMasuk(): string
     {
         do {
-            $nomor = 'MM-' . date('Ymd-His') . '-' . random_int(100, 999);
+            // materialmasuk.faktur dan detail_materialmasuk.detfaktur pada
+            // schema lama bertipe CHAR(20).
+            $nomor = 'MM-' . date('ymd-His') . '-' . random_int(100, 999);
         } while (db_connect()->table('materialmasuk')->where('faktur', $nomor)->countAllResults() > 0);
 
         return $nomor;
@@ -617,6 +619,10 @@ class Materialmasuk extends BaseController
                 $json = [
                     'error' => 'Maaf, data item untuk invoice ini belum ada'
                 ];
+            } elseif (strlen($nofaktur) > 20) {
+                $json = [
+                    'error' => "Nomor transaksi {$nofaktur} memiliki " . strlen($nofaktur) . " karakter, sedangkan kolom materialmasuk.faktur maksimal 20 karakter. Muat ulang halaman lalu tambahkan item kembali."
+                ];
             } else {
                 $db = db_connect();
                 if ($sumber === 'retur_ng') {
@@ -712,13 +718,6 @@ class Materialmasuk extends BaseController
                         'stok' => $row['detjml']
                     ];
 
-                    // Kredit qty_masuk ke PO Keluar asal item ini sendiri
-                    // (per baris), supaya 1 transaksi Material Masuk yang
-                    // isinya item dari beberapa PO Keluar berbeda tetap
-                    // kecatet dengan benar ke masing-masing PO-nya.
-                    if ($poKeluarIdItem) {
-                        (new PoKeluar())->terimaQty($poKeluarIdItem, 'material', (string) $row['detmatkode'], (float) $row['detjml']);
-                    }
                 }
 
                 if ($langkahGagal === null) {
@@ -741,6 +740,18 @@ class Materialmasuk extends BaseController
                     }
                 }
 
+                // Update PO hanya setelah header, detail, dan stok berhasil.
+                // Dengan urutan ini kegagalan tidak membuat PO atau stok
+                // terlihat berubah sementara header belum tersimpan.
+                if ($langkahGagal === null) {
+                    foreach ($dataTemp->getResultArray() as $row) {
+                        $poKeluarIdItem = (in_array($sumber, ['beli', 'retur_ng'], true) && !empty($row['po_keluar_id'])) ? (int) $row['po_keluar_id'] : null;
+                        if ($poKeluarIdItem) {
+                            (new PoKeluar())->terimaQty($poKeluarIdItem, 'material', (string) $row['detmatkode'], (float) $row['detjml']);
+                        }
+                    }
+                }
+
                 if ($langkahGagal === null && $sumber === 'retur_ng') {
                     foreach (array_keys($poKeluarIdPerItem) as $poId) {
                         (new PoKeluar())->refreshStatusAfterReplacement((int) $poId);
@@ -751,7 +762,11 @@ class Materialmasuk extends BaseController
                     $modelTemp->hapusData($nofaktur);
                 }
 
-                $db->transComplete();
+                if ($langkahGagal !== null) {
+                    $db->transRollback();
+                } else {
+                    $db->transComplete();
+                }
 
                 $persisted = $db->table('materialmasuk')->where('faktur', $nofaktur)->countAllResults() === 1
                     && $db->table('detail_materialmasuk')->where('detfaktur', $nofaktur)->countAllResults() > 0;

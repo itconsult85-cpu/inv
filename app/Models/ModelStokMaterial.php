@@ -41,13 +41,19 @@ class ModelStokMaterial extends Model
 
         // Update data jika ada data yang perlu diupdate
         if (!empty($updateData)) {
-            $this->updateBatch($updateData, 'id');
+            if (!$this->updateBatch($updateData, 'id')) {
+                return false;
+            }
         }
 
         // Insert data jika ada data yang perlu ditambahkan
         if (!empty($insertData)) {
-            $this->insertBatch($insertData);
+            if (!$this->insertBatch($insertData)) {
+                return false;
+            }
         }
+
+        return true;
     }
 
     public function getStokById($id)
