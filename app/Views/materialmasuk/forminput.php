@@ -234,6 +234,7 @@
 <script>
     let csrfToken = '<?= csrf_token() ?>';
     let csrfHash = '<?= csrf_hash() ?>';
+    let materialSaveInProgress = false;
     const supplierOptions = <?= json_encode(array_map(static function ($row) {
                                 return [
                                     'id' => (string) $row['supid'],
@@ -782,6 +783,9 @@
 
         $('#tombolSelesaiTransaksi').click(function(e) {
             e.preventDefault();
+            if (materialSaveInProgress) {
+                return;
+            }
             syncSupplierCombobox();
             syncPelangganCombobox();
             syncPoKeluarCombobox();
@@ -831,6 +835,8 @@
                     cancelButtonText: 'Tidak'
                 }).then((result) => {
                     if (result.isConfirmed) {
+                        materialSaveInProgress = true;
+                        $('#tombolSelesaiTransaksi').prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> Menyimpan...');
                         $.ajax({
                             type: "post",
                             url: "<?= site_url('materialmasuk/selesaiTransaksi') ?>",
@@ -855,6 +861,8 @@
                                         icon: 'error',
                                         text: response.error
                                     });
+                                    materialSaveInProgress = false;
+                                    $('#tombolSelesaiTransaksi').prop('disabled', false).html('<i class="fa fa-save"></i> Selesai Transaksi');
                                 }
 
                                 if (response.sukses) {
@@ -870,7 +878,13 @@
                                 }
                             },
                             error: function(xhr, ajaxOptions, thrownError) {
-                                showBootstrapModal('Error', xhr.status + '\n' + thrownError, 'error')
+                                showBootstrapModal({
+                                    title: 'Error',
+                                    icon: 'error',
+                                    text: (xhr.responseJSON && (xhr.responseJSON.error || xhr.responseJSON.message)) || (xhr.status + '\n' + thrownError)
+                                });
+                                materialSaveInProgress = false;
+                                $('#tombolSelesaiTransaksi').prop('disabled', false).html('<i class="fa fa-save"></i> Selesai Transaksi');
                             }
                         });
                     }

@@ -595,12 +595,18 @@ class Materialmasuk extends BaseController
             $nomorTransaksiTerpakai = db_connect()->table('materialmasuk')
                 ->where('faktur', $nofaktur)
                 ->countAllResults() > 0;
+            $nomorTransaksiSudahTersimpan = $nomorTransaksiTerpakai
+                && db_connect()->table('detail_materialmasuk')
+                    ->where('detfaktur', $nofaktur)
+                    ->countAllResults() > 0;
             $sumberNoDo = $this->cariPemakaianNoDo($noDo);
 
             if ($sumber !== 'adjustment' && $noDo === '') {
                 $json = ['error' => 'No Surat Jalan tidak boleh kosong'];
             } elseif ($invoiceTerpakai) {
                 $json = ['error' => "No. Invoice {$noInvoice} sudah digunakan"];
+            } elseif ($nomorTransaksiSudahTersimpan) {
+                $json = ['sukses' => 'Transaksi sudah tersimpan sebelumnya.'];
             } elseif ($nomorTransaksiTerpakai) {
                 $json = ['error' => 'Nomor transaksi internal sudah terpakai. Silakan refresh halaman lalu coba lagi.'];
             } elseif ($sumberNoDo !== null && $sumber !== 'retur_ng') {
@@ -661,7 +667,24 @@ class Materialmasuk extends BaseController
 
                 $okHeader = $modelMaterialMasuk->insert($headerData);
                 if ($okHeader === false) {
-                    $langkahGagal = 'header (' . implode(', ', $modelMaterialMasuk->errors() ?: [$db->error()['message'] ?? 'unknown']) . ')';
+                    $dbErrorMessage = (string) ($db->error()['message'] ?? '');
+                    $modelErrorMessage = implode(', ', $modelMaterialMasuk->errors() ?: []);
+                    $duplicateRetry = stripos($dbErrorMessage, 'Duplicate entry') !== false
+                        || stripos($modelErrorMessage, 'Duplicate entry') !== false;
+                    $existingHasDetails = $duplicateRetry
+                        && $db->table('detail_materialmasuk')->where('detfaktur', $nofaktur)->countAllResults() > 0;
+
+                    if ($existingHasDetails) {
+                        // Request sebelumnya sudah berhasil, tetapi response
+                        // mungkin terlambat/terputus sehingga browser mencoba
+                        // lagi. Anggap retry tersebut sukses dan jangan
+                        // mengulang pengurangan stok atau PO.
+                        $db->transRollback();
+                        echo json_encode(['sukses' => 'Transaksi sudah tersimpan sebelumnya.']);
+                        return;
+                    }
+
+                    $langkahGagal = 'header (' . ($modelErrorMessage !== '' ? $modelErrorMessage : ($dbErrorMessage !== '' ? $dbErrorMessage : 'unknown')) . ')';
                 }
 
                 $fieldDetail = [];
