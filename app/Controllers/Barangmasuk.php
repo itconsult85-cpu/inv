@@ -735,7 +735,7 @@ class Barangmasuk extends BaseController
 
                 $modelBarangMasuk = new Modelbarangmasuk();
 
-                $modelBarangMasuk->insert([
+                $headerData = [
                     'faktur' => $nofaktur,
                     'po_keluar_id' => $poKeluarId ?: null,
                     'sumber' => $sumberProduk,
@@ -744,7 +744,12 @@ class Barangmasuk extends BaseController
                     'gudang' => $gudang,
                     'qtymasuk' => $totalqtymasuk,
                     'totalberatbarang' => $totalberatbarang,
-                ]);
+                ];
+                if (!$modelBarangMasuk->insert($headerData)) {
+                    $db->transRollback();
+                    echo json_encode(['error' => $this->detailError('Header transaksi produk gagal disimpan.', $modelBarangMasuk)]);
+                    return;
+                }
 
                 $fieldDetail = [];
                 $fieldStok = [];
@@ -788,13 +793,21 @@ class Barangmasuk extends BaseController
                 // echo '</pre>';
                 // die();
                 $modelDetail = new Modeldetailbarangmasuk();
-                $modelDetail->insertBatch($fieldDetail);
+                if (!$modelDetail->insertBatch($fieldDetail)) {
+                    $db->transRollback();
+                    echo json_encode(['error' => $this->detailError('Detail transaksi produk gagal disimpan.', $modelDetail)]);
+                    return;
+                }
                 if ($sumberProduk === 'retur_ng' && $poKeluarId) {
                     (new PoKeluar())->refreshStatusAfterReplacement($poKeluarId);
                 }
 
                 $modelStok = new Modelstok();
-                $modelStok->updateOrInsertBatch($fieldStok);
+                if (!$modelStok->updateOrInsertBatch($fieldStok)) {
+                    $db->transRollback();
+                    echo json_encode(['error' => $this->detailError('Stok produk gagal diperbarui.', $modelStok)]);
+                    return;
+                }
 
                 if ($sumberProduk === 'produksi_pelanggan') {
                     $this->buatBatchProduksiMaterialPelanggan($tglfaktur, $gudang, $rowsTemp);
@@ -819,14 +832,26 @@ class Barangmasuk extends BaseController
                 // $pusher->trigger('my-channel', 'my-event', $data);
 
                 $json = $db->transStatus() === false
-                    ? ['error' => 'Transaksi Produk Masuk gagal disimpan. Tidak ada data yang diubah.']
-                    : ['sukses' => 'Transaksi Berhasil di Simpan'];
+                    ? ['error' => $this->detailError('Transaksi Produk Masuk gagal disimpan. Tidak ada data yang diubah.', null)]
+                    : ['sukses' => "Transaksi Produk Masuk berhasil disimpan dengan nomor {$nofaktur}.", 'nofaktur' => $nofaktur];
 
                 echo json_encode($json);
             }
         } else {
             exit('Maaf tidak bisa dipanggil');
         }
+    }
+
+    private function detailError(string $message, ?object $model = null): string
+    {
+        $errors = $model && method_exists($model, 'errors') ? $model->errors() : [];
+        $dbError = db_connect()->error();
+        $parts = array_filter([
+            $message,
+            !empty($errors) ? implode('; ', array_map('strval', $errors)) : null,
+            !empty($dbError['message']) ? 'Database: ' . $dbError['message'] : null,
+        ]);
+        return implode(' ', $parts);
     }
 
     function hapusTransaksi()

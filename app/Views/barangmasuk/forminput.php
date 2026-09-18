@@ -1217,26 +1217,32 @@
                             success: function(response) {
                                 if (response.error) {
                                     showBootstrapModal({
-                                        title: 'Error',
+                                        title: 'Transaksi tidak tersimpan',
                                         icon: 'error',
                                         text: response.error
                                     });
+                                    return;
                                 }
-
                                 if (response.sukses) {
                                     showBootstrapModal({
-                                        title: 'Berhasil',
+                                        title: 'Transaksi berhasil tersimpan',
                                         icon: 'success',
                                         text: response.sukses
-                                    }).then((result) => {
-                                        if (result.isConfirmed) {
-                                            window.location.reload();
-                                        }
-                                    })
+                                    }).then(() => window.location.reload());
+                                    return;
                                 }
+                                Swal.fire('Gagal', 'Server tidak memberikan konfirmasi penyimpanan transaksi.', 'error');
                             },
                             error: function(xhr, ajaxOptions, thrownError) {
-                                showBootstrapModal('Error', xhr.status + '\n' + thrownError, 'error')
+                                let detail = 'HTTP ' + xhr.status + ' - ' + (thrownError || 'Request gagal');
+                                try {
+                                    const body = xhr.responseJSON || JSON.parse(xhr.responseText || '{}');
+                                    if (body.error) detail += '\n' + body.error;
+                                    else if (body.message) detail += '\n' + body.message;
+                                } catch (e) {
+                                    if (xhr.responseText) detail += '\n' + $('<div>').text(xhr.responseText).text().substring(0, 500);
+                                }
+                                showBootstrapModal('Transaksi tidak tersimpan', detail, 'error');
                             }
                         });
                     }
