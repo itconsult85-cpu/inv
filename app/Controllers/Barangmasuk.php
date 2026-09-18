@@ -757,8 +757,9 @@ class Barangmasuk extends BaseController
                     $headerData['sumber'] = $sumberProduk;
                 }
                 if (!$modelBarangMasuk->insert($headerData)) {
+                    $errorMessage = $this->detailError('Header transaksi produk gagal disimpan.', $modelBarangMasuk, $db->error());
                     $db->transRollback();
-                    echo json_encode(['error' => $this->detailError('Header transaksi produk gagal disimpan.', $modelBarangMasuk)]);
+                    echo json_encode(['error' => $errorMessage]);
                     return;
                 }
 
@@ -805,8 +806,9 @@ class Barangmasuk extends BaseController
                 // die();
                 $modelDetail = new Modeldetailbarangmasuk();
                 if (!$modelDetail->insertBatch($fieldDetail)) {
+                    $errorMessage = $this->detailError('Detail transaksi produk gagal disimpan.', $modelDetail, $db->error());
                     $db->transRollback();
-                    echo json_encode(['error' => $this->detailError('Detail transaksi produk gagal disimpan.', $modelDetail)]);
+                    echo json_encode(['error' => $errorMessage]);
                     return;
                 }
                 if ($sumberProduk === 'retur_ng' && $poKeluarId) {
@@ -815,8 +817,9 @@ class Barangmasuk extends BaseController
 
                 $modelStok = new Modelstok();
                 if (!$modelStok->updateOrInsertBatch($fieldStok)) {
+                    $errorMessage = $this->detailError('Stok produk gagal diperbarui.', $modelStok, $db->error());
                     $db->transRollback();
-                    echo json_encode(['error' => $this->detailError('Stok produk gagal diperbarui.', $modelStok)]);
+                    echo json_encode(['error' => $errorMessage]);
                     return;
                 }
 
@@ -861,16 +864,16 @@ class Barangmasuk extends BaseController
         return $this->selesaiTransaksi();
     }
 
-    private function detailError(string $message, ?object $model = null): string
+    private function detailError(string $message, ?object $model = null, ?array $queryError = null): string
     {
         $errors = $model && method_exists($model, 'errors') ? $model->errors() : [];
-        $dbError = db_connect()->error();
+        $dbError = $queryError ?: db_connect()->error();
         $parts = array_filter([
             $message,
             !empty($errors) ? implode('; ', array_map('strval', $errors)) : null,
             !empty($dbError['message']) ? 'Database: ' . $dbError['message'] : null,
         ]);
-        return implode(' ', $parts);
+        return implode(' ', $parts) . (count($parts) === 1 ? ' Tidak ada detail error dari driver database.' : '');
     }
 
     function hapusTransaksi()
