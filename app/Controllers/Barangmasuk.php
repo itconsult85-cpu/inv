@@ -284,7 +284,8 @@ class Barangmasuk extends BaseController
     private function buatNomorProdukMasuk(): string
     {
         do {
-            $nomor = 'BM-' . date('Ymd-His') . '-' . random_int(100, 999);
+            // barangmasuk.faktur pada dump lama bertipe CHAR(20).
+            $nomor = 'BM-' . date('ymd-His') . '-' . random_int(100, 999);
         } while (db_connect()->table('barangmasuk')->where('faktur', $nomor)->countAllResults() > 0);
 
         return $nomor;
@@ -734,6 +735,12 @@ class Barangmasuk extends BaseController
                 }
 
                 $modelBarangMasuk = new Modelbarangmasuk();
+
+                if (strlen($nofaktur) > 20) {
+                    $db->transRollback();
+                    echo json_encode(['error' => "Nomor transaksi {$nofaktur} memiliki " . strlen($nofaktur) . " karakter, sedangkan kolom barangmasuk.faktur pada database maksimal 20 karakter. Muat ulang halaman lalu tambahkan item kembali."]);
+                    return;
+                }
 
                 $headerData = [
                     'faktur' => $nofaktur,
