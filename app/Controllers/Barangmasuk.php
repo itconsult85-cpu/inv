@@ -738,13 +738,17 @@ class Barangmasuk extends BaseController
                 $headerData = [
                     'faktur' => $nofaktur,
                     'po_keluar_id' => $poKeluarId ?: null,
-                    'sumber' => $sumberProduk,
                     'tglfaktur' => $tglfaktur,
                     'idsup' => $idsupplier,
                     'gudang' => $gudang,
                     'qtymasuk' => $totalqtymasuk,
                     'totalberatbarang' => $totalberatbarang,
                 ];
+                // Dump lama belum memiliki kolom `sumber`; jangan mengirim
+                // field tersebut jika patch retur produk belum dijalankan.
+                if ($db->fieldExists('sumber', 'barangmasuk')) {
+                    $headerData['sumber'] = $sumberProduk;
+                }
                 if (!$modelBarangMasuk->insert($headerData)) {
                     $db->transRollback();
                     echo json_encode(['error' => $this->detailError('Header transaksi produk gagal disimpan.', $modelBarangMasuk)]);
