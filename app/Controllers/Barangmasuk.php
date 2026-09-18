@@ -734,8 +734,6 @@ class Barangmasuk extends BaseController
                     $totalqtymasuk += intval($totqty['detjml']);
                 }
 
-                $modelBarangMasuk = new Modelbarangmasuk();
-
                 if (strlen($nofaktur) > 20) {
                     $db->transRollback();
                     echo json_encode(['error' => "Nomor transaksi {$nofaktur} memiliki " . strlen($nofaktur) . " karakter, sedangkan kolom barangmasuk.faktur pada database maksimal 20 karakter. Muat ulang halaman lalu tambahkan item kembali."]);
@@ -756,8 +754,17 @@ class Barangmasuk extends BaseController
                 if ($db->fieldExists('sumber', 'barangmasuk')) {
                     $headerData['sumber'] = $sumberProduk;
                 }
-                if (!$modelBarangMasuk->insert($headerData)) {
-                    $errorMessage = $this->detailError('Header transaksi produk gagal disimpan.', $modelBarangMasuk, $db->error());
+                $headerData = array_filter($headerData, static function ($value, $field) use ($db) {
+                    return $db->fieldExists($field, 'barangmasuk');
+                }, ARRAY_FILTER_USE_BOTH);
+                try {
+                    $okHeader = $db->table('barangmasuk')->insert($headerData);
+                } catch (\Throwable $e) {
+                    $okHeader = false;
+                    log_message('error', 'Insert header barangmasuk gagal: {message}', ['message' => $e->getMessage()]);
+                }
+                if (!$okHeader) {
+                    $errorMessage = $this->detailError('Header transaksi produk gagal disimpan.', null, $db->error());
                     $db->transRollback();
                     echo json_encode(['error' => $errorMessage]);
                     return;
