@@ -347,6 +347,10 @@
             overflow: hidden;
         }
 
+        .plain-page:last-of-type {
+            page-break-after: auto;
+        }
+
         .plain-value {
             position: absolute;
             white-space: nowrap;
@@ -359,13 +363,13 @@
         .plain-tanggal {
             /* Nilai dimulai setelah label dan titik dua pada form pabrik. */
             left: 160mm;
-            top: 35mm;
+            top: 39.5mm;
             width: 48mm;
         }
 
         .plain-do {
             left: 160mm;
-            top: 40mm;
+            top: 44.5mm;
             width: 48mm;
             font-size: 7.6pt;
             font-weight: 700;
@@ -374,20 +378,20 @@
 
         .plain-po {
             left: 160mm;
-            top: 45mm;
+            top: 49.5mm;
             width: 48mm;
             font-size: 7.8pt;
         }
 
         .plain-kendaraan {
             left: 160mm;
-            top: 50mm;
+            top: 54.5mm;
             width: 48mm;
         }
 
         .plain-pelanggan {
             left: 34mm;
-            top: 68mm;
+            top: 72.5mm;
             width: 172mm;
             font-size: 11pt;
             font-weight: 700;
@@ -395,14 +399,14 @@
 
         .plain-alamat {
             left: 34mm;
-            top: 73mm;
+            top: 77.5mm;
             width: 174mm;
             font-size: 10pt;
         }
 
         .plain-penerima {
             left: 145mm;
-            top: 148mm;
+            top: 152.5mm;
             width: 25mm;
             text-align: center;
             font-size: 8.5pt;
@@ -437,7 +441,7 @@
             position: absolute;
             left: 129mm;
             width: 15mm;
-            text-align: right;
+            text-align: center;
             white-space: nowrap;
         }
 
@@ -451,7 +455,7 @@
 
         .plain-pengirim {
             left: 54mm;
-            top: 147mm;
+            top: 151.5mm;
             width: 31mm;
             text-align: center;
             font-size: 8.5pt;
@@ -514,10 +518,15 @@
     $details = is_array($details ?? null) ? $details : [];
     $detailPages = array_chunk($details, 4);
     if ($detailPages === []) $detailPages = [[]];
+    // Form pabrik memiliki ruang sekitar delapan baris produk. Mode ringkas
+    // membagi halaman hanya jika kapasitas tabel benar-benar terlampaui.
+    $plainDetailPages = array_chunk($details, 8);
+    if ($plainDetailPages === []) $plainDetailPages = [[]];
     $daftarPoText = implode(', ', array_filter($header['daftar_po'] ?? [$header['detpo']])) ?: '-';
     $alamatPelanggan = trim((string) ($header['pelalamat'] ?? ''));
     ?>
     <?php if ($isRingkas): ?>
+        <?php foreach ($plainDetailPages as $plainPageIndex => $plainPageDetails): ?>
         <main class="plain-page">
             <span class="plain-value plain-tanggal"><?= esc(date('d-m-Y', strtotime((string) $header['tglfaktur']))) ?></span>
             <span class="plain-value plain-do"><?= esc($header['faktur']) ?></span>
@@ -527,15 +536,16 @@
             <span class="plain-value plain-alamat"><?= esc($alamatPelanggan) ?></span>
             <span class="plain-value plain-pengirim"><?= esc($pengirimBarang ?? '') ?></span>
             <span class="plain-value plain-penerima"><?= esc($penerimaBarang ?? '') ?></span>
-            <?php foreach ($details as $index => $detail): ?>
-                <div class="plain-row" style="top: <?= 94 + ($index * 4.5) ?>mm;">
-                    <span class="plain-row-number"><?= $index + 1 ?></span>
+            <?php foreach ($plainPageDetails as $index => $detail): ?>
+                <div class="plain-row" style="top: <?= 98.5 + ($index * 4.3) ?>mm;">
+                    <span class="plain-row-number"><?= ($plainPageIndex * 8) + $index + 1 ?></span>
                     <span class="plain-row-part"><?= esc($detail['detbrgkode'] ?? '') ?></span>
                     <span class="plain-row-qty"><?= number_format((float) ($detail['detjml'] ?? 0), 0, ',', '.') ?></span>
                     <span class="plain-row-unit"><?= esc($normalizeUom($detail['satnama'] ?? 'Pcs')) ?></span>
                 </div>
             <?php endforeach; ?>
         </main>
+        <?php endforeach; ?>
     <?php else: ?>
         <?php foreach ($detailPages as $pageIndex => $pageDetails): ?>
             <main class="do-page">
