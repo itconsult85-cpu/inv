@@ -1196,7 +1196,7 @@ Pengiriman
                         const notesGroup = document.getElementById('notesDoGroup');
                         const toggleOptionalFields = () => {
                             const ringkas = formatSelect.value === 'ringkas';
-                            pengirimGroup.style.display = ringkas ? 'none' : 'block';
+                            pengirimGroup.style.display = 'block';
                             notesGroup.style.display = ringkas ? 'none' : 'block';
                         };
                         formatSelect.addEventListener('change', toggleOptionalFields);
