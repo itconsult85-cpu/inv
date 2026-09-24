@@ -1196,7 +1196,9 @@ Pengiriman
                         const notesGroup = document.getElementById('notesDoGroup');
                         const toggleOptionalFields = () => {
                             const ringkas = formatSelect.value === 'ringkas';
-                            pengirimGroup.style.display = ringkas ? 'none' : 'block';
+                            // Nama pengirim tetap diperlukan untuk dicetak di
+                            // dalam tanda kurung pada form pabrik.
+                            pengirimGroup.style.display = 'block';
                             notesGroup.style.display = ringkas ? 'none' : 'block';
                         };
                         formatSelect.addEventListener('change', toggleOptionalFields);
