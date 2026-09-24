@@ -405,8 +405,8 @@
         }
 
         .plain-penerima {
-            left: 160mm;
-            top: 150mm;
+            left: 170mm;
+            top: 149mm;
             width: max-content;
             text-align: center;
             font-size: 8.5pt;
@@ -432,8 +432,9 @@
 
         .plain-row-part {
             position: absolute;
-            left: 28mm;
-            width: 101mm;
+            left: 26mm;
+            width: 103mm;
+            padding-left: 2mm;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: clip;
@@ -456,7 +457,7 @@
         }
 
         .plain-pengirim {
-            left: 72mm;
+            left: 66mm;
             top: 149mm;
             width: max-content;
             text-align: center;
