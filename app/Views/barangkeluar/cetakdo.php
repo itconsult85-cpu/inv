@@ -405,11 +405,13 @@
         }
 
         .plain-penerima {
-            left: 145mm;
+            left: 160mm;
             top: 150mm;
-            width: 30mm;
+            width: max-content;
             text-align: center;
             font-size: 8.5pt;
+            overflow: visible;
+            transform: translateX(-50%);
         }
 
         .plain-row {
@@ -430,8 +432,8 @@
 
         .plain-row-part {
             position: absolute;
-            left: 26mm;
-            width: 103mm;
+            left: 28mm;
+            width: 101mm;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: clip;
@@ -454,11 +456,13 @@
         }
 
         .plain-pengirim {
-            left: 54mm;
+            left: 72mm;
             top: 149mm;
-            width: 36mm;
+            width: max-content;
             text-align: center;
             font-size: 8.5pt;
+            overflow: visible;
+            transform: translateX(-50%);
         }
 
         .screen-tools {
