@@ -372,7 +372,7 @@
             top: 47mm;
             width: 48mm;
             font-size: 7.6pt;
-            font-weight: 700;
+            font-weight: 400;
             letter-spacing: -.2px;
         }
 
