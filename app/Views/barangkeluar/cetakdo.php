@@ -390,17 +390,17 @@
         }
 
         .plain-pelanggan {
-            left: 34mm;
+            left: 32mm;
             top: 72.5mm;
-            width: 172mm;
+            width: 164mm;
             font-size: 11pt;
             font-weight: 700;
         }
 
         .plain-alamat {
-            left: 34mm;
+            left: 32mm;
             top: 77.5mm;
-            width: 174mm;
+            width: 170mm;
             font-size: 10pt;
         }
 
@@ -432,8 +432,8 @@
 
         .plain-row-part {
             position: absolute;
-            left: 26mm;
-            width: 103mm;
+            left: 20.5mm;
+            width: 111mm;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: clip;
@@ -441,7 +441,7 @@
 
         .plain-row-qty {
             position: absolute;
-            left: 129mm;
+            left: 98mm;
             width: 15mm;
             text-align: center;
             white-space: nowrap;
@@ -449,7 +449,7 @@
 
         .plain-row-unit {
             position: absolute;
-            left: 144mm;
+            left: 116.5mm;
             width: 15mm;
             text-align: center;
             white-space: nowrap;
