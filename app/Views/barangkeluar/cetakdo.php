@@ -363,13 +363,13 @@
         .plain-tanggal {
             /* Nilai dimulai setelah label dan titik dua pada form pabrik. */
             left: 160mm;
-            top: 44mm;
+            top: 42mm;
             width: 48mm;
         }
 
         .plain-do {
             left: 160mm;
-            top: 49mm;
+            top: 47mm;
             width: 48mm;
             font-size: 7.6pt;
             font-weight: 700;
@@ -378,14 +378,14 @@
 
         .plain-po {
             left: 160mm;
-            top: 54mm;
+            top: 52mm;
             width: 48mm;
             font-size: 7.8pt;
         }
 
         .plain-kendaraan {
             left: 160mm;
-            top: 59mm;
+            top: 57mm;
             width: 48mm;
         }
 
@@ -405,9 +405,9 @@
         }
 
         .plain-penerima {
-            left: 150mm;
-            top: 147mm;
-            width: 20mm;
+            left: 145mm;
+            top: 150mm;
+            width: 30mm;
             text-align: center;
             font-size: 8.5pt;
         }
@@ -454,9 +454,9 @@
         }
 
         .plain-pengirim {
-            left: 57mm;
-            top: 146mm;
-            width: 30mm;
+            left: 54mm;
+            top: 149mm;
+            width: 36mm;
             text-align: center;
             font-size: 8.5pt;
         }
