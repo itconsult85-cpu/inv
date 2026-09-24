@@ -390,28 +390,26 @@
         }
 
         .plain-pelanggan {
-            left: 32mm;
+            left: 34mm;
             top: 72.5mm;
-            width: 164mm;
+            width: 172mm;
             font-size: 11pt;
             font-weight: 700;
         }
 
         .plain-alamat {
-            left: 32mm;
+            left: 34mm;
             top: 77.5mm;
-            width: 170mm;
+            width: 174mm;
             font-size: 10pt;
         }
 
         .plain-penerima {
-            left: 160mm;
+            left: 145mm;
             top: 150mm;
-            width: max-content;
+            width: 30mm;
             text-align: center;
             font-size: 8.5pt;
-            overflow: visible;
-            transform: translateX(-50%);
         }
 
         .plain-row {
@@ -432,8 +430,8 @@
 
         .plain-row-part {
             position: absolute;
-            left: 20.5mm;
-            width: 111mm;
+            left: 26mm;
+            width: 103mm;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: clip;
@@ -441,7 +439,7 @@
 
         .plain-row-qty {
             position: absolute;
-            left: 98mm;
+            left: 129mm;
             width: 15mm;
             text-align: center;
             white-space: nowrap;
@@ -449,20 +447,18 @@
 
         .plain-row-unit {
             position: absolute;
-            left: 116.5mm;
+            left: 144mm;
             width: 15mm;
             text-align: center;
             white-space: nowrap;
         }
 
         .plain-pengirim {
-            left: 72mm;
+            left: 54mm;
             top: 149mm;
-            width: max-content;
+            width: 36mm;
             text-align: center;
             font-size: 8.5pt;
-            overflow: visible;
-            transform: translateX(-50%);
         }
 
         .screen-tools {
