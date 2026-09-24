@@ -1172,6 +1172,9 @@ Pengiriman
                             <label for="noKendaraanDo" class="mb-1">No Kendaraan</label>
                             <input type="text" id="noKendaraanDo" class="form-control" placeholder="Contoh: B 9739 OH" style="margin: 0 0 12px 0; width: 100%;">
 
+                            <label for="penerimaDo" class="mb-1">Yang Menerima Barang</label>
+                            <input type="text" id="penerimaDo" class="form-control" placeholder="Nama penerima (opsional)" style="margin: 0 0 12px 0; width: 100%;">
+
                             <div id="pengirimDoGroup">
                                 <label for="pengirimDo" class="mb-1">Pengirim Barang</label>
                                 <input type="text" id="pengirimDo" class="form-control" placeholder="Contoh: Eka" style="margin: 0 0 12px 0; width: 100%;">
@@ -1214,6 +1217,7 @@ Pengiriman
                         return {
                             format: document.getElementById('formatDo').value,
                             kendaraan: document.getElementById('noKendaraanDo').value.trim(),
+                            penerimaBarang: document.getElementById('penerimaDo').value.trim(),
                             pengirim: document.getElementById('pengirimDo').value.trim(),
                             notes: notes
                         };
@@ -1223,6 +1227,7 @@ Pengiriman
                         const params = new URLSearchParams({
                             format: result.value.format,
                             kendaraan: result.value.kendaraan,
+                            penerimaBarang: result.value.penerimaBarang,
                             pengirimBarang: result.value.pengirim,
                             pengirim: result.value.pengirim,
                             notes: JSON.stringify(result.value.notes)

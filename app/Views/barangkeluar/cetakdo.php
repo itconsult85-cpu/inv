@@ -5,9 +5,9 @@
     <meta charset="utf-8">
     <title>Delivery Order <?= esc($header['faktur']) ?></title>
     <style>
-        /* Format lapangan A5 landscape: 210 x 148 mm; area kerja 194 x 143,5 mm. */
+        /* Form pabrik: 213 x 165 mm, landscape. */
         @page {
-            size: A5 landscape;
+            size: 213mm 165mm landscape;
             margin: 0;
         }
 
@@ -340,8 +340,8 @@
         /* Format tanpa tabel: hanya teks data pada kertas A5 landscape putih. */
         .plain-page {
             position: relative;
-            width: 210mm;
-            height: 148mm;
+            width: 213mm;
+            height: 165mm;
             padding: 0;
             page-break-after: always;
             overflow: hidden;
@@ -357,52 +357,60 @@
         }
 
         .plain-tanggal {
-            left: 124mm;
-            top: 22mm;
-            width: 70mm;
+            left: 134mm;
+            top: 35mm;
+            width: 73mm;
         }
 
         .plain-do {
-            left: 124mm;
-            top: 26mm;
-            width: 70mm;
+            left: 134mm;
+            top: 40mm;
+            width: 73mm;
             font-size: 7.6pt;
             font-weight: 700;
             letter-spacing: -.2px;
         }
 
         .plain-po {
-            left: 124mm;
-            top: 30mm;
-            width: 70mm;
+            left: 134mm;
+            top: 45mm;
+            width: 73mm;
             font-size: 7.8pt;
         }
 
         .plain-kendaraan {
-            left: 124mm;
-            top: 34mm;
-            width: 70mm;
+            left: 134mm;
+            top: 50mm;
+            width: 73mm;
         }
 
         .plain-pelanggan {
-            left: 32mm;
-            top: 56mm;
-            width: 164mm;
+            left: 34mm;
+            top: 68mm;
+            width: 172mm;
             font-size: 11pt;
             font-weight: 700;
         }
 
         .plain-alamat {
-            left: 32mm;
-            top: 61.3mm;
-            width: 170mm;
+            left: 34mm;
+            top: 73mm;
+            width: 174mm;
             font-size: 10pt;
+        }
+
+        .plain-penerima {
+            left: 137mm;
+            top: 148mm;
+            width: 65mm;
+            text-align: center;
+            font-size: 8.5pt;
         }
 
         .plain-row {
             position: absolute;
             left: 0;
-            width: 210mm;
+            width: 213mm;
             height: 4.5mm;
             font-size: 8.5pt;
             line-height: 1.1;
@@ -410,15 +418,15 @@
 
         .plain-row-number {
             position: absolute;
-            left: 13mm;
+            left: 14mm;
             width: 5mm;
             text-align: center;
         }
 
         .plain-row-part {
             position: absolute;
-            left: 20.5mm;
-            width: 111mm;
+            left: 21mm;
+            width: 116mm;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: clip;
@@ -426,7 +434,7 @@
 
         .plain-row-qty {
             position: absolute;
-            left: 98mm;
+            left: 103mm;
             width: 15mm;
             text-align: right;
             white-space: nowrap;
@@ -434,7 +442,7 @@
 
         .plain-row-unit {
             position: absolute;
-            left: 116.5mm;
+            left: 121mm;
             width: 15mm;
             white-space: nowrap;
         }
@@ -507,8 +515,9 @@
             <span class="plain-value plain-kendaraan"><?= esc($noKendaraan !== '' ? $noKendaraan : '') ?></span>
             <span class="plain-value plain-pelanggan"><?= esc($header['pelnama']) ?></span>
             <span class="plain-value plain-alamat"><?= esc($alamatPelanggan) ?></span>
+            <span class="plain-value plain-penerima"><?= esc($penerimaBarang ?? '') ?></span>
             <?php foreach ($details as $index => $detail): ?>
-                <div class="plain-row" style="top: <?= 80.5 + ($index * 4.5) ?>mm;">
+                <div class="plain-row" style="top: <?= 94 + ($index * 4.5) ?>mm;">
                     <span class="plain-row-number"><?= $index + 1 ?></span>
                     <span class="plain-row-part"><?= esc($detail['detbrgkode'] ?? '') ?></span>
                     <span class="plain-row-qty"><?= number_format((float) ($detail['detjml'] ?? 0), 0, ',', '.') ?></span>

@@ -328,6 +328,7 @@ class Barangkeluar extends BaseController
             'format' => $format,
             'noKendaraan' => trim((string) $this->request->getGet('kendaraan')),
             'pengirimBarang' => trim((string) ($this->request->getGet('pengirimBarang') ?? $this->request->getGet('pengirim'))),
+            'penerimaBarang' => trim((string) $this->request->getGet('penerimaBarang')),
             'notes' => json_decode((string) $this->request->getGet('notes'), true) ?: [],
             'preview' => $this->request->getGet('preview') === '1',
         ]);
