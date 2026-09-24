@@ -357,31 +357,32 @@
         }
 
         .plain-tanggal {
-            left: 134mm;
+            /* Nilai dimulai setelah label dan titik dua pada form pabrik. */
+            left: 160mm;
             top: 35mm;
-            width: 73mm;
+            width: 48mm;
         }
 
         .plain-do {
-            left: 134mm;
+            left: 160mm;
             top: 40mm;
-            width: 73mm;
+            width: 48mm;
             font-size: 7.6pt;
             font-weight: 700;
             letter-spacing: -.2px;
         }
 
         .plain-po {
-            left: 134mm;
+            left: 160mm;
             top: 45mm;
-            width: 73mm;
+            width: 48mm;
             font-size: 7.8pt;
         }
 
         .plain-kendaraan {
-            left: 134mm;
+            left: 160mm;
             top: 50mm;
-            width: 73mm;
+            width: 48mm;
         }
 
         .plain-pelanggan {
@@ -400,9 +401,9 @@
         }
 
         .plain-penerima {
-            left: 137mm;
+            left: 145mm;
             top: 148mm;
-            width: 65mm;
+            width: 25mm;
             text-align: center;
             font-size: 8.5pt;
         }
@@ -425,8 +426,8 @@
 
         .plain-row-part {
             position: absolute;
-            left: 21mm;
-            width: 116mm;
+            left: 26mm;
+            width: 103mm;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: clip;
@@ -434,7 +435,7 @@
 
         .plain-row-qty {
             position: absolute;
-            left: 103mm;
+            left: 129mm;
             width: 15mm;
             text-align: right;
             white-space: nowrap;
@@ -442,9 +443,18 @@
 
         .plain-row-unit {
             position: absolute;
-            left: 121mm;
+            left: 144mm;
             width: 15mm;
+            text-align: center;
             white-space: nowrap;
+        }
+
+        .plain-pengirim {
+            left: 54mm;
+            top: 147mm;
+            width: 31mm;
+            text-align: center;
+            font-size: 8.5pt;
         }
 
         .screen-tools {
@@ -515,6 +525,7 @@
             <span class="plain-value plain-kendaraan"><?= esc($noKendaraan !== '' ? $noKendaraan : '') ?></span>
             <span class="plain-value plain-pelanggan"><?= esc($header['pelnama']) ?></span>
             <span class="plain-value plain-alamat"><?= esc($alamatPelanggan) ?></span>
+            <span class="plain-value plain-pengirim"><?= esc($pengirimBarang ?? '') ?></span>
             <span class="plain-value plain-penerima"><?= esc($penerimaBarang ?? '') ?></span>
             <?php foreach ($details as $index => $detail): ?>
                 <div class="plain-row" style="top: <?= 94 + ($index * 4.5) ?>mm;">
