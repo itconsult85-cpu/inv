@@ -828,7 +828,7 @@ class InvoiceOut extends BaseController
                     dk.detbrgkode AS product_code,
                     COALESCE(MAX(b.brgnama), MAX(dk.namabarang)) AS product_name,
                     COALESCE(MAX(s.satnama), 'Pcs') AS unit,
-                    COALESCE(MAX(b.harga), MAX(dp.detharga / NULLIF(dp.detqty, 0)), 0) AS unit_price,
+                    COALESCE(MAX(b.harga), MAX(dp.unit_price), 0) AS unit_price,
                     SUM(dk.detjml) AS qty_shipped,
                     COALESCE((SELECT SUM(iod.qty) FROM invoice_out_detail iod
                         INNER JOIN invoice_out io ON io.id = iod.invoice_id
@@ -838,7 +838,17 @@ class InvoiceOut extends BaseController
                 LEFT JOIN barang b ON b.brgkode = dk.detbrgkode
                 LEFT JOIN satuan s ON s.satid = b.brgsatid
                 LEFT JOIN barangkeluar bk ON bk.faktur = dk.detfaktur
-                LEFT JOIN detail_po dp ON dp.detnopo = dk.detpo AND dp.detkodebrg = dk.detbrgkode
+                -- Satu PO dapat memiliki beberapa baris detail untuk produk
+                -- yang sama (misalnya hasil split/migrasi). Agregasikan dulu
+                -- agar JOIN tidak menggandakan dk.detjml saat di-SUM.
+                LEFT JOIN (
+                    SELECT detnopo,
+                           detkodebrg,
+                           MAX(namabarang) AS namabarang,
+                           MAX(detharga / NULLIF(detqty, 0)) AS unit_price
+                    FROM detail_po
+                    GROUP BY detnopo, detkodebrg
+                ) dp ON dp.detnopo = dk.detpo AND dp.detkodebrg = dk.detbrgkode
                 WHERE dk.detpo = ? $fakturFilter
                 GROUP BY dk.detfaktur, dk.detbrgkode
                 ORDER BY bk.tglfaktur ASC, dk.detfaktur ASC";
