@@ -5,6 +5,43 @@
     <meta charset="utf-8">
     <title>Delivery Order <?= esc($header['faktur']) ?></title>
     <style>
+        /*
+         * Calibri tidak selalu tersedia pada komputer/browser yang mencetak.
+         * Carlito adalah font open-source yang metrically compatible dengan
+         * Calibri, sehingga hasil cetak tetap konsisten tanpa fallback Arial.
+         */
+        @font-face {
+            font-family: 'Calibri';
+            src: url('<?= base_url('fonts/Carlito-Regular.ttf') ?>') format('truetype');
+            font-style: normal;
+            font-weight: 400;
+            font-display: block;
+        }
+
+        @font-face {
+            font-family: 'Calibri';
+            src: url('<?= base_url('fonts/Carlito-Bold.ttf') ?>') format('truetype');
+            font-style: normal;
+            font-weight: 700 900;
+            font-display: block;
+        }
+
+        @font-face {
+            font-family: 'Calibri';
+            src: url('<?= base_url('fonts/Carlito-Italic.ttf') ?>') format('truetype');
+            font-style: italic;
+            font-weight: 400;
+            font-display: block;
+        }
+
+        @font-face {
+            font-family: 'Calibri';
+            src: url('<?= base_url('fonts/Carlito-BoldItalic.ttf') ?>') format('truetype');
+            font-style: italic;
+            font-weight: 700 900;
+            font-display: block;
+        }
+
         /* Form pabrik: 213 x 165 mm, landscape. */
         @page {
             size: 213mm 165mm landscape;
