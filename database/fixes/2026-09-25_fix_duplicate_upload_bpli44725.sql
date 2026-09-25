@@ -5,6 +5,9 @@
 -- Berdasarkan dump database 2026-09-24:
 --   detail_po 862 = qty 33.042, detkirim 5.400
 --   detail_po 863 = qty 65.000, detkirim 5.400 (duplikasi upload)
+-- Karena detail_barangkeluar memakai foreign key ke detail_po.detnopo
+-- (bukan ke detail_po.id), baris 863 tidak boleh dihapus selama PO ini
+-- masih memiliki surat jalan. Baris tersebut dinetralisasi menjadi qty 0.
 --   outstanding 1113 dan 1114 sama-sama mencatat pengiriman 5.400
 --
 -- Hasil yang benar:
@@ -77,7 +80,16 @@ BEGIN
       AND detkirim_awal = 0;
     SET v_detail_updated = ROW_COUNT();
 
-    DELETE FROM detail_po
+    -- Pertahankan baris 863 untuk memenuhi foreign key, tetapi nolkan semua
+    -- nilai kuantitas dan nominal agar tidak lagi dihitung sebagai detail PO.
+    UPDATE detail_po
+    SET detqty = 0,
+        detkirim = 0,
+        detkurang = 0,
+        detsubtotal = 0,
+        detharga = 0,
+        detkirim_awal = 0,
+        detinvoice_awal = 0
     WHERE id = 863
       AND detnopo = 'BPLI44725'
       AND detkodebrg = 'KIT074-0501S'
