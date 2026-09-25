@@ -511,8 +511,7 @@
         return $hari[date('l', $time)] . ', ' . date('d', $time) . ' ' . $bulan[(int) date('n', $time)] . ' ' . date('Y', $time);
     };
     $normalizeUom = static function (?string $satuan): string {
-        $satuan = strtoupper(trim((string) $satuan));
-        return in_array($satuan, ['PCS', 'PCS.', 'PC'], true) ? 'PC' : ($satuan ?: 'PC');
+        return trim((string) $satuan) ?: 'Pcs';
     };
     $noKendaraan = trim((string) ($noKendaraan ?? ''));
     $pengirimBarang = trim((string) ($pengirimBarang ?? ''));
