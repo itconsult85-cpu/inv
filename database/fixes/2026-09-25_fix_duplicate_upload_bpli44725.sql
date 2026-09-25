@@ -3,8 +3,8 @@
 -- Produk: KIT074-0501S
 --
 -- Berdasarkan dump database 2026-09-24:
---   detail_po 862 = qty 33.042, terkirim awal 5.400
---   detail_po 863 = qty 65.000, terkirim awal 5.400 (duplikasi upload)
+--   detail_po 862 = qty 33.042, detkirim 5.400
+--   detail_po 863 = qty 65.000, detkirim 5.400 (duplikasi upload)
 --   outstanding 1113 dan 1114 sama-sama mencatat pengiriman 5.400
 --
 -- Hasil yang benar:
@@ -63,17 +63,18 @@ BEGIN
 
     UPDATE detail_po
     SET detqty = 98042,
-        detkirim = 0,
+        detkirim = 5400,
         detkurang = 92642,
         detsubtotal = 1205.9166,
         detharga = 46569950,
-        detkirim_awal = 5400,
+        detkirim_awal = 0,
         detinvoice_awal = 0
     WHERE id = 862
       AND detnopo = 'BPLI44725'
       AND detkodebrg = 'KIT074-0501S'
       AND detqty = 33042
-      AND detkirim_awal = 5400;
+      AND detkirim = 5400
+      AND detkirim_awal = 0;
     SET v_detail_updated = ROW_COUNT();
 
     DELETE FROM detail_po
@@ -81,7 +82,8 @@ BEGIN
       AND detnopo = 'BPLI44725'
       AND detkodebrg = 'KIT074-0501S'
       AND detqty = 65000
-      AND detkirim_awal = 5400;
+      AND detkirim = 5400
+      AND detkirim_awal = 0;
     SET v_detail_deleted = ROW_COUNT();
 
     UPDATE outstanding
