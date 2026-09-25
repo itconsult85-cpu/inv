@@ -241,8 +241,9 @@
 
         .items {
             width: 194mm;
-            height: 44mm;
-            flex: 0 0 44mm;
+            min-height: 44mm;
+            height: auto;
+            flex: 0 0 auto;
             margin-top: 3mm;
             border: .45mm solid #111;
             border-collapse: collapse;
@@ -456,6 +457,14 @@
             white-space: nowrap;
         }
 
+        .plain-row-note {
+            position: absolute;
+            left: 160mm;
+            width: 45mm;
+            white-space: normal;
+            overflow-wrap: anywhere;
+        }
+
         .plain-pengirim {
             left: 66mm;
             top: 149mm;
@@ -524,7 +533,7 @@
     if ($detailPages === []) $detailPages = [[]];
     // Form pabrik memiliki ruang sekitar delapan baris produk. Mode ringkas
     // membagi halaman hanya jika kapasitas tabel benar-benar terlampaui.
-    $plainDetailPages = array_chunk($details, 8);
+        $plainDetailPages = array_chunk($details, 8);
     if ($plainDetailPages === []) $plainDetailPages = [[]];
     $daftarPoText = implode(', ', array_filter($header['daftar_po'] ?? [$header['detpo']])) ?: '-';
     $alamatPelanggan = trim((string) ($header['pelalamat'] ?? ''));
@@ -540,13 +549,21 @@
             <span class="plain-value plain-alamat"></span>
             <span class="plain-value plain-pengirim"><?= esc($pengirimBarang ?? '') ?></span>
             <span class="plain-value plain-penerima"><?= esc($penerimaBarang ?? '') ?></span>
+            <?php $plainRowTop = 98.5; ?>
             <?php foreach ($plainPageDetails as $index => $detail): ?>
-                <div class="plain-row" style="top: <?= 98.5 + ($index * 4.3) ?>mm;">
+                <?php
+                $plainNote = trim((string) ($notes[(string) ($detail['id'] ?? '')] ?? ''));
+                $plainNoteLines = $plainNote === '' ? 1 : max(1, (int) ceil(strlen($plainNote) / 35));
+                $plainRowHeight = max(4.3, $plainNoteLines * 4.3);
+                ?>
+                <div class="plain-row" style="top: <?= $plainRowTop ?>mm; min-height: <?= $plainRowHeight ?>mm;">
                     <span class="plain-row-number"><?= ($plainPageIndex * 8) + $index + 1 ?></span>
                     <span class="plain-row-part"><?= esc($detail['namabarang'] ?? $detail['detbrgkode'] ?? '') ?></span>
                     <span class="plain-row-qty"><?= number_format((float) ($detail['detjml'] ?? 0), 0, ',', '.') ?></span>
                     <span class="plain-row-unit"><?= esc($normalizeUom($detail['satnama'] ?? 'Pcs')) ?></span>
+                    <span class="plain-row-note"><?= esc($plainNote) ?></span>
                 </div>
+                <?php $plainRowTop += $plainRowHeight; ?>
             <?php endforeach; ?>
         </main>
         <?php endforeach; ?>
@@ -658,7 +675,7 @@
                                 </td>
                                 <td class="right"><?= $isRingkas ? '' : number_format($qty, 0, ',', '.') ?></td>
                                 <td class="center"><?= $isRingkas ? '' : esc($uom) ?></td>
-                                <td><?= $isRingkas ? '' : ($noteProduk !== '' ? esc($noteProduk) : '&nbsp;') ?></td>
+                                <td><?= $noteProduk !== '' ? esc($noteProduk) : '&nbsp;' ?></td>
                             </tr>
                         <?php endforeach; ?>
                         <?php if (count($pageDetails) < 4): ?>

@@ -1243,7 +1243,7 @@ function cetakDo(faktur) {
                     const toggleOptionalFields = () => {
                         const ringkas = formatSelect.value === 'ringkas';
                         pengirimGroup.style.display = 'block';
-                        notesGroup.style.display = ringkas ? 'none' : 'block';
+                        notesGroup.style.display = 'block';
                     };
                     formatSelect.addEventListener('change', toggleOptionalFields);
                     toggleOptionalFields();
