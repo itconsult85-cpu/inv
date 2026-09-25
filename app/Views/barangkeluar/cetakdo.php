@@ -544,7 +544,7 @@
             <?php foreach ($plainPageDetails as $index => $detail): ?>
                 <div class="plain-row" style="top: <?= 98.5 + ($index * 4.3) ?>mm;">
                     <span class="plain-row-number"><?= ($plainPageIndex * 8) + $index + 1 ?></span>
-                    <span class="plain-row-part"><?= esc($detail['detbrgkode'] ?? '') ?></span>
+                    <span class="plain-row-part"><?= esc($detail['namabarang'] ?? $detail['detbrgkode'] ?? '') ?></span>
                     <span class="plain-row-qty"><?= number_format((float) ($detail['detjml'] ?? 0), 0, ',', '.') ?></span>
                     <span class="plain-row-unit"><?= esc($normalizeUom($detail['satnama'] ?? 'Pcs')) ?></span>
                 </div>
@@ -655,7 +655,7 @@
                             <tr class="body-row">
                                 <td class="center"><?= ($pageIndex * 4) + $index + 1 ?></td>
                                 <td>
-                                    <div class="product-name"><?= esc($isRingkas ? ($detail['detbrgkode'] ?? '') : ($detail['namabarang'] ?? '')) ?></div>
+                                    <div class="product-name"><?= esc($detail['namabarang'] ?? $detail['detbrgkode'] ?? '') ?></div>
                                 </td>
                                 <td class="right"><?= $isRingkas ? '' : number_format($qty, 0, ',', '.') ?></td>
                                 <td class="center"><?= $isRingkas ? '' : esc($uom) ?></td>
