@@ -532,7 +532,7 @@
     <?php if ($isRingkas): ?>
         <?php foreach ($plainDetailPages as $plainPageIndex => $plainPageDetails): ?>
         <main class="plain-page">
-            <span class="plain-value plain-tanggal"><?= esc(date('d-m-Y', strtotime((string) $header['tglfaktur']))) ?></span>
+            <span class="plain-value plain-tanggal"><?= esc($tanggalLengkap((string) $header['tglfaktur'])) ?></span>
             <span class="plain-value plain-do"><?= esc($header['faktur']) ?></span>
             <span class="plain-value plain-po"><?= esc($daftarPoText) ?></span>
             <span class="plain-value plain-kendaraan"><?= esc($noKendaraan !== '' ? $noKendaraan : '') ?></span>
@@ -596,7 +596,7 @@
                                 <tr>
                                     <td>Tanggal</td>
                                     <td>:</td>
-                                    <td><?= esc(date('d-m-Y', strtotime((string) $header['tglfaktur']))) ?></td>
+                                    <td><?= esc($tanggalLengkap((string) $header['tglfaktur'])) ?></td>
                                 </tr>
                                 <tr>
                                     <td>No. DO</td>
