@@ -24,7 +24,7 @@
         body {
             background: #fff;
             color: #111;
-            font-family: Arial, Helvetica, sans-serif;
+            font-family: Calibri, Carlito, Arial, Helvetica, sans-serif;
             font-size: 8.5pt;
             line-height: 1.12;
         }
@@ -161,7 +161,7 @@
             justify-content: center;
             align-items: center;
             border-bottom: .45mm solid #111;
-            font-family: "Times New Roman", serif;
+            font-family: Calibri, Carlito, Arial, Helvetica, sans-serif;
             font-size: 14px;
             font-style: italic;
             font-weight: 700;
