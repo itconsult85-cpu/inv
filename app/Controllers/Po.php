@@ -431,7 +431,23 @@ class Po extends BaseController
             $totalQty += $qty;
             $totalHarga += $subtotalHarga;
 
-            $detailRows[] = [
+            // Satu produk yang muncul beberapa kali dalam file upload harus
+            // menjadi satu detail PO. Jika dibiarkan, qty pengiriman berikutnya
+            // akan ter-join ke beberapa baris dan terbaca lebih dari sekali.
+            if (isset($detailRows[$kodeBarang])) {
+                $detailRows[$kodeBarang]['detqty'] += $qty;
+                $detailRows[$kodeBarang]['detkirim_awal'] += $terkirimAwal;
+                $detailRows[$kodeBarang]['detinvoice_awal'] += $invoiceAwal;
+                $detailRows[$kodeBarang]['detsubtotal'] += $qty * $berat;
+                $detailRows[$kodeBarang]['detharga'] += $subtotalHarga;
+                $detailRows[$kodeBarang]['detkurang'] = max(
+                    $detailRows[$kodeBarang]['detqty'] - $detailRows[$kodeBarang]['detkirim_awal'],
+                    0
+                );
+                continue;
+            }
+
+            $detailRows[$kodeBarang] = [
                 'detnopo' => $nopo,
                 'dettglpo' => $tglpo,
                 'detkodebrg' => $kodeBarang,
@@ -464,7 +480,7 @@ class Po extends BaseController
             'is_migrasi' => ($this->request->getPost('po_migrasi') === '1' || array_sum(array_map('floatval', $terkirimAwalList)) > 0 || array_sum(array_map('floatval', $invoiceAwalList)) > 0) ? 1 : 0,
         ]);
 
-        (new Modeldetailpo())->insertBatch($detailRows);
+        (new Modeldetailpo())->insertBatch(array_values($detailRows));
         (new Modeloutstand())->sinkronByPo($nopo);
 
         $db->transComplete();
