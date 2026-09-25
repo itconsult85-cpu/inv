@@ -537,8 +537,8 @@
             <span class="plain-value plain-do"><?= esc($header['faktur']) ?></span>
             <span class="plain-value plain-po"><?= esc($daftarPoText) ?></span>
             <span class="plain-value plain-kendaraan"><?= esc($noKendaraan !== '' ? $noKendaraan : '') ?></span>
-            <span class="plain-value plain-pelanggan"><?= esc($header['pelnama']) ?></span>
-            <span class="plain-value plain-alamat"><?= esc($alamatPelanggan) ?></span>
+            <span class="plain-value plain-pelanggan"></span>
+            <span class="plain-value plain-alamat"></span>
             <span class="plain-value plain-pengirim"><?= esc($pengirimBarang ?? '') ?></span>
             <span class="plain-value plain-penerima"><?= esc($penerimaBarang ?? '') ?></span>
             <?php foreach ($plainPageDetails as $index => $detail): ?>
@@ -621,8 +621,8 @@
                     <section class="delivery">
                         <div class="delivery-label">Di Kirim&nbsp;&nbsp;Kepada Yth :</div>
                         <div class="recipient">
-                            <div class="recipient-name"><?= $isRingkas ? '' : esc($header['pelnama']) ?></div>
-                            <div class="recipient-address"><?= $isRingkas ? '' : ($alamatPelanggan !== '' ? nl2br(esc($alamatPelanggan)) : '-') ?></div>
+                            <div class="recipient-name"></div>
+                            <div class="recipient-address"></div>
                         </div>
                     </section>
                 </div>
