@@ -1296,6 +1296,15 @@ class Barangkeluar extends BaseController
                     'idgudang' => $idGudang,
                     'namagudang' => $row['gdgnama'],
                     'datapo' => $cekPo,
+                    // Nomor surat jalan menjadi identitas sumber Invoice Out.
+                    // Setelah ada invoice aktif, nomor ini harus read-only.
+                    'suratJalanLockedByInvoice' => $db->tableExists('invoice_out_detail')
+                        && $db->tableExists('invoice_out')
+                        && $db->table('invoice_out_detail iod')
+                            ->join('invoice_out io', 'io.id = iod.invoice_id', 'inner')
+                            ->where('iod.source_no', $row['faktur'])
+                            ->where('io.status', 'AKTIF')
+                            ->countAllResults() > 0,
                 ];
 
                 return view('barangkeluar/formedit', $data);
@@ -1332,16 +1341,30 @@ class Barangkeluar extends BaseController
         }
 
         $modelBarangKeluar = new ModelBarangKeluar();
+        $db = \Config\Database::connect();
 
         if (!$modelBarangKeluar->find($fakturLama)) {
             return $this->response->setJSON(['error' => 'Data Surat Jalan lama tidak ditemukan.']);
+        }
+
+        // Source surat jalan pada Invoice Out aktif tidak boleh diubah.
+        // Validasi ini wajib di server karena tombol/UI dapat dilewati dengan
+        // request manual.
+        if ($db->tableExists('invoice_out_detail') && $db->tableExists('invoice_out')) {
+            $dipakaiInvoice = $db->table('invoice_out_detail iod')
+                ->join('invoice_out io', 'io.id = iod.invoice_id', 'inner')
+                ->where('iod.source_no', $fakturLama)
+                ->where('io.status', 'AKTIF')
+                ->countAllResults() > 0;
+            if ($dipakaiInvoice) {
+                return $this->response->setJSON(['error' => 'No Surat Jalan tidak bisa diubah karena sudah dipakai Invoice Out aktif.']);
+            }
         }
 
         if ($modelBarangKeluar->find($fakturBaru)) {
             return $this->response->setJSON(['error' => "No Surat Jalan {$fakturBaru} sudah dipakai transaksi lain."]);
         }
 
-        $db = \Config\Database::connect();
         $db->transStart();
 
         $db->table('barangkeluar')

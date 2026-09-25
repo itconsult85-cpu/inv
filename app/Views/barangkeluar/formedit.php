@@ -13,6 +13,7 @@ Edit Produk Keluar
 <?= $this->endSection('subjudul') ?>
 
 <?= $this->section('isi') ?>
+<?php $suratJalanLockedByInvoice = (bool) ($suratJalanLockedByInvoice ?? false); ?>
 <style>
     table#datadetail tbody tr:hover {
         cursor: pointer;
@@ -28,13 +29,16 @@ Edit Produk Keluar
         <td style="width: 2%;">:</td>
         <td style="width: 28%;">
             <div class="input-group input-group-sm">
-                <input type="text" class="form-control" id="nofakturBaru" value="<?= $nofaktur ?>">
+                <input type="text" class="form-control" id="nofakturBaru" value="<?= $nofaktur ?>" <?= $suratJalanLockedByInvoice ? 'readonly' : '' ?>>
                 <div class="input-group-append">
-                    <button type="button" class="btn btn-outline-primary" id="tombolUbahNoSuratJalan" title="Simpan No Surat Jalan">
+                    <button type="button" class="btn btn-outline-secondary" id="tombolUbahNoSuratJalan" title="<?= $suratJalanLockedByInvoice ? 'Tidak dapat diubah karena sudah dipakai Invoice Out aktif' : 'Simpan No Surat Jalan' ?>" <?= $suratJalanLockedByInvoice ? 'disabled' : '' ?>>
                         <i class="fa fa-save"></i>
                     </button>
                 </div>
             </div>
+            <?php if ($suratJalanLockedByInvoice) : ?>
+                <small class="text-warning d-block mt-1"><i class="fa fa-lock"></i> No Surat Jalan terkunci karena sudah dipakai Invoice Out aktif.</small>
+            <?php endif ?>
         </td>
         <td rowspan="4" style="width: 50%; font-weight:bold; color:blue; font-size:20pt; text-align:center; vertical-align:middle;" id="lbTotalBerat">
 
