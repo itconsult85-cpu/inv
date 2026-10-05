@@ -106,7 +106,8 @@ class MaterialTerbuang extends BaseController
             ->select(
                 'b.brgkode, m.matid, m.matkode, m.matnama,
                 m.matsatid, satuan_material.satnama AS satuan_material,
-                bmtr.berat AS berat_material, brt.satuan AS satuan_berat_id',
+                bmtr.berat AS berat_material, bmtr.wise AS wise_material,
+                brt.satuan AS satuan_berat_id',
                 false
             )
             ->join('material m', 'FIND_IN_SET(m.matid, b.brgmat) > 0', 'inner', false)
@@ -168,9 +169,6 @@ class MaterialTerbuang extends BaseController
                 continue;
             }
 
-            $wiseProduk = $produk['wise'];
-            $wiseValid = $wiseProduk !== null && is_numeric($wiseProduk);
-
             $relasiProduk = $relasiPerProduk[$produk['kodebrg']] ?? [];
             if (!$relasiProduk) {
                 $pesan = "Produk {$produk['kodebrg']} belum memiliki relasi material yang dapat dihitung.";
@@ -197,6 +195,11 @@ class MaterialTerbuang extends BaseController
                 }
 
                 $berat = $relasi['berat_material'];
+                // Produk lama menyimpan wise di barang.wise. Produk baru
+                // menyimpan wise per material agar material alternatif dapat
+                // memiliki susut yang berbeda.
+                $wiseProduk = $relasi['wise_material'] ?? $produk['wise'];
+                $wiseValid = $wiseProduk !== null && is_numeric($wiseProduk);
                 $alasanDetail = null;
                 if ($berat === null || !is_numeric($berat) || (float) $berat <= 0) {
                     $alasanDetail = "Berat material {$relasi['matkode']} untuk produk {$produk['kodebrg']} belum diisi.";

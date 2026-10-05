@@ -196,7 +196,7 @@ $labelPemakaianKode = implode(', ', array_map(static function ($row) {
                 </div>
             </div>
         </div>
-        <div class="row d-none">
+        <div class="row">
             <div class="col-md-6">
                 <div class="form-group">
                     <label for="wise">Wise <small class="text-muted">(% material yang kebuang/susut pas produksi)</small></label>
@@ -327,10 +327,18 @@ $labelPemakaianKode = implode(', ', array_map(static function ($row) {
             detailRow.innerHTML = '<div class="col-md-6"><label class="small text-muted mb-1">Wise (%)</label><input type="number" step="0.01" min="0" max="100" class="form-control wise-material" name="wise_material[' + opt.value + ']" value="' + wiseAwal + '"></div>'
                 + '<div class="col-md-6"><label class="small text-muted mb-1">Berat produk jadi (gram)</label><input type="number" step="0.0001" min="0.0001" required class="form-control berat-produk-jadi-material" name="berat_produk_jadi_material[' + opt.value + ']" placeholder="Contoh: 8,6" value="' + beratProdukAwal + '"></div>';
             detailRow.querySelector('.wise-material').addEventListener('input', function() {
-                if (opt.value === materialUtamaElement.value) document.getElementById('wise').value = this.value;
+                if (opt.value === materialUtamaElement.value) {
+                    document.getElementById('wise').value = this.value;
+                    beratProdukJadiManual = false;
+                    hitungKalkulasiWise('wise');
+                }
             });
             detailRow.querySelector('.berat-produk-jadi-material').addEventListener('input', function() {
-                if (opt.value === materialUtamaElement.value) document.getElementById('beratProdukJadi').value = this.value;
+                if (opt.value === materialUtamaElement.value) {
+                    document.getElementById('beratProdukJadi').value = this.value;
+                    beratProdukJadiManual = true;
+                    hitungKalkulasiWise('finished');
+                }
             });
             wrapper.appendChild(detailRow);
             materialBeratContainer.appendChild(wrapper);
@@ -374,11 +382,11 @@ $labelPemakaianKode = implode(', ', array_map(static function ($row) {
         return 'Rp ' + new Intl.NumberFormat('id-ID').format(Math.round(value));
     }
 
-    // Total Material Terpakai (kg, sudah termasuk bagian yang bakal kebuang)
-    // + Wise% -> Berat Produk Jadi disaranin otomatis (boleh ditimpa manual),
-    // dan sisanya (Total Material Terpakai x Wise%) itu estimasi waste-nya.
-    function hitungKalkulasiWise() {
+    // Berat material dan berat produk jadi adalah berat per pcs. Wise/waste
+    // dihitung dari selisih kedua berat tersebut, bukan dari 1 / berat bahan.
+    function hitungKalkulasiWise(source) {
         var totalMaterialKg = parseFloat(totalBeratElement.value) || 0;
+        var beratProdukGram = parseFloat(beratProdukJadiElement.value) || 0;
         var wisePersen = parseFloat(wiseElement.value) || 0;
 
         if (totalMaterialKg <= 0) {
@@ -388,15 +396,20 @@ $labelPemakaianKode = implode(', ', array_map(static function ($row) {
             return;
         }
 
-        hasilPcsPerKgElement.textContent = (1 / totalMaterialKg).toLocaleString('id-ID', { maximumFractionDigits: 4 });
-
-        var wasteKg = totalMaterialKg * (wisePersen / 100);
-        var beratProdukJadiSaranKg = Math.max(totalMaterialKg - wasteKg, 0);
-        hasilWastePcsElement.textContent = (wasteKg * GRAM_KE_KG).toLocaleString('id-ID', { maximumFractionDigits: 4 }) + ' gram';
-
-        if (!beratProdukJadiManual && !beratProdukJadiElement.disabled) {
-            beratProdukJadiElement.value = (beratProdukJadiSaranKg * GRAM_KE_KG).toFixed(4);
+        var totalMaterialGram = totalMaterialKg * GRAM_KE_KG;
+        if (source === 'wise' && !beratProdukJadiManual && wisePersen >= 0) {
+            beratProdukGram = Math.max(totalMaterialGram * (1 - wisePersen / 100), 0);
+            beratProdukJadiElement.value = beratProdukGram.toFixed(4);
         }
+        var wasteGram = beratProdukGram > 0 ? Math.max(totalMaterialGram - beratProdukGram, 0) : 0;
+        wisePersen = totalMaterialGram > 0 ? (wasteGram / totalMaterialGram) * 100 : 0;
+        wiseElement.value = totalMaterialGram > 0 && beratProdukGram > 0 ? wisePersen.toFixed(4) : '';
+        hasilPcsPerKgElement.textContent = beratProdukGram > 0
+            ? (GRAM_KE_KG / beratProdukGram).toLocaleString('id-ID', { maximumFractionDigits: 4 })
+            : '-';
+        hasilWastePcsElement.textContent = beratProdukGram > 0
+            ? wasteGram.toLocaleString('id-ID', { maximumFractionDigits: 4 }) + ' gram'
+            : '-';
 
         hasilHargaMaterialPcsElement.textContent = hargaMaterialTerakhirKg !== null
             ? formatRupiahKalkulasi(totalMaterialKg * hargaMaterialTerakhirKg)
@@ -444,11 +457,12 @@ $labelPemakaianKode = implode(', ', array_map(static function ($row) {
         // selamanya cuma gara-gara sempet dihapus.
         var kosong = beratProdukJadiElement.value.trim() === '';
         beratProdukJadiManual = !kosong;
-        if (kosong) {
-            hitungKalkulasiWise();
-        }
+        hitungKalkulasiWise('finished');
     });
-    wiseElement.addEventListener('input', hitungKalkulasiWise);
+    wiseElement.addEventListener('input', function() {
+        beratProdukJadiManual = false;
+        hitungKalkulasiWise('wise');
+    });
 
     tanpaBeratElement.addEventListener('change', toggleTanpaBerat);
     sumberMaterialElement.addEventListener('change', toggleTanpaBerat);
