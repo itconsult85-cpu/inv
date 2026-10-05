@@ -9,6 +9,11 @@ use \Hermawan\DataTables\DataTable;
 
 class Jasa extends BaseController
 {
+    public function index()
+    {
+        return view('jasa/index');
+    }
+
     private function relasiJasa(int $id): array
     {
         return $this->periksaRelasiMaster([

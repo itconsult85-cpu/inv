@@ -255,6 +255,16 @@ Data Material Masuk
 <script src="<?= base_url() ?>/plugins/datatables-responsive/js/dataTables.responsive.min.js"></script>
 <script src="<?= base_url() ?>/plugins/datatables-responsive/js/responsive.bootstrap4.min.js"></script>
 
+<ul class="nav nav-tabs mb-3" id="materialMasukTabs" role="tablist">
+    <li class="nav-item">
+        <a class="nav-link active" href="#tabMaterialMasuk" data-tab="tabMaterialMasuk">Material Masuk</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" href="#tabDataNg" data-tab="tabDataNg">Data NG <span class="badge badge-danger">Maintenance</span></a>
+    </li>
+</ul>
+
+<div id="tabMaterialMasuk" class="material-masuk-tab">
 <div class="mm-toolbar">
     <div class="mm-filter-anchor">
         <div class="mm-search-shell">
@@ -327,6 +337,31 @@ Data Material Masuk
 
     </tbody>
 </table>
+</div>
+<div id="tabDataNg" class="material-masuk-tab" style="display:none;">
+    <div class="alert alert-info py-2">
+        <i class="fa fa-info-circle"></i>
+        Daftar di bawah mengambil item dari <strong>PO Keluar berstatus NG</strong>. Data tetap tersimpan sebagai history walaupun seluruh penggantinya sudah diterima. Gunakan <strong>Edit</strong> untuk memperbaiki qty/berat penerimaan, atau <strong>Batalkan</strong> jika kualitas tidak sesuai agar PO kembali menjadi NG dan dapat diproses retur/pengganti ulang.
+    </div>
+    <table id="datangmaterialmasuk" class="table table-bordered table-striped table-hover dataTable dtr-inline collapsed" style="width: 100%;">
+        <thead>
+            <tr>
+                <th>No</th>
+                <th>No. PO</th>
+                <th>Supplier</th>
+                <th>Tanggal PO</th>
+                <th>Material</th>
+                <th>Qty NG</th>
+                <th>Qty Pengganti</th>
+                <th>Sisa NG</th>
+                <th>Stok Material</th>
+                <th>Status</th>
+                <th>#</th>
+            </tr>
+        </thead>
+    </table>
+</div>
+
 <script>
     // var pusher = new Pusher('8f027ac11961f0fa1906', {
     //     cluster: 'ap1'
@@ -401,6 +436,48 @@ Data Material Masuk
                 },
             ]
         });
+        const tableNg = $('#datangmaterialmasuk').DataTable({
+            searching: true,
+            searchDelay: 500,
+            stateSave: true,
+            stateDuration: -1,
+            responsive: true,
+            processing: true,
+            serverSide: true,
+            dom: "<'row'<'col-sm-12'tr>><'row align-items-center mt-3'<'col-sm-12 col-md-5'i><'col-sm-12 col-md-7'p>>",
+            ajax: {
+                url: '<?= site_url('materialmasuk/listDataNg') ?>',
+                type: 'POST',
+                data: function(d) {
+                    d.tglawal = $('#tglawal').val();
+                    d.tglakhir = $('#tglakhir').val();
+                    d[csrfToken] = csrfHash;
+                }
+            },
+            pageLength: 10,
+            order: [[3, 'asc']],
+            columns: [
+                { data: 'nomor', orderable: false, className: 'text-center' },
+                { data: 'no_po' }, { data: 'supplier_nama', defaultContent: '-' },
+                { data: 'tgl_po', className: 'text-center' },
+                { data: 'nama_item', render: function(data, type, row) { return (row.kode_item || '-') + ' - ' + (data || '-'); } },
+                { data: 'qty_ng', className: 'text-right' }, { data: 'qty_pengganti', className: 'text-right' },
+                { data: 'qty_sisa', className: 'text-right' }, { data: 'stok_material', className: 'text-right' },
+                { data: 'status_ng', className: 'text-center' },
+                { data: 'aksi', orderable: false, className: 'text-center' }
+            ]
+        });
+
+        $('#materialMasukTabs [data-tab]').on('click', function(e) {
+            e.preventDefault();
+            const target = $(this).data('tab');
+            $('#materialMasukTabs .nav-link').removeClass('active');
+            $(this).addClass('active');
+            $('.material-masuk-tab').hide();
+            $('#' + target).show();
+            if (target === 'tabDataNg') tableNg.columns.adjust().responsive.recalc();
+        });
+
         $('#mmSearchInput').val(table.search());
 
         const filterPanel = $('#mmFilterPanel');
@@ -446,6 +523,7 @@ Data Material Masuk
             window.clearTimeout(searchTimer);
             searchTimer = window.setTimeout(function() {
                 table.search(keyword).draw();
+                tableNg.search(keyword).draw();
             }, 350);
         });
 
@@ -462,10 +540,12 @@ Data Material Masuk
 
         $('#mmPageLength').on('change', function() {
             table.page.len(Number(this.value)).draw();
+            tableNg.page.len(Number(this.value)).draw();
         });
 
         $('#tombolTampil').on('click', function() {
             table.ajax.reload();
+            tableNg.ajax.reload();
             toggleFilterPanel(false);
         });
 
@@ -476,7 +556,9 @@ Data Material Masuk
             $('#mmPageLength').val('50');
             $('#mmSearchInput').val('');
             table.search('').page.len(50);
+            tableNg.search('').page.len(50);
             table.ajax.reload();
+            tableNg.ajax.reload();
         });
     });
 
@@ -527,6 +609,32 @@ Data Material Masuk
     function returMaterial(faktur) {
         window.location.href = ('/materialmasuk/retur/') + faktur;
     }
+
+    function hapusPenerimaanNg(faktur) {
+        showBootstrapModal({
+            title: 'Batalkan penerimaan NG?',
+            text: 'Stok material akan dikurangi kembali dan PO akan dibuka sebagai NG agar dapat diproses retur/pengganti ulang.',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Ya, batalkan'
+        }).then(function(result) {
+            if (!result.isConfirmed) return;
+            $.post('<?= site_url('materialmasuk/hapusTransaksi') ?>', {
+                faktur: faktur,
+                [csrfToken]: csrfHash
+            }, function(response) {
+                if (response.error) {
+                    showBootstrapModal('Gagal', response.error, 'error');
+                    return;
+                }
+                showBootstrapModal('Berhasil', response.sukses || 'Penerimaan NG dibatalkan.', 'success');
+                $('#datangmaterialmasuk').DataTable().ajax.reload(null, false);
+            }, 'json').fail(function(xhr) {
+                showBootstrapModal('Gagal', xhr.responseJSON?.error || 'Pembatalan penerimaan gagal.', 'error');
+            });
+        });
+    }
+
 </script>
 
 <?= $this->endSection('isi') ?>

@@ -270,6 +270,11 @@ Pengiriman
             Cetak Surat Jalan
         </a>
     </li>
+    <li class="nav-item">
+        <a class="nav-link" id="tab-sample-link" data-toggle="tab" href="#tab-sample" role="tab">
+            Produk Sample
+        </a>
+    </li>
 </ul>
 
 <div class="tab-content border border-top-0 p-3" id="tabPengirimanUtamaContent">
@@ -488,6 +493,11 @@ Pengiriman
             <tbody></tbody>
         </table>
     </div>
+    <div class="tab-pane fade" id="tab-sample" role="tabpanel">
+        <div id="sampleTabContent" class="py-2">
+            <div class="text-center text-muted py-4"><i class="fa fa-spinner fa-spin"></i> Memuat produk sample...</div>
+        </div>
+    </div>
 </div>
 
 <script>
@@ -496,6 +506,7 @@ let csrfHash = '<?= csrf_hash() ?>';
 let tableDaftar;
 let tablePermintaan;
 let tableRiwayat;
+let sampleTabLoaded = false;
 
 $(document).ready(function() {
     tableDaftar = $('#dataPengirimanGabungan').DataTable({
@@ -827,6 +838,8 @@ $(document).ready(function() {
             tablePermintaan.columns.adjust().responsive.recalc();
         } else if (target === '#tab-riwayat') {
             tableRiwayat.columns.adjust().responsive.recalc();
+        } else if (target === '#tab-sample') {
+            loadSampleTab();
         }
         window.location.hash = target.replace('#tab-', '');
     });
@@ -836,6 +849,16 @@ $(document).ready(function() {
         $('#tab-' + initialHash + '-link').tab('show');
     }
 });
+
+function loadSampleTab() {
+    if (sampleTabLoaded) return;
+    $.get('<?= site_url('sampleproduk/tabData') ?>', function(response) {
+        $('#sampleTabContent').html(response);
+        sampleTabLoaded = true;
+    }).fail(function(xhr) {
+        $('#sampleTabContent').html('<div class="alert alert-danger">Gagal memuat Produk Sample (' + xhr.status + ').</div>');
+    });
+}
 
 function proses(id) {
     location.href = '/permintaanPengiriman/proses/' + id;

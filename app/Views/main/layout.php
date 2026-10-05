@@ -1971,6 +1971,12 @@
                                  </a>
                              </li>
                              <li class="nav-item">
+                                 <a href="<?= site_url('materialwasteproduksi/index') ?>" class="nav-link <?= (current_url(true)->getSegment(1) == 'materialwasteproduksi') ? 'active' : '' ?>">
+                                     <i class="nav-icon fas fa-chart-line text-danger"></i>
+                                     <p class="text">Waste/Wise Aktual Produksi</p>
+                                 </a>
+                             </li>
+                             <li class="nav-item">
                                  <a href="<?= site_url('materialmasuk/data') ?>" class="nav-link <?= (current_url(true)->getSegment(1) == 'materialmasuk') ? 'active' : '' ?>">
                                      <i class=" nav-icon fa fa-arrow-circle-down text-success"></i>
                                      <p class="text">Material Masuk</p>

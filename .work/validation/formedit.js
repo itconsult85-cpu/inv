@@ -1,232 +1,4 @@
-<?= $this->extend('main/layout') ?>
-
-<?= $this->section('judul') ?>
-Form Edit Data Produk
-<?= $this->endSection('judul') ?>
-
-<?= $this->section('subjudul') ?>
-
-<button type="button" class="btn btn-warning" onclick="location.href=('/barang/index')">
-    <i class="fa fa-undo"></i> Kembali
-</button>
-
-<?= $this->endSection('subjudul') ?>
-
-<?= $this->section('isi') ?>
-<?= form_open('barang/updatedata', ['id' => 'formProduk']) ?>
-<?php
-$flashError = session()->getFlashdata('error');
-$flashSukses = session()->getFlashdata('sukses');
-if (is_array($flashError)) {
-    $flashError = '<div class="alert alert-danger"><ul class="mb-0"><li>' . implode('</li><li>', array_map('esc', $flashError)) . '</li></ul></div>';
-}
-if (is_array($flashSukses)) {
-    $flashSukses = '<div class="alert alert-success"><ul class="mb-0"><li>' . implode('</li><li>', array_map('esc', $flashSukses)) . '</li></ul></div>';
-}
-?>
-<?= $flashError ?>
-<?= $flashSukses ?>
-<?php
-$kodeDapatDiubah = (bool) ($kodeDapatDiubah ?? false);
-$pemakaianKodeProduk = $pemakaianKodeProduk ?? [];
-$labelPemakaianKode = implode(', ', array_map(static function ($row) {
-    return ($row['label'] ?? '-') . ' (' . ($row['jumlah'] ?? 0) . ')';
-}, $pemakaianKodeProduk));
-?>
-
-<div class="card mb-3">
-    <div class="card-header py-2"><strong>Informasi Dasar</strong></div>
-    <div class="card-body">
-        <div class="row">
-            <div class="col-md-4">
-                <div class="form-group">
-                    <label for="kodebarang">Kode Produk</label>
-                    <input type="text" class="form-control" id="kodebarang" name="kodebarang" value="<?= esc($kodebarang) ?>" <?= $kodeDapatDiubah ? '' : 'readonly' ?>>
-                    <?php if ($kodeDapatDiubah) : ?>
-                        <small class="text-muted">Bisa diubah karena belum dipakai transaksi.</small>
-                    <?php else : ?>
-                        <small class="text-muted">Tidak bisa diubah, sudah dipakai di: <?= esc($labelPemakaianKode ?: 'transaksi lain') ?>.</small>
-                    <?php endif ?>
-                    <input type="hidden" class="form-control" id="old_kodebarang" name="old_kodebarang" value="<?= esc($kodebarang) ?>">
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="form-group">
-                    <label for="namabarang">Nama Produk</label>
-                    <input type="text" class="form-control" id="namabarang" placeholder="Input Nama Produk" name="namabarang" value="<?= $namabarang ?>" autofocus>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="form-group">
-                    <label for="idpel">Pelanggan</label>
-                    <select name="idpel" id="idpel" class="tre-combobox-source d-none">
-                        <?php foreach ($datapelanggan as $pel) : ?>
-                            <?php if ($pel['pelid'] == $idpel) : ?>
-                                <option selected value="<?= $pel['pelid'] ?>"><?= $pel['pelnama'] ?></option>
-                            <?php else : ?>
-                                <option value="<?= $pel['pelid'] ?>"><?= $pel['pelnama'] ?></option>
-                            <?php endif; ?>
-                        <?php endforeach ?>
-                    </select>
-                    <div class="tre-combobox" data-target="idpel">
-                        <input type="text" class="form-control tre-combobox-input" placeholder="-- Pilih Pelanggan --" autocomplete="off">
-                        <div class="tre-combobox-menu"></div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="form-group">
-                    <label for="kategori">Kategori</label>
-                    <select name="kategori" id="kategori" class="tre-combobox-source d-none">
-                        <?php foreach ($datakategori as $kat) : ?>
-                            <?php if ($kat['katid'] == $kategori) : ?>
-                                <option selected value="<?= $kat['katid'] ?>"><?= $kat['katnama'] ?></option>
-                            <?php else : ?>
-                                <option value="<?= $kat['katid'] ?>"><?= $kat['katnama'] ?></option>
-                            <?php endif; ?>
-                        <?php endforeach ?>
-                    </select>
-                    <div class="tre-combobox" data-target="kategori">
-                        <input type="text" class="form-control tre-combobox-input" placeholder="-- Pilih Kategori --" autocomplete="off">
-                        <div class="tre-combobox-menu"></div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="form-group">
-                    <label for="satuan">Satuan Produk</label>
-                    <select name="satuan" id="satuan" class="tre-combobox-source d-none">
-                        <?php foreach ($datasatuan as $sat) : ?>
-                            <?php if ($sat['satid'] == $satuan) : ?>
-                                <option selected value="<?= $sat['satid'] ?>"><?= $sat['satnama'] ?></option>
-                            <?php else : ?>
-                                <option value="<?= $sat['satid'] ?>"><?= $sat['satnama'] ?></option>
-                            <?php endif; ?>
-                        <?php endforeach ?>
-                    </select>
-                    <div class="tre-combobox" data-target="satuan">
-                        <input type="text" class="form-control tre-combobox-input" placeholder="-- Pilih Satuan --" autocomplete="off">
-                        <div class="tre-combobox-menu"></div>
-                    </div>
-                    <input type="hidden" name="satuanberat" id="satuanberat" value="<?= $satuanberat ?>">
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="form-group pt-md-4 mt-md-2">
-                    <div class="custom-control custom-checkbox">
-                        <input type="checkbox" class="custom-control-input" id="tanpaBerat" name="tanpa_berat" value="1" <?= !empty($tanpaBerat) ? 'checked' : '' ?>>
-                        <label class="custom-control-label font-weight-bold" for="tanpaBerat">Produk jasa / tanpa berat</label>
-                    </div>
-                    <small class="form-text text-muted">Pakai untuk jasa jahit/konsinyasi yang belum punya data berat material atau berat produk jadi.</small>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="form-group">
-                    <label for="sumberMaterial">Sumber Material Produksi</label>
-                    <select name="sumber_material" id="sumberMaterial" class="form-control">
-                        <option value="tre" <?= ($sumberMaterial ?? 'tre') === 'tre' ? 'selected' : '' ?>>Material TRE</option>
-                        <option value="vendor" <?= ($sumberMaterial ?? 'tre') === 'vendor' ? 'selected' : '' ?>>Material dari Customer</option>
-                        <option value="beli_jadi" <?= ($sumberMaterial ?? 'tre') === 'beli_jadi' ? 'selected' : '' ?>>Beli Barang Jadi (Full dari Vendor)</option>
-                    </select>
-                    <small class="form-text text-muted">Pilih customer kalau material tidak masuk stok TRE dan hanya dicatat sebagai referensi produk. Pilih "Beli Barang Jadi" kalau produk ini nggak pernah diproduksi di TRE sama sekali -- selalu dibeli barang jadi dari vendor lewat PO Out, jadi nggak butuh material apapun.</small>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<div class="card mb-3">
-    <div class="card-header py-2"><strong>Harga &amp; Stok</strong></div>
-    <div class="card-body">
-        <div class="row">
-            <div class="col-md-4">
-                <div class="form-group">
-                    <label for="harga">Harga Produk</label>
-                    <input type="number" class="form-control" id="harga" placeholder="Input Harga Produk" name="harga" value="<?= $harga ?>" autofocus>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="form-group">
-                    <label for="minstok">Minimal Stok Produk</label>
-                    <input type="number" class="form-control" id="minstok" name="minstok" value="<?= $minstok ?>" autofocus>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<div class="card mb-3">
-    <div class="card-header py-2"><strong>Material &amp; Berat</strong></div>
-    <div class="card-body">
-        <div class="form-group">
-            <label for="materialUtama">Material Inti / Default</label>
-            <select name="material_utama" id="materialUtama" class="form-control select2" data-placeholder="-- Pilih material inti --" style="width: 100%;">
-                <option value="">-- Pilih material inti --</option>
-                <?php foreach ($datamaterial as $mat) : ?>
-                    <option value="<?= $mat['matid'] ?>" data-matsatid="<?= $mat['matsatid'] ?>" <?= (int) ($materialUtama ?? 0) === (int) $mat['matid'] ? 'selected' : '' ?>><?= esc($mat['matnama']) ?></option>
-                <?php endforeach ?>
-            </select>
-            <small class="form-text text-muted">Material ini menjadi pilihan default saat penerimaan hasil produksi. Jika stoknya habis, material alternatif dapat dipilih.</small>
-        </div>
-        <div class="form-group">
-            <label for="materialAlternatif">Material Alternatif</label>
-            <select name="material_alternatif[]" id="materialAlternatif" class="form-control select2" multiple="multiple" data-placeholder="-- Pilih material alternatif --" style="width: 100%;">
-                <?php foreach ($datamaterial as $mat) : ?>
-                    <option value="<?= $mat['matid'] ?>" data-matsatid="<?= $mat['matsatid'] ?>" <?= in_array((int) $mat['matid'], $materialAlternatif ?? [], true) ? 'selected' : '' ?>><?= esc($mat['matnama']) ?></option>
-                <?php endforeach ?>
-            </select>
-            <small class="form-text text-muted">Alternatif memakai berat per pcs masing-masing. Material inti dan alternatif tidak dikurangi bersamaan; pilih salah satu saat produksi.</small>
-            <div id="materialHelp" class="form-text text-muted">Material inti wajib dipilih untuk produk biasa. Untuk produk jasa/tanpa berat, material boleh hanya sebagai referensi atau dikosongkan.</div>
-        </div>
-        <div class="row">
-            <div class="col-md-6">
-                <div class="form-group">
-                    <label>Berat Material Terpakai <small class="text-muted">(input dalam gram)</small></label>
-                    <small class="d-block text-muted mb-2">Setiap material memiliki berat pemakaian, Wise, dan berat produk jadi masing-masing.</small>
-                    <div id="materialBeratContainer" class="berat-material-container text-muted">
-                        Pilih material terlebih dahulu.
-                    </div>
-            <small class="form-text text-muted">Isi berat tiap material yang dibutuhkan untuk membuat 1 pcs produk ini. Jika Berat Produk Jadi dan Wise diisi, berat material utama akan dihitung otomatis dan tetap bisa disesuaikan manual.</small>
-                </div>
-            </div>
-            <div class="col-md-6">
-                <div class="form-group">
-                    <label for="totalMaterialTerpakai">Total Semua Material <small class="text-muted">(referensi global, Kg)</small></label>
-                    <input type="number" step="0.0001" min="0" class="form-control" id="totalMaterialTerpakai" placeholder="0.0000" readonly>
-                </div>
-            </div>
-        </div>
-        <div class="row">
-            <div class="col-md-6">
-                <div class="form-group">
-                    <label for="wise">Wise Material Utama <small class="text-muted">(referensi global, % susut)</small></label>
-                    <input type="number" step="0.01" min="0" max="100" class="form-control" id="wise" name="wise" placeholder="otomatis dari kalibrasi" value="<?= $wise !== null ? esc($wise) : '' ?>" readonly>
-                    <small class="form-text text-muted">Persentase dari Total Material Terpakai yang kebuang/susut jadi waste pas produksi. Dipakai buat nyaranin Berat 1 Pcs Produk Jadi di bawah, dan buat laporan Material Terbuang. Opsional, kosongin kalau tidak tahu.</small>
-                </div>
-            </div>
-            <div class="col-md-6">
-                <div class="form-group">
-                    <label for="beratProdukJadi">Berat 1 Pcs Produk Jadi <small class="text-muted">(input dalam gram)</small></label>
-                    <input type="number" step="0.0001" min="0.0001" class="form-control" id="beratProdukJadi" name="berat_produk_jadi" placeholder="Berat produk jadi dalam gram" required>
-                    <small class="form-text text-muted">Berat aktual produk setelah jadi. Otomatis disarankan dari Total Material Terpakai x (1 - Wise%), tapi boleh ditimpa manual kalau perlu. Ini yang dipakai buat hitung berat pengiriman.</small>
-                </div>
-            </div>
-        </div>
-        <div class="form-group">
-            <label class="mb-1">Hasil Kalkulasi per Material</label>
-            <div id="hasilKalkulasiPerMaterial" class="berat-material-container">
-                <span class="text-muted">Pilih material untuk melihat kalkulasi masing-masing material.</span>
-            </div>
-            <small class="form-text text-muted">Setiap kartu dihitung dari berat material, Wise, berat produk jadi, dan harga pembelian terakhir material tersebut. Tidak lagi menggunakan total global.</small>
-        </div>
-    </div>
-</div>
-
-<div class="form-group">
-    <button type="submit" class="btn btn-success">Simpan</button>
-</div>
-<?= form_close() ?>
-<script>
+﻿
     var materialBeratContainer = document.getElementById('materialBeratContainer');
     var totalBeratElement = document.getElementById('totalMaterialTerpakai');
     var beratProdukJadiElement = document.getElementById('beratProdukJadi');
@@ -234,18 +6,18 @@ $labelPemakaianKode = implode(', ', array_map(static function ($row) {
     var sumberMaterialElement = document.getElementById('sumberMaterial');
     var materialUtamaElement = document.getElementById('materialUtama');
     var materialAlternatifElement = document.getElementById('materialAlternatif');
-    var beratMaterialAwal = <?= json_encode($beratMaterial, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
-    var beratProdukJadiMaterialAwal = <?= json_encode($beratProdukJadiMaterial ?? [], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
-    var wiseMaterialAwal = <?= json_encode($wiseMaterial ?? [], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
+    var beratMaterialAwal = 0;
+    var beratProdukJadiMaterialAwal = 0;
+    var wiseMaterialAwal = 0;
     var GRAM_KE_KG = 1000;
     // Berat Produk Jadi sudah tersimpan sebelumnya (dari input manual lama)
     // -- jangan ditimpa otomatis pas halaman baru dibuka, biarin apa adanya
     // sampai user sendiri yang ubah Total Material Terpakai/Wise.
-    var beratProdukJadiManual = <?= $beratProdukJadi !== null ? 'true' : 'false' ?>;
+    var beratProdukJadiManual = 0;
 
-    <?php if ($beratProdukJadi !== null) : ?>
-        beratProdukJadiElement.value = <?= json_encode((float) $beratProdukJadi * 1000) ?>;
-    <?php endif ?>
+    0
+        beratProdukJadiElement.value = 0;
+    0
 
     function hitungTotalBerat() {
         var totalGram = 0;
@@ -359,7 +131,7 @@ $labelPemakaianKode = implode(', ', array_map(static function ($row) {
         beratProdukJadiElement.disabled = isTanpaBerat;
         if (isTanpaBerat) {
             beratProdukJadiElement.value = '0';
-        } else if (<?= $beratProdukJadi !== null ? 'false' : 'true' ?>) {
+        } else if (0) {
             beratProdukJadiElement.value = '';
         }
         materialUtamaElement.required = !isTanpaBerat && sumberMaterialElement.value !== 'beli_jadi';
@@ -543,141 +315,8 @@ $labelPemakaianKode = implode(', ', array_map(static function ($row) {
             toggle.setAttribute('aria-expanded', tersembunyi ? 'false' : 'true');
         });
     });
-</script>
 
-<style>
-    .form-text-toggle {
-        align-items: center;
-        color: #6c757d;
-        display: inline-flex;
-        font-size: .8rem;
-        gap: 4px;
-        margin-top: .25rem;
-        text-decoration: none;
-    }
 
-    .form-text-toggle:hover,
-    .form-text-toggle:focus {
-        color: #495057;
-        text-decoration: none;
-    }
-
-    .form-text-toggle .fa-chevron-down {
-        font-size: .65rem;
-        transition: transform .15s ease;
-    }
-
-    .form-text-toggle[aria-expanded="true"] .fa-chevron-down {
-        transform: rotate(180deg);
-    }
-
-    .tre-combobox {
-        position: relative;
-    }
-
-    .tre-combobox-menu {
-        background: #fff;
-        border: 1px solid #80bdff;
-        border-radius: 0 0 0.25rem 0.25rem;
-        box-shadow: 0 0.35rem 0.75rem rgba(15, 23, 42, .12);
-        display: none;
-        left: 0;
-        max-height: 15rem;
-        overflow-y: auto;
-        position: absolute;
-        right: 0;
-        top: calc(100% - 1px);
-        z-index: 1050;
-    }
-
-    .tre-combobox.is-open .tre-combobox-input {
-        border-color: #80bdff;
-        border-bottom-left-radius: 0;
-        border-bottom-right-radius: 0;
-        box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
-    }
-
-    .tre-combobox.is-open .tre-combobox-menu {
-        display: block;
-    }
-
-    .tre-combobox-option {
-        cursor: pointer;
-        padding: .55rem .85rem;
-    }
-
-    .tre-combobox-option:hover,
-    .tre-combobox-option.is-active {
-        background: #0d6efd;
-        color: #fff;
-    }
-
-    .tre-combobox-empty {
-        color: #6c757d;
-        padding: .55rem .85rem;
-    }
-
-    #materialUtama + .select2-container .select2-selection--multiple {
-        height: calc(2.25rem + 2px) !important;
-        min-height: calc(2.25rem + 2px) !important;
-        padding: 0.375rem 0.75rem !important;
-        background-color: #fff !important;
-        border: 1px solid #ced4da !important;
-        border-radius: 0.25rem !important;
-        box-sizing: border-box;
-        overflow: hidden;
-    }
-
-    #materialUtama + .select2-container .select2-selection__rendered {
-        display: flex !important;
-        align-items: center;
-        height: 100%;
-        padding: 0 !important;
-        margin: 0 !important;
-        overflow-x: auto;
-    }
-
-    #materialUtama + .select2-container .select2-search--inline {
-        display: flex;
-        align-items: center;
-    }
-
-    #materialUtama + .select2-container .select2-search__field {
-        height: auto !important;
-        margin: 0 !important;
-        padding: 0 !important;
-        border: 0 !important;
-    }
-
-    #materialUtama + .select2-container .select2-selection__choice {
-        color: #000 !important;
-        background-color: #f1f1f1 !important;
-        border: 1px solid #ced4da !important;
-        margin-top: 0 !important;
-    }
-
-    #materialUtama + .select2-container .select2-selection__choice__remove {
-        color: #000 !important;
-    }
-
-    #materialUtama + .select2-container.select2-container--focus
-    .select2-selection--multiple {
-        border-color: #80bdff !important;
-        box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
-    }
-
-    .berat-material-container {
-        border: 1px dashed #ced4da;
-        border-radius: 0.25rem;
-        padding: 0.6rem 0.75rem;
-        background-color: #f8f9fa;
-    }
-
-    .berat-material-container .form-group:last-child {
-        margin-bottom: 0;
-    }
-</style>
-<script>
     function initTreComboboxes() {
         $('.tre-combobox').each(function() {
             const $box = $(this);
@@ -780,5 +419,4 @@ $labelPemakaianKode = implode(', ', array_map(static function ($row) {
     }
 
     $(document).ready(initTreComboboxes);
-</script>
-<?= $this->endSection('isi') ?>
+

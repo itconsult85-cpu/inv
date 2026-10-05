@@ -58,6 +58,7 @@ class AccessControl
                     self::feature('material.stok', 'Stok Material', 'stokmaterial/index', 'fa fa-box text-primary', ['stokmaterial']),
                     self::feature('material.kebutuhan', 'Kebutuhan Material', 'kebutuhanmaterial/index', 'fas fa-calculator text-info', ['kebutuhanmaterial']),
                     self::feature('material.waste', 'Material Terbuang', 'materialterbuang/index', 'fas fa-trash-alt text-danger', ['materialterbuang']),
+                    self::feature('material.waste_produksi', 'Waste/Wise Aktual Produksi', 'materialwasteproduksi/index', 'fas fa-chart-line text-danger', ['materialwasteproduksi']),
                     self::feature('material.masuk', 'Material Masuk', 'materialmasuk/data', 'fa fa-arrow-circle-down text-success', ['materialmasuk']),
                     self::feature('material.keluar', 'Pemakaian Material', 'materialkeluar/data', 'fa fa-arrow-circle-up text-warning', ['materialkeluar']),
                     self::feature('material.produksi', 'Produksi dari Material', 'produksi/data', 'fa fa-industry text-info', ['produksi'], [], false),
@@ -213,6 +214,19 @@ class AccessControl
     public static function can(string $permissionKey, ?string $userid = null): bool
     {
         $userid ??= (string) session()->get('userid');
+
+        // Laporan Waste/Wise Aktual Produksi adalah pasangan laporan dari
+        // Material Terbuang/Kebutuhan Material. Pengguna yang sudah dapat
+        // membuka menu laporan material lama tetap dapat membuka laporan
+        // aktual tanpa menunggu permission baru disalin manual ke setiap akun.
+        if ($permissionKey === 'material.waste_produksi.view') {
+            if (in_array((int) session()->get('idlevel'), [1, 4, 5], true)) {
+                return true;
+            }
+            if (self::can('material.waste', $userid) || self::can('material.kebutuhan', $userid)) {
+                return true;
+            }
+        }
 
         if (in_array($permissionKey, ['produk.masuk.print', 'material.masuk.return_ng'], true) && in_array((int) session()->get('idlevel'), [1, 4, 5], true)) {
             return true;
@@ -537,20 +551,20 @@ class AccessControl
 
             case 'produk.keluar':
                 return [
-                    self::permissionAction($key, 'view', 'Lihat Pengiriman', array_merge($viewPatterns, self::patterns(['barangkeluar/listDataPengiriman']))),
+                    self::permissionAction($key, 'view', 'Lihat Pengiriman', array_merge($viewPatterns, self::patterns(['barangkeluar/listDataPengiriman', 'sampleproduk', 'sampleproduk/tabData', 'sampleproduk/input', 'sampleproduk/input/*']))),
                     self::permissionAction($key, 'input_direct', 'Input Pengiriman Langsung', self::patterns(['permintaanPengiriman/langsung', 'permintaanPengiriman/langsung/*']), 'create'),
                     self::permissionAction($key, 'input_request', 'Input Permintaan Pengiriman', self::patterns(['permintaanPengiriman/input', 'permintaanPengiriman/simpanItem', 'permintaanPengiriman/tampilTemp', 'permintaanPengiriman/selesai']), 'create'),
                     self::permissionAction($key, 'input_manual', 'Input Pengiriman Manual', self::patterns(['barangkeluar/input', 'barangkeluar/simpanItem', 'barangkeluar/tampilDataTemp', 'barangkeluar/tampilDataTempKeluar']), 'create'),
                     self::permissionAction($key, 'po_lookup', 'Ambil Data PO & Item', self::patterns(['permintaanPengiriman/itemPo', 'permintaanPengiriman/ambilStok', 'permintaanPengiriman/modalCariBarang', 'permintaanPengiriman/listDataBarang', 'permintaanPengiriman/ambilDataBarang', 'permintaanPengiriman/cekNoDo', 'permintaanPengiriman/poListProduk']), 'create'),
                     self::permissionAction($key, 'manual_lookup', 'Ambil Data Manual Pengiriman', self::patterns(['barangkeluar/listDataPo', 'barangkeluar/ambilDataPo', 'barangkeluar/ambilDataBarang', 'barangkeluar/modalData', 'barangkeluar/modalCariBarang']), 'create'),
                     self::permissionAction($key, 'save_plan', 'Simpan Rencana Pengiriman', self::patterns(['permintaanPengiriman/simpanRencana', 'permintaanPengiriman/tampilRencana']), 'create'),
-                    self::permissionAction($key, 'save_manual', 'Simpan Pengiriman Manual', self::patterns(['barangkeluar/selesaiTransaksi']), 'create'),
+                    self::permissionAction($key, 'save_manual', 'Simpan Pengiriman Manual', self::patterns(['barangkeluar/selesaiTransaksi', 'sampleproduk/simpan']), 'create'),
                     self::permissionAction($key, 'ship_product', 'Kirim Produk / Kurangi Stok', self::patterns(['permintaanPengiriman/kirimProduk']), 'create'),
-                    self::permissionAction($key, 'process', 'Proses Pengiriman Existing', self::patterns(['permintaanPengiriman/proses', 'permintaanPengiriman/proses/*', 'barangkeluar/edit', 'barangkeluar/edit/*', 'barangkeluar/ambilTotalBerat', 'barangkeluar/tampilDataDetail', 'barangkeluar/tampilDataTempKeluar', 'barangkeluar/editItem', 'barangkeluar/simpanItemDetail', 'barangkeluar/ubahNoSuratJalan', 'barangkeluar/ubah-no-surat-jalan']), 'edit'),
+                    self::permissionAction($key, 'process', 'Proses Pengiriman Existing', self::patterns(['permintaanPengiriman/proses', 'permintaanPengiriman/proses/*', 'barangkeluar/edit', 'barangkeluar/edit/*', 'barangkeluar/ambilTotalBerat', 'barangkeluar/tampilDataDetail', 'barangkeluar/tampilDataTempKeluar', 'barangkeluar/editItem', 'barangkeluar/simpanItemDetail', 'barangkeluar/ubahNoSuratJalan', 'barangkeluar/ubah-no-surat-jalan', 'sampleproduk/input/*']), 'edit'),
                     self::permissionAction($key, 'edit_document', 'Edit Dokumen Pengiriman', self::patterns(['permintaanPengiriman/updateRencanaDokumen', 'permintaanPengiriman/updateDetailNoPo', 'permintaanPengiriman/updateDetailTanggalPo', 'permintaanPengiriman/updateDetailPelanggan', 'permintaanPengiriman/updateTanggalPengiriman', 'barangkeluar/dokumenPengiriman', 'barangkeluar/dokumen-pengiriman', 'barangkeluar/simpanDokumenPengiriman', 'barangkeluar/simpan-dokumen-pengiriman', 'barangkeluar/hapusDokumenPengiriman', 'barangkeluar/hapus-dokumen-pengiriman']), 'edit'),
                     self::permissionAction($key, 'split_po', 'Pisahkan PO Terkirim', self::patterns(['permintaanPengiriman/poTujuanSplit', 'permintaanPengiriman/pisahkanPoTerkirim']), 'edit'),
                     self::permissionAction($key, 'print', 'Cetak Surat Jalan', self::patterns(['permintaanPengiriman/pilihCetak', 'permintaanPengiriman/pilihCetak/*', 'permintaanPengiriman/pilih-cetak', 'permintaanPengiriman/pilih-cetak/*', 'permintaanPengiriman/cetak', 'permintaanPengiriman/cetak/*', 'barangkeluar/cetakDo', 'barangkeluar/cetakDo/*', 'barangkeluar/detailDo', 'barangkeluar/detailDo/*', 'barangkeluar/cetak-do', 'barangkeluar/cetak-do/*', 'barangkeluar/detail-do', 'barangkeluar/detail-do/*', 'barangkeluar/fileBtb', 'barangkeluar/fileBtb/*', 'barangkeluar/file-btb', 'barangkeluar/file-btb/*']), 'print'),
-                    self::permissionAction($key, 'delete', 'Hapus Pengiriman / Rencana', self::patterns(['permintaanPengiriman/hapus', 'permintaanPengiriman/hapusItem', 'permintaanPengiriman/hapusRencana', 'permintaanPengiriman/hapusRiwayatPengiriman', 'permintaanPengiriman/hapusItemPermintaan', 'barangkeluar/hapus', 'barangkeluar/hapus/*', 'barangkeluar/hapusItem', 'barangkeluar/hapusItemDetail', 'barangkeluar/hapusTransaksi', 'barangkeluar/hapusPengirimanLangsung', 'barangkeluar/hapusSuratJalanLangsung', 'barangkeluar/batal', 'barangkeluar/batal/*']), 'delete'),
+                    self::permissionAction($key, 'delete', 'Hapus Pengiriman / Rencana', self::patterns(['permintaanPengiriman/hapus', 'permintaanPengiriman/hapusItem', 'permintaanPengiriman/hapusRencana', 'permintaanPengiriman/hapusRiwayatPengiriman', 'permintaanPengiriman/hapusItemPermintaan', 'barangkeluar/hapus', 'barangkeluar/hapus/*', 'barangkeluar/hapusItem', 'barangkeluar/hapusItemDetail', 'barangkeluar/hapusTransaksi', 'barangkeluar/hapusPengirimanLangsung', 'barangkeluar/hapusSuratJalanLangsung', 'barangkeluar/batal', 'barangkeluar/batal/*', 'sampleproduk/hapus/*']), 'delete'),
                     self::permissionAction($key, 'override_stok', 'Override Stok Manual (Pengiriman)', self::patterns([])),
                 ];
 
@@ -655,14 +669,14 @@ class AccessControl
 
             case 'material.masuk':
                 return [
-                    self::permissionAction($key, 'view', 'Lihat Material Masuk', $viewPatterns),
+                    self::permissionAction($key, 'view', 'Lihat Material Masuk', array_merge($viewPatterns, self::patterns(['materialmasuk/listDataNg']))),
                     self::permissionAction($key, 'input', 'Input Material Masuk', self::patterns(['materialmasuk/input', 'materialmasuk/simpanItem', 'materialmasuk/tampilDataTemp']), 'create'),
                     self::permissionAction($key, 'po_keluar', 'Pilih PO Keluar Material', self::patterns(['materialmasuk/materialPoKeluar', 'materialmasuk/itemPoKeluar', 'materialmasuk/listPoKeluar']), 'create'),
                     self::permissionAction($key, 'lookup', 'Cari Material & Cek Nomor', self::patterns(['materialmasuk/modalCariMaterial', 'materialmasuk/listDataMaterial', 'materialmasuk/ambilDataMaterial', 'materialmasuk/cekNoDo', 'materialmasuk/cekNoInvoice']), 'view'),
                     self::permissionAction($key, 'save_receipt', 'Simpan Transaksi Material Masuk', self::patterns(['materialmasuk/selesaiTransaksi']), 'create'),
                     self::permissionAction($key, 'payment', 'Catat Pembayaran Material Masuk', self::patterns(['materialmasuk/simpanPembayaran']), 'edit'),
                     self::permissionAction($key, 'edit_detail', 'Edit Detail Material Masuk', self::patterns(['materialmasuk/edit', 'materialmasuk/edit/*', 'materialmasuk/updateInvoice', 'materialmasuk/editItem', 'materialmasuk/simpanItemDetail']), 'edit'),
-                    self::permissionAction($key, 'return_ng', 'Retur Material NG ke Supplier', self::patterns(['materialmasuk/retur', 'materialmasuk/retur/*', 'materialretur/simpan']), 'edit'),
+                    self::permissionAction($key, 'return_ng', 'Retur / Koreksi Material NG ke Supplier', self::patterns(['materialmasuk/retur', 'materialmasuk/retur/*', 'materialmasuk/edit', 'materialmasuk/edit/*', 'materialmasuk/hapusTransaksi', 'materialretur/simpan', 'materialretur/kelola', 'materialretur/kelola/*', 'materialretur/koreksi', 'materialretur/hapusDetail']), 'edit'),
                     self::permissionAction($key, 'delete', 'Hapus Material Masuk', self::actionPatterns($basePatterns, ['hapus', 'hapusTransaksi', 'hapusItem', 'hapusItemDetail']), 'delete'),
                 ];
 

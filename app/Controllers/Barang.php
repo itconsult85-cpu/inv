@@ -29,6 +29,38 @@ class Barang extends BaseController
         $this->ensureMaterialColumnsNullable();
         $this->ensureWiseColumn();
         $this->ensureBeratMaterialDetailColumns();
+        $this->ensureWeightPrecisionColumns();
+    }
+
+    /** Nilai berat disimpan dalam Kg; 6 desimal menjaga presisi sampai 0,001 gram. */
+    private function ensureWeightPrecisionColumns(): void
+    {
+        $db = \Config\Database::connect();
+        $forge = \Config\Database::forge();
+        foreach ([
+            ['table' => 'berat_material', 'column' => 'berat'],
+            ['table' => 'berat_material', 'column' => 'berat_produk_jadi'],
+            ['table' => 'berat', 'column' => 'berat'],
+            ['table' => 'stok', 'column' => 'berat'],
+        ] as $target) {
+            if (!$db->tableExists($target['table']) || !$db->fieldExists($target['column'], $target['table'])) {
+                continue;
+            }
+            try {
+                $forge->modifyColumn($target['table'], [
+                    $target['column'] => [
+                        'name' => $target['column'],
+                        'type' => 'DECIMAL',
+                        'constraint' => '15,6',
+                        'null' => true,
+                    ],
+                ]);
+            } catch (\Throwable $e) {
+                log_message('error', 'Gagal meningkatkan presisi {table}.{column}: {message}', [
+                    'table' => $target['table'], 'column' => $target['column'], 'message' => $e->getMessage(),
+                ]);
+            }
+        }
     }
 
     private function ensureBeratMaterialDetailColumns(): void
@@ -428,6 +460,14 @@ class Barang extends BaseController
             $wiseUtama = $wisePerMaterial[$materialUtamaInput];
             $wise = ($wiseUtama !== '' && is_numeric($wiseUtama)) ? (float) $wiseUtama : null;
         }
+        try {
+            $kalibrasiLapangan = $this->kalibrasiLapangan($materials);
+        } catch (\InvalidArgumentException $e) {
+            return redirect()->back()->withInput()->with('error', '<div class="alert alert-danger">' . esc($e->getMessage()) . '</div>');
+        }
+        if (isset($kalibrasiLapangan[$materialUtamaInput])) {
+            $wise = $kalibrasiLapangan[$materialUtamaInput]['wise'];
+        }
         $sumberMaterial = in_array($this->request->getPost('sumber_material'), ['vendor', 'beli_jadi'], true)
             ? $this->request->getPost('sumber_material')
             : 'tre';
@@ -767,6 +807,14 @@ class Barang extends BaseController
             $wiseUtama = $wisePerMaterial[$materialUtamaInput];
             $wise = ($wiseUtama !== '' && is_numeric($wiseUtama)) ? (float) $wiseUtama : null;
         }
+        try {
+            $kalibrasiLapangan = $this->kalibrasiLapangan($materials);
+        } catch (\InvalidArgumentException $e) {
+            return redirect()->back()->withInput()->with('error', '<div class="alert alert-danger">' . esc($e->getMessage()) . '</div>');
+        }
+        if (isset($kalibrasiLapangan[$materialUtamaInput])) {
+            $wise = $kalibrasiLapangan[$materialUtamaInput]['wise'];
+        }
         $db = \Config\Database::connect();
         $db->transStart();
 
@@ -1076,6 +1124,13 @@ class Barang extends BaseController
         $detail = [];
         $beratProdukUtama = $beratProdukFallback;
         $materialUtama = $this->materialUtama($materialIds);
+        // Data batch aktual menjadi sumber kebenaran untuk material/pcs dan
+        // wise; berat produk jadi tetap memakai hasil timbang per pcs.
+        $kalibrasiLapangan = $this->kalibrasiLapangan($materialIds);
+        foreach ($kalibrasiLapangan as $matid => $kalibrasi) {
+            $inputBerat[$matid] = $kalibrasi['material_per_pcs_kg'];
+            $inputWise[$matid] = $kalibrasi['wise'];
+        }
 
         foreach ($materialIds as $matid) {
             $nilai = $inputBerat[$matid] ?? null;
@@ -1126,6 +1181,39 @@ class Barang extends BaseController
         );
 
         return $beratProdukUtama;
+    }
+
+    /**
+     * Mengubah hasil aktual lapangan menjadi angka master per pcs.
+     * Wise konsisten dihitung sebagai scrap / material masuk x 100.
+     */
+    private function kalibrasiLapangan(array $materialIds): array
+    {
+        $inputKg = (array) $this->request->getPost('kalibrasi_material_kg');
+        $qty = (array) $this->request->getPost('kalibrasi_qty_produk');
+        $scrapKg = (array) $this->request->getPost('kalibrasi_scrap_kg');
+        $hasil = [];
+        foreach ($materialIds as $matid) {
+            $input = $inputKg[$matid] ?? null;
+            $output = $qty[$matid] ?? null;
+            $scrap = $scrapKg[$matid] ?? null;
+            $kosong = ($input === null || $input === '')
+                && ($output === null || $output === '')
+                && ($scrap === null || $scrap === '');
+            if ($kosong) {
+                continue;
+            }
+            if (!is_numeric($input) || !is_numeric($output) || !is_numeric($scrap)
+                || (float) $input <= 0 || (float) $output <= 0 || (float) $scrap < 0
+                || (float) $scrap > (float) $input) {
+                throw new \InvalidArgumentException("Kalibrasi material #{$matid} harus lengkap dan valid: material masuk > 0, qty > 0, scrap 0 sampai material masuk.");
+            }
+            $hasil[(int) $matid] = [
+                'material_per_pcs_kg' => round((float) $input / (float) $output, 9),
+                'wise' => round(((float) $scrap / (float) $input) * 100, 6),
+            ];
+        }
+        return $hasil;
     }
 
     /**

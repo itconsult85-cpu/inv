@@ -134,6 +134,98 @@ class Materialmasuk extends BaseController
         return view('materialmasuk/viewdata', $data);
     }
 
+    /** Daftar item PO Keluar berstatus NG yang belum menerima pengganti. */
+    public function listDataNg()
+    {
+        if (!$this->request->isAJAX()) return $this->response->setStatusCode(404);
+
+        $db = db_connect();
+        if (!$db->tableExists('retur_material_detail')) {
+            return DataTable::of($db->table('po_keluar')->where('1 = 0', null, false))
+                ->addNumbering('nomor')->toJson(true);
+        }
+        $returPoColumn = $db->fieldExists('po_keluar_id', 'retur_material_detail')
+            ? 'COALESCE(rd.po_keluar_id, dmm.po_keluar_id)'
+            : 'dmm.po_keluar_id';
+        $ng = $db->table('retur_material_detail rd')
+            ->select($returPoColumn . ' AS po_keluar_id, dmm.detmatkode AS kode_item, SUM(rd.qty_retur) AS qty_ng', false)
+            ->join('detail_materialmasuk dmm', 'dmm.id = rd.material_masuk_detail_id', 'inner')
+            ->groupBy($returPoColumn . ', dmm.detmatkode', false)->getCompiledSelect();
+        $replacement = $db->table('detail_materialmasuk dmm')
+            ->select("dmm.po_keluar_id, dmm.detmatkode AS kode_item, SUM(dmm.detjml) AS qty_pengganti, GROUP_CONCAT(DISTINCT dmm.detfaktur ORDER BY dmm.detfaktur SEPARATOR ',') AS faktur_pengganti", false)
+            ->join('materialmasuk mm', 'mm.faktur = dmm.detfaktur', 'inner')
+            ->where('mm.sumber', 'retur_ng')
+            ->groupBy('dmm.po_keluar_id, dmm.detmatkode')->getCompiledSelect();
+        $stock = $db->table('stokmaterial')
+            ->select('materialid, SUM(stok) AS stok_material', false)
+            ->groupBy('materialid')->getCompiledSelect();
+
+        $builder = $db->table('po_keluar pk')
+            ->select("pk.id, pk.no_po, pk.supplier_nama, pk.tgl_po, dpk.id AS detail_id, dpk.kode_item, dpk.nama_item, ng.qty_ng, COALESCE(rep.qty_pengganti, 0) AS qty_pengganti, COALESCE(rep.faktur_pengganti, '') AS faktur_pengganti, (ng.qty_ng - COALESCE(rep.qty_pengganti, 0)) AS qty_sisa, COALESCE(sm.stok_material, 0) AS stok_material", false)
+            ->join('detail_po_keluar dpk', "dpk.po_keluar_id = pk.id AND LOWER(dpk.tipe_item) = 'material'", 'inner', false)
+            ->join("({$ng}) ng", 'ng.po_keluar_id = pk.id AND ng.kode_item = dpk.kode_item', 'inner', false)
+            ->join("({$replacement}) rep", 'rep.po_keluar_id = pk.id AND rep.kode_item = dpk.kode_item', 'left', false)
+            ->join("({$stock}) sm", 'sm.materialid = dpk.kode_item', 'left', false);
+
+        $tglawal = trim((string) $this->request->getPost('tglawal'));
+        $tglakhir = trim((string) $this->request->getPost('tglakhir'));
+        if ($tglawal !== '' && $tglakhir !== '') $builder->where('pk.tgl_po >=', $tglawal)->where('pk.tgl_po <=', $tglakhir);
+
+        $total = (clone $builder)->countAllResults();
+        $search = trim((string) $this->request->getPost('search')['value'] ?? '');
+        if ($search !== '') {
+            $builder->groupStart()
+                ->like('pk.no_po', $search)
+                ->orLike('pk.supplier_nama', $search)
+                ->orLike('dpk.kode_item', $search)
+                ->orLike('dpk.nama_item', $search)
+                ->groupEnd();
+        }
+        $filtered = (clone $builder)->countAllResults();
+        $orderColumns = [1 => 'pk.no_po', 2 => 'pk.supplier_nama', 3 => 'pk.tgl_po', 4 => 'dpk.nama_item', 5 => 'ng.qty_ng', 6 => 'rep.qty_pengganti', 7 => 'qty_sisa', 8 => 'stok_material'];
+        $orderIndex = (int) (($this->request->getPost('order')[0]['column'] ?? 3));
+        $orderDirection = strtolower((string) ($this->request->getPost('order')[0]['dir'] ?? 'asc')) === 'desc' ? 'DESC' : 'ASC';
+        $builder->orderBy($orderColumns[$orderIndex] ?? 'pk.tgl_po', $orderDirection);
+        $start = max(0, (int) $this->request->getPost('start'));
+        $length = (int) $this->request->getPost('length');
+        if ($length !== -1) $builder->limit($length > 0 ? min($length, 100) : 10, $start);
+        $rows = $builder->get()->getResultArray();
+        $canInput = \App\Libraries\AccessControl::can('material.masuk.input');
+        $canManageReturn = \App\Libraries\AccessControl::can('material.masuk.return_ng');
+        $data = [];
+        foreach ($rows as $index => $row) {
+            $sisaNg = (float) $row['qty_sisa'];
+            $row['nomor'] = $start + $index + 1;
+            $row['tgl_po'] = !empty($row['tgl_po']) ? date('d-m-Y', strtotime($row['tgl_po'])) : '-';
+            foreach (['qty_ng', 'qty_pengganti', 'stok_material'] as $field) $row[$field] = number_format((float) $row[$field], 2, ',', '.');
+            $row['qty_sisa'] = '<strong class="' . ($sisaNg > 0 ? 'text-danger' : 'text-success') . '">' . number_format($sisaNg, 2, ',', '.') . '</strong>';
+            $row['status_ng'] = $sisaNg > 0
+                ? '<span class="badge badge-danger">Belum Selesai</span>'
+                : '<span class="badge badge-success">Selesai / History</span>';
+            $aksi = [];
+            if ($canInput && $sisaNg > 0) {
+                $aksi[] = '<a class="btn btn-sm btn-danger" title="Terima material pengganti NG" href="' . site_url('materialmasuk/input?penerimaan_ng=1&po_keluar_id=' . (int) $row['id']) . '"><i class="fa fa-box-open"></i> Terima</a>';
+            }
+            if ($canManageReturn && (float) $row['qty_pengganti'] > 0 && trim((string) $row['faktur_pengganti']) !== '') {
+                $links = [];
+                foreach (array_unique(array_filter(explode(',', (string) $row['faktur_pengganti']))) as $fakturPengganti) {
+                    $fakturJson = htmlspecialchars(json_encode($fakturPengganti, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP), ENT_QUOTES, 'UTF-8');
+                    $links[] = '<a class="dropdown-item" href="' . site_url('materialmasuk/edit/' . sha1($fakturPengganti)) . '"><i class="fa fa-edit"></i> Edit ' . esc($fakturPengganti) . '</a>';
+                    $links[] = '<button type="button" class="dropdown-item text-danger" onclick="hapusPenerimaanNg(' . $fakturJson . ')"><i class="fa fa-undo"></i> Batalkan ' . esc($fakturPengganti) . '</button>';
+                }
+                $aksi[] = '<div class="btn-group"><button type="button" class="btn btn-sm btn-warning dropdown-toggle" data-toggle="dropdown" title="Koreksi penerimaan NG"><i class="fa fa-tools"></i> Koreksi</button><div class="dropdown-menu dropdown-menu-right">' . implode('', $links) . '</div></div>';
+            }
+            $row['aksi'] = $aksi ? implode(' ', $aksi) : '<span class="text-muted">-</span>';
+            $data[] = $row;
+        }
+        return $this->response->setJSON([
+            'draw' => (int) $this->request->getPost('draw'),
+            'recordsTotal' => $total,
+            'recordsFiltered' => $filtered,
+            'data' => $data,
+        ]);
+    }
+
     public function listData()
     {
         if ($this->request->isAJAX()) {
@@ -892,10 +984,17 @@ class Materialmasuk extends BaseController
             // cuma buat data lama sebelum kolom ini ada.
             $poKeluarIdHeader = (int) ($header['po_keluar_id'] ?? 0);
             $poKeluar = new PoKeluar();
+            $poKeluarIds = [];
             foreach ($details as $detail) {
                 $poKeluarIdItem = (int) ($detail['po_keluar_id'] ?? $poKeluarIdHeader);
                 if ($poKeluarIdItem > 0) {
+                    $poKeluarIds[$poKeluarIdItem] = true;
                     $poKeluar->batalkanQty($poKeluarIdItem, 'material', (string) $detail['detmatkode'], (float) $detail['detjml']);
+                }
+            }
+            if (($header['sumber'] ?? '') === 'retur_ng') {
+                foreach (array_keys($poKeluarIds) as $poKeluarId) {
+                    $poKeluar->refreshStatusAfterReplacement((int) $poKeluarId);
                 }
             }
 
@@ -1120,6 +1219,27 @@ class Materialmasuk extends BaseController
             // po_keluar_id header cuma buat data lama sebelum kolom ini ada.
             $poKeluarId = (int) ($rowData['po_keluar_id'] ?? ($header['po_keluar_id'] ?? 0));
 
+            if (($header['sumber'] ?? '') === 'retur_ng' && $poKeluarId > 0 && $db->tableExists('retur_material_detail')) {
+                $qtyNg = (float) (($db->table('retur_material_detail rd')
+                    ->selectSum('rd.qty_retur', 'total_ng')
+                    ->join('detail_materialmasuk dmm', 'dmm.id = rd.material_masuk_detail_id', 'inner')
+                    ->where('dmm.po_keluar_id', $poKeluarId)
+                    ->where('dmm.detmatkode', $rowData['detmatkode'])
+                    ->get()->getRowArray()['total_ng'] ?? 0));
+                $qtyPenggantiLain = (float) (($db->table('detail_materialmasuk dmm')
+                    ->selectSum('dmm.detjml', 'total_pengganti')
+                    ->join('materialmasuk mm', 'mm.faktur = dmm.detfaktur', 'inner')
+                    ->where('mm.sumber', 'retur_ng')
+                    ->where('dmm.po_keluar_id', $poKeluarId)
+                    ->where('dmm.detmatkode', $rowData['detmatkode'])
+                    ->where('dmm.id !=', $iddetail)
+                    ->get()->getRowArray()['total_pengganti'] ?? 0));
+                if ($qtyNg <= 0 || $qtyPenggantiLain + (float) $jml > $qtyNg + 0.000001) {
+                    echo json_encode(['error' => 'Qty penerimaan pengganti tidak boleh melebihi total qty NG yang tercatat.']);
+                    return;
+                }
+            }
+
             $db->transStart();
 
             if ($existingStok) {
@@ -1138,6 +1258,9 @@ class Materialmasuk extends BaseController
                     $poKeluar->terimaQty($poKeluarId, 'material', (string) $rowData['detmatkode'], (float) $selisih);
                 } else {
                     $poKeluar->batalkanQty($poKeluarId, 'material', (string) $rowData['detmatkode'], (float) abs($selisih));
+                }
+                if (($header['sumber'] ?? '') === 'retur_ng') {
+                    $poKeluar->refreshStatusAfterReplacement($poKeluarId);
                 }
             }
 
