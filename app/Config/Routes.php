@@ -153,6 +153,15 @@ $routes->delete('/permintaanbarang/hapus/(:any)', 'Permintaan::hapus/$1');
 $routes->get('/satuan/hapus/(:any)', 'Satuan::index');
 $routes->delete('/satuan/hapus/(:any)', 'Satuan::hapus/$1');
 
+$routes->get('jasa/index', 'Jasa::index');
+$routes->get('jasa/modalData', 'Jasa::modalData');
+$routes->get('jasa/formtambah', 'Jasa::formtambah');
+$routes->post('jasa/simpan', 'Jasa::simpan');
+$routes->post('jasa/update', 'Jasa::update');
+$routes->post('jasa/hapus', 'Jasa::hapus');
+$routes->get('jasa/listData', 'Jasa::listData');
+$routes->get('jasa/pemakaian', 'Jasa::pemakaian');
+
 $routes->get('/berat/hapus/(:any)', 'Berat::index');
 $routes->delete('/berat/hapus/(:any)', 'Berat::hapus/$1');
 

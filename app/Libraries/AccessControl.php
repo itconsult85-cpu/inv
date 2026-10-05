@@ -88,7 +88,7 @@ class AccessControl
                     self::feature('master.harga_produk', 'Harga Produk', 'barang/hargaProduk', 'fa fa-tags text-warning', ['barang/hargaProduk', 'barang/listDataHarga'], [], false),
                     self::feature('master.pelanggan', 'Pelanggan', 'pelanggan/index', 'fa fa-users text-success', ['pelanggan']),
                     self::feature('master.supplier', 'Supplier', 'supplier/index', 'fa fa-users text-success', ['supplier']),
-                    self::feature('master.jasa', 'Jasa', 'jasa/modalData', 'fa fa-handshake text-info', ['jasa'], [], false),
+                    self::feature('master.jasa', 'Jasa', 'jasa/index', 'fa fa-handshake text-info', ['jasa']),
                 ],
             ],
             [
@@ -530,7 +530,7 @@ class AccessControl
 
             case 'master.jasa':
                 return [
-                    self::permissionAction($key, 'view', 'Lihat Jasa', self::patterns(['jasa/modaldata', 'jasa/listdata']), 'view'),
+                    self::permissionAction($key, 'view', 'Lihat Jasa', self::patterns(['jasa/index', 'jasa/modaldata', 'jasa/listdata']), 'view'),
                     self::permissionAction($key, 'create', 'Tambah Jasa', self::patterns(['jasa/formtambah', 'jasa/simpan']), 'create'),
                     self::permissionAction($key, 'edit', 'Edit Jasa', self::patterns(['jasa/update']), 'edit'),
                     self::permissionAction($key, 'usage_check', 'Cek Pemakaian Jasa', self::patterns(['jasa/pemakaian']), 'view'),
