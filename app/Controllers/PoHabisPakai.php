@@ -3,6 +3,7 @@
 namespace App\Controllers;
 
 use App\Libraries\AccessControl;
+use App\Libraries\PublicId;
 use App\Models\ModelDetailPoHabisPakai;
 use App\Models\ModelLogStokHabisPakai;
 use App\Models\ModelPenerimaanPoHabisPakai;
@@ -12,6 +13,12 @@ use App\Models\ModelSupplier;
 
 class PoHabisPakai extends BaseController
 {
+    private function resolveToken(string $token, string $context): int
+    {
+        $id = PublicId::decode($token, $context);
+        return $id !== null && ctype_digit($id) && (int) $id > 0 ? (int) $id : 0;
+    }
+
     public function index()
     {
         if (!AccessControl::can('order.po_habis_pakai.view')) return $this->deny();
@@ -34,19 +41,19 @@ class PoHabisPakai extends BaseController
         return redirect()->to('poHabisPakai/index')->with($ok ? 'message' : 'error', $ok ? 'PO Barang Habis Pakai berhasil dibuat.' : 'PO gagal dibuat.');
     }
 
-    public function edit($id)
+    public function edit($token)
     {
         if (!AccessControl::can('order.po_habis_pakai.input')) return $this->deny();
-        $id = (int) $id; $po = (new ModelPoHabisPakai())->find($id);
+        $id = $this->resolveToken((string) $token, 'po-bhp-id'); $po = (new ModelPoHabisPakai())->find($id);
         if (!$po) return redirect()->to('poHabisPakai/index')->with('error', 'PO tidak ditemukan.');
         if ($this->hasReceipts($id)) return redirect()->to('poHabisPakai/index')->with('error', 'PO yang sudah memiliki penerimaan tidak dapat diedit.');
         return view('pohabispakai/edit', ['po' => $po, 'details' => (new ModelDetailPoHabisPakai())->where('po_id', $id)->findAll(), 'suppliers' => (new ModelSupplier())->orderBy('supnama')->findAll(), 'stok' => (new ModelStokHabisPakai())->where('aktif', 1)->orderBy('nama')->findAll()]);
     }
 
-    public function update($id)
+    public function update($token)
     {
         if (!AccessControl::can('order.po_habis_pakai.input')) return $this->deny();
-        $id = (int) $id; $po = (new ModelPoHabisPakai())->find($id);
+        $id = $this->resolveToken((string) $token, 'po-bhp-id'); $po = (new ModelPoHabisPakai())->find($id);
         if (!$po) return redirect()->to('poHabisPakai/index')->with('error', 'PO tidak ditemukan.');
         if ($this->hasReceipts($id)) return redirect()->to('poHabisPakai/index')->with('error', 'PO yang sudah memiliki penerimaan tidak dapat diubah.');
         $data = $this->collectPoData(); if ($data['error']) return redirect()->back()->withInput()->with('error', $data['error']);
@@ -57,10 +64,10 @@ class PoHabisPakai extends BaseController
         return redirect()->to('poHabisPakai/index')->with($ok ? 'message' : 'error', $ok ? 'PO berhasil diubah.' : 'PO gagal diubah.');
     }
 
-    public function hapus($id)
+    public function hapus($token)
     {
         if (!AccessControl::can('order.po_habis_pakai.input')) return $this->deny();
-        $id = (int) $id;
+        $id = $this->resolveToken((string) $token, 'po-bhp-id');
         if (!(new ModelPoHabisPakai())->find($id)) return redirect()->to('poHabisPakai/index')->with('error', 'PO tidak ditemukan.');
         if ($this->hasReceipts($id)) return redirect()->to('poHabisPakai/index')->with('error', 'PO yang sudah memiliki penerimaan tidak dapat dihapus.');
         $db = db_connect(); $db->transStart(); (new ModelDetailPoHabisPakai())->where('po_id', $id)->delete(); (new ModelPoHabisPakai())->delete($id); $db->transComplete(); $ok = $db->transStatus();
@@ -70,7 +77,7 @@ class PoHabisPakai extends BaseController
     public function terima()
     {
         if (!AccessControl::can('order.po_habis_pakai.receive')) return $this->deny();
-        $detailId = (int) $this->request->getPost('detail_id'); $invoice = trim((string) $this->request->getPost('nomor_invoice')); $qty = (float) $this->request->getPost('qty');
+        $detailId = $this->resolveToken((string) $this->request->getPost('detail_id'), 'po-bhp-detail-id'); $invoice = trim((string) $this->request->getPost('nomor_invoice')); $qty = (float) $this->request->getPost('qty');
         if (!$detailId || $invoice === '' || $qty <= 0) return redirect()->back()->with('error', 'Detail PO, Invoice, dan qty wajib diisi.');
         $detail = (new ModelDetailPoHabisPakai())->find($detailId); $stok = $detail ? (new ModelStokHabisPakai())->find($detail['stok_id']) : null;
         if (!$detail || $qty > ((float) $detail['qty_pesan'] - (float) $detail['qty_diterima'])) return redirect()->back()->with('error', 'Qty penerimaan melebihi sisa PO.');
@@ -86,10 +93,10 @@ class PoHabisPakai extends BaseController
         return redirect()->back()->with($ok ? 'message' : 'error', $ok ? 'Penerimaan berhasil, stok bertambah.' : 'Penerimaan gagal.');
     }
 
-    public function updatePenerimaan($id)
+    public function updatePenerimaan($token)
     {
         if (!AccessControl::can('order.po_habis_pakai.receive')) return $this->deny();
-        $id = (int) $id; $receiptModel = new ModelPenerimaanPoHabisPakai(); $receipt = $receiptModel->find($id); $newQty = (float) $this->request->getPost('qty'); $invoice = trim((string) $this->request->getPost('nomor_invoice'));
+        $id = $this->resolveToken((string) $token, 'po-bhp-receipt-id'); $receiptModel = new ModelPenerimaanPoHabisPakai(); $receipt = $receiptModel->find($id); $newQty = (float) $this->request->getPost('qty'); $invoice = trim((string) $this->request->getPost('nomor_invoice'));
         if (!$receipt || $newQty <= 0 || $invoice === '') return redirect()->back()->with('error', 'Data penerimaan tidak valid.');
         $detail = (new ModelDetailPoHabisPakai())->find($receipt['detail_id']); $stok = (new ModelStokHabisPakai())->find($receipt['stok_id']);
         if (!$detail || !$stok) return redirect()->back()->with('error', 'Detail PO atau master stok tidak ditemukan.');
@@ -101,10 +108,10 @@ class PoHabisPakai extends BaseController
         return redirect()->back()->with($ok ? 'message' : 'error', $ok ? 'Penerimaan berhasil diubah dan stok disesuaikan.' : 'Perubahan penerimaan gagal.');
     }
 
-    public function hapusPenerimaan($id)
+    public function hapusPenerimaan($token)
     {
         if (!AccessControl::can('order.po_habis_pakai.receive')) return $this->deny();
-        $id = (int) $id; $receiptModel = new ModelPenerimaanPoHabisPakai(); $receipt = $receiptModel->find($id); if (!$receipt) return redirect()->back()->with('error', 'Penerimaan tidak ditemukan.');
+        $id = $this->resolveToken((string) $token, 'po-bhp-receipt-id'); $receiptModel = new ModelPenerimaanPoHabisPakai(); $receipt = $receiptModel->find($id); if (!$receipt) return redirect()->back()->with('error', 'Penerimaan tidak ditemukan.');
         $stok = (new ModelStokHabisPakai())->find($receipt['stok_id']); $detail = (new ModelDetailPoHabisPakai())->find($receipt['detail_id']);
         if (!$stok || !$detail || (float) $stok['stok'] < (float) $receipt['qty']) return redirect()->back()->with('error', 'Penerimaan tidak dapat dihapus karena stok sudah terpakai.');
         $now = date('Y-m-d H:i:s'); $after = (float) $stok['stok'] - (float) $receipt['qty']; $db = db_connect(); $db->transStart();

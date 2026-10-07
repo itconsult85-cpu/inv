@@ -4,12 +4,24 @@ namespace App\Controllers;
 
 use App\Models\ModelInvoiceIn;
 use App\Models\ModelInvoiceInDetail;
+use App\Libraries\PublicId;
 
 class InvoiceIn extends BaseController
 {
     private $db;
     private ModelInvoiceIn $invoiceModel;
     private ModelInvoiceInDetail $detailModel;
+
+    private function resolveInvoiceToken(string $token): int
+    {
+        $id = PublicId::decode($token, 'invoice-in-id');
+        return $id !== null && ctype_digit($id) && (int) $id > 0 ? (int) $id : 0;
+    }
+
+    private function invoiceUrl(string $action, int $id): string
+    {
+        return '/invoiceIn/' . $action . '/' . PublicId::encode($id, 'invoice-in-id');
+    }
 
     public function __construct()
     {
@@ -252,7 +264,7 @@ class InvoiceIn extends BaseController
             }
             $this->db->transCommit();
 
-            return redirect()->to('/invoiceIn/detail/' . $invoiceId)->with('message', 'Invoice In berhasil dicatat.');
+            return redirect()->to($this->invoiceUrl('detail', (int) $invoiceId))->with('message', 'Invoice In berhasil dicatat.');
         } catch (\Throwable $e) {
             $this->db->transRollback();
             if ($uploadedFileName) {
@@ -266,8 +278,9 @@ class InvoiceIn extends BaseController
         }
     }
 
-    public function detail(int $id)
+    public function detail(string $token)
     {
+        $id = $this->resolveInvoiceToken($token);
         $data = $this->getInvoice($id);
         if (!$data) {
             throw \CodeIgniter\Exceptions\PageNotFoundException::forPageNotFound('Invoice In tidak ditemukan.');
@@ -275,8 +288,9 @@ class InvoiceIn extends BaseController
         return view('invoicein/detail', $data);
     }
 
-    public function uploadFileInvoice(int $id)
+    public function uploadFileInvoice(string $token)
     {
+        $id = $this->resolveInvoiceToken($token);
         $data = $this->getInvoice($id);
         if (!$data) {
             throw \CodeIgniter\Exceptions\PageNotFoundException::forPageNotFound('Invoice In tidak ditemukan.');
@@ -284,8 +298,10 @@ class InvoiceIn extends BaseController
         return view('invoicein/upload_file_invoice', $data);
     }
 
-    public function simpanFileInvoice(int $id)
+    public function simpanFileInvoice(string $token)
     {
+        $id = $this->resolveInvoiceToken($token);
+        if ($id <= 0) return redirect()->to('/invoiceIn/data')->with('error', 'Identifier Invoice In tidak valid.');
         $invoice = $this->invoiceModel->find($id);
         if (!$invoice) {
             return redirect()->to('/invoiceIn/data')->with('error', 'Invoice In tidak ditemukan.');
@@ -332,7 +348,7 @@ class InvoiceIn extends BaseController
                 }
             }
 
-            return redirect()->to('/invoiceIn/detail/' . $id)->with('message', 'File invoice berhasil diupload.');
+            return redirect()->to($this->invoiceUrl('detail', $id))->with('message', 'File invoice berhasil diupload.');
         } catch (\Throwable $e) {
             $uploadedPath = $uploadDir . DIRECTORY_SEPARATOR . $uploadedFileName;
             if (is_file($uploadedPath)) {
@@ -343,17 +359,19 @@ class InvoiceIn extends BaseController
         }
     }
 
-    public function hapusFileInvoice(int $id)
+    public function hapusFileInvoice(string $token)
     {
+        $id = $this->resolveInvoiceToken($token);
+        if ($id <= 0) return redirect()->to('/invoiceIn/data')->with('error', 'Identifier Invoice In tidak valid.');
         $invoice = $this->invoiceModel->find($id);
         if (!$invoice) {
             return redirect()->to('/invoiceIn/data')->with('error', 'Invoice In tidak ditemukan.');
         }
         if (($invoice['status'] ?? '') === 'DIBATALKAN') {
-            return redirect()->to('/invoiceIn/detail/' . $id)->with('error', 'File invoice pada Invoice In yang dibatalkan tidak bisa dihapus.');
+            return redirect()->to($this->invoiceUrl('detail', $id))->with('error', 'File invoice pada Invoice In yang dibatalkan tidak bisa dihapus.');
         }
         if (empty($invoice['invoice_file'])) {
-            return redirect()->to('/invoiceIn/detail/' . $id)->with('error', 'File invoice belum tersedia.');
+            return redirect()->to($this->invoiceUrl('detail', $id))->with('error', 'File invoice belum tersedia.');
         }
 
         $uploadDir = WRITEPATH . 'uploads' . DIRECTORY_SEPARATOR . 'invoice_in';
@@ -370,15 +388,16 @@ class InvoiceIn extends BaseController
                 'invoice_uploaded_at' => null,
             ]);
 
-            return redirect()->to('/invoiceIn/detail/' . $id)->with('message', 'File invoice berhasil dihapus.');
+            return redirect()->to($this->invoiceUrl('detail', $id))->with('message', 'File invoice berhasil dihapus.');
         } catch (\Throwable $e) {
             log_message('error', 'Gagal hapus file invoice in: {message}', ['message' => $e->getMessage()]);
-            return redirect()->to('/invoiceIn/detail/' . $id)->with('error', 'File invoice gagal dihapus. ' . $e->getMessage());
+            return redirect()->to($this->invoiceUrl('detail', $id))->with('error', 'File invoice gagal dihapus. ' . $e->getMessage());
         }
     }
 
-    public function uploadBuktiTransfer(int $id)
+    public function uploadBuktiTransfer(string $token)
     {
+        $id = $this->resolveInvoiceToken($token);
         $data = $this->getInvoice($id);
         if (!$data) {
             throw \CodeIgniter\Exceptions\PageNotFoundException::forPageNotFound('Invoice In tidak ditemukan.');
@@ -386,8 +405,10 @@ class InvoiceIn extends BaseController
         return view('invoicein/upload_bukti_transfer', $data);
     }
 
-    public function simpanBuktiTransfer(int $id)
+    public function simpanBuktiTransfer(string $token)
     {
+        $id = $this->resolveInvoiceToken($token);
+        if ($id <= 0) return redirect()->to('/invoiceIn/data')->with('error', 'Identifier Invoice In tidak valid.');
         $invoice = $this->invoiceModel->find($id);
         if (!$invoice) {
             return redirect()->to('/invoiceIn/data')->with('error', 'Invoice In tidak ditemukan.');
@@ -435,7 +456,7 @@ class InvoiceIn extends BaseController
                 }
             }
 
-            return redirect()->to('/invoiceIn/detail/' . $id)->with('message', 'Bukti transfer berhasil diupload. Invoice In ditandai Lunas.');
+            return redirect()->to($this->invoiceUrl('detail', $id))->with('message', 'Bukti transfer berhasil diupload. Invoice In ditandai Lunas.');
         } catch (\Throwable $e) {
             $uploadedPath = $uploadDir . DIRECTORY_SEPARATOR . $uploadedFileName;
             if (is_file($uploadedPath)) {
@@ -446,8 +467,9 @@ class InvoiceIn extends BaseController
         }
     }
 
-    public function file(int $id)
+    public function file(string $token)
     {
+        $id = $this->resolveInvoiceToken($token);
         $invoice = $this->invoiceModel->find($id);
         if (!$invoice || empty($invoice['invoice_file'])) {
             throw \CodeIgniter\Exceptions\PageNotFoundException::forPageNotFound('File invoice tidak ditemukan.');
@@ -463,8 +485,9 @@ class InvoiceIn extends BaseController
             ->setFileName($invoice['invoice_original_name'] ?: $invoice['invoice_file']);
     }
 
-    public function buktiTransfer(int $id)
+    public function buktiTransfer(string $token)
     {
+        $id = $this->resolveInvoiceToken($token);
         $invoice = $this->invoiceModel->find($id);
         if (!$invoice || empty($invoice['bukti_transfer_file'])) {
             throw \CodeIgniter\Exceptions\PageNotFoundException::forPageNotFound('Bukti transfer tidak ditemukan.');
@@ -480,8 +503,10 @@ class InvoiceIn extends BaseController
             ->setFileName($invoice['bukti_transfer_original_name'] ?: $invoice['bukti_transfer_file']);
     }
 
-    public function cancel(int $id)
+    public function cancel(string $token)
     {
+        $id = $this->resolveInvoiceToken($token);
+        if ($id <= 0) return redirect()->to('/invoiceIn/data')->with('error', 'Identifier Invoice In tidak valid.');
         if (strtolower($this->request->getMethod()) !== 'post') {
             return redirect()->to('/invoiceIn/data');
         }
@@ -492,8 +517,10 @@ class InvoiceIn extends BaseController
         return redirect()->to('/invoiceIn/data')->with('message', 'Invoice In berhasil dibatalkan.');
     }
 
-    public function hapus(int $id)
+    public function hapus(string $token)
     {
+        $id = $this->resolveInvoiceToken($token);
+        if ($id <= 0) return redirect()->to('/invoiceIn/data')->with('error', 'Identifier Invoice In tidak valid.');
         if (strtolower($this->request->getMethod()) !== 'post') {
             return redirect()->to('/invoiceIn/data');
         }

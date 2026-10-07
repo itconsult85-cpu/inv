@@ -42,8 +42,8 @@ class Packaging extends BaseController
             return DataTable::of($builder)
                 ->addNumbering('nomor')
                 ->add('aksi', function ($row) {
-                    return "<button type=\"button\" class=\"btn btn-sm btn-primary\" title=\"Edit Data\" onclick=\"edit('" . ($row->matpid) . "')\"><i class=\"fa fa-edit\"></i></button>&nbsp
-                    <button type=\"button\" class=\"btn btn-sm btn-danger\" title=\"Hapus Data\" onclick=\"hapus('" . $row->matpid . "','" . $row->matpkode . "')\"><i class=\"fa fa-trash-alt\"></i></button>";
+                    return "<button type=\"button\" class=\"btn btn-sm btn-primary\" title=\"Edit Data\" onclick=\"edit('" . $this->publicId($row->matpid, 'packaging-id') . "')\"><i class=\"fa fa-edit\"></i></button>&nbsp
+                    <button type=\"button\" class=\"btn btn-sm btn-danger\" title=\"Hapus Data\" onclick=\"hapus('" . $this->publicId($row->matpid, 'packaging-id') . "','" . $row->matpkode . "')\"><i class=\"fa fa-trash-alt\"></i></button>";
                 })
                 ->toJson(true);
         }
@@ -114,6 +114,9 @@ class Packaging extends BaseController
 
     public function edit($id)
     {
+        $idAsli = $this->resolvePublicId((string) $id, 'packaging-id');
+        if ($idAsli === null || !ctype_digit($idAsli)) { return redirect()->to('/packaging/index')->with('error', 'Token packaging tidak valid.'); }
+        $id = (int) $idAsli;
         $cekData = $this->packaging->find($id);
 
         if ($cekData) {
@@ -144,7 +147,9 @@ class Packaging extends BaseController
     public function updatedata()
     {
         // if ($this->request->isAJAX()) {
-            $idmaterial = $this->request->getVar('idmaterial');
+            $idmaterial = $this->resolvePublicId($this->request->getVar('idmaterial'), 'packaging-id');
+            if ($idmaterial === null || !ctype_digit($idmaterial)) { return redirect()->to('/packaging/index')->with('error', 'Token packaging tidak valid.'); }
+            $idmaterial = (int) $idmaterial;
             $kodematerial = $this->request->getVar('kodematerial');
             $namamaterial = $this->request->getVar('namamaterial');
             $stok = $this->request->getVar('stok');
@@ -214,7 +219,9 @@ class Packaging extends BaseController
     function hapus()
     {
         if ($this->request->isAJAX()) {
-            $kode = $this->request->getPost('kode');
+            $kode = $this->resolvePublicId($this->request->getPost('kode'), 'packaging-id');
+            if ($kode === null || !ctype_digit($kode)) { return $this->response->setJSON(['error' => 'Token packaging tidak valid']); }
+            $kode = (int) $kode;
 
             $modelmaterial = new ModelMaterialPackaging();
 

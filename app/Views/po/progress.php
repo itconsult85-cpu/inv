@@ -211,14 +211,14 @@ Progress PO
                             $statusText = $isReopened ? ' <span class="badge badge-light">Dibuka kembali</span>' : ' <span class="badge badge-warning">Ditutup</span>';
                         ?>
                         <?php if (!empty($log['nopo_tujuan'])) : ?>
-                            <div class="<?= $isReopened ? 'text-muted' : '' ?>"><?= esc($log['kodebrg']) ?> &middot; <?= number_format((float) $log['qty_dipindah'], 0, ',', '.') ?> pcs ditutup, dicatat sebagai bagian dari PO <a href="<?= site_url('po/edit/' . sha1($log['nopo_tujuan'])) ?>"><?= esc($log['nopo_tujuan']) ?></a> &middot; <?= date('d-m-Y', strtotime($log['ditutup_pada'])) ?> oleh <?= esc($log['ditutup_oleh'] ?: '-') ?><?= $statusText ?><?= $reopenInfo ?></div>
+                            <div class="<?= $isReopened ? 'text-muted' : '' ?>"><?= esc($log['kodebrg']) ?> &middot; <?= number_format((float) $log['qty_dipindah'], 0, ',', '.') ?> pcs ditutup, dicatat sebagai bagian dari PO <a href="<?= site_url('po/edit/' . \App\Libraries\PublicId::encode($log['nopo_tujuan'], 'po-masuk-no')) ?>"><?= esc($log['nopo_tujuan']) ?></a> &middot; <?= date('d-m-Y', strtotime($log['ditutup_pada'])) ?> oleh <?= esc($log['ditutup_oleh'] ?: '-') ?><?= $statusText ?><?= $reopenInfo ?></div>
                         <?php else : ?>
                             <div class="<?= $isReopened ? 'text-muted' : '' ?>"><?= esc($log['kodebrg']) ?> &middot; <?= number_format((float) $log['qty_dipindah'], 0, ',', '.') ?> pcs disesuaikan (qty salah input, tidak dipindah kemana-mana) &middot; <?= date('d-m-Y', strtotime($log['ditutup_pada'])) ?> oleh <?= esc($log['ditutup_oleh'] ?: '-') ?><?= $statusText ?><?= $reopenInfo ?></div>
                         <?php endif ?>
                     <?php endforeach ?>
                     <?php foreach ($closingMasukAktif as $log) : ?>
                         <?php $isReopened = !empty($log['reopened_at']); ?>
-                        <div class="<?= $isReopened ? 'text-muted' : '' ?>">Qty <?= esc($log['kodebrg']) ?> di PO ini sebagian (<?= number_format((float) $log['qty_dipindah'], 0, ',', '.') ?> pcs) sebenarnya bagian dari PO <a href="<?= site_url('po/edit/' . sha1($log['nopo_asal'])) ?>"><?= esc($log['nopo_asal']) ?></a> yang ditutup &middot; <?= date('d-m-Y', strtotime($log['ditutup_pada'])) ?><?= $isReopened ? ' &middot; close asal sudah dibuka kembali' : '' ?></div>
+                        <div class="<?= $isReopened ? 'text-muted' : '' ?>">Qty <?= esc($log['kodebrg']) ?> di PO ini sebagian (<?= number_format((float) $log['qty_dipindah'], 0, ',', '.') ?> pcs) sebenarnya bagian dari PO <a href="<?= site_url('po/edit/' . \App\Libraries\PublicId::encode($log['nopo_asal'], 'po-masuk-no')) ?>"><?= esc($log['nopo_asal']) ?></a> yang ditutup &middot; <?= date('d-m-Y', strtotime($log['ditutup_pada'])) ?><?= $isReopened ? ' &middot; close asal sudah dibuka kembali' : '' ?></div>
                     <?php endforeach ?>
                 </div>
             </div>

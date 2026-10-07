@@ -102,7 +102,7 @@ $pendingCount = count(array_filter($permintaan, static fn($row) => ($row['status
                                     <td class="text-right <?= (float)$item['stok'] <= (float)$item['stok_minimum'] ? 'text-danger font-weight-bold' : '' ?>"><?= number_format((float)$item['stok'], 2, ',', '.') ?></td>
                                     <td class="text-right"><?= number_format((float)$item['stok_minimum'], 2, ',', '.') ?></td>
                                     <td><?= (float)$item['stok'] <= (float)$item['stok_minimum'] ? '<span class="badge badge-warning">Perlu Restok</span>' : '<span class="badge badge-success">Aman</span>' ?></td>
-                                    <td class="text-nowrap"><button type="button" class="btn btn-sm btn-outline-primary btnEditStok" data-id="<?= $item['id'] ?>" data-kode="<?= esc($item['kode'], 'attr') ?>" data-nama="<?= esc($item['nama'], 'attr') ?>" data-satuan="<?= esc($item['satuan'], 'attr') ?>" data-minimum="<?= (float) $item['stok_minimum'] ?>" title="Edit"><i class="fas fa-edit"></i></button> <button type="button" class="btn btn-sm btn-outline-danger btnNonaktifkanStok" data-id="<?= $item['id'] ?>" data-nama="<?= esc($item['nama'], 'attr') ?>" title="Nonaktifkan"><i class="fas fa-ban"></i></button></td>
+                                    <td class="text-nowrap"><button type="button" class="btn btn-sm btn-outline-primary btnEditStok" data-id="<?= \App\Libraries\PublicId::encode($item['id'], 'bhp-stock-id') ?>" data-kode="<?= esc($item['kode'], 'attr') ?>" data-nama="<?= esc($item['nama'], 'attr') ?>" data-satuan="<?= esc($item['satuan'], 'attr') ?>" data-minimum="<?= (float) $item['stok_minimum'] ?>" title="Edit"><i class="fas fa-edit"></i></button> <button type="button" class="btn btn-sm btn-outline-danger btnNonaktifkanStok" data-id="<?= \App\Libraries\PublicId::encode($item['id'], 'bhp-stock-id') ?>" data-nama="<?= esc($item['nama'], 'attr') ?>" title="Nonaktifkan"><i class="fas fa-ban"></i></button></td>
                                 </tr><?php endforeach; ?></tbody>
                     </table>
                 </div>
@@ -133,7 +133,7 @@ $pendingCount = count(array_filter($permintaan, static fn($row) => ($row['status
                                         <td class="text-right"><?= number_format((float)$row['qty_pesan'], 2, ',', '.') ?></td>
                                         <td class="text-right"><?= number_format((float)$row['qty_masuk'], 2, ',', '.') ?></td>
                                         <td class="text-right font-weight-bold"><?= number_format((float)$row['qty_pesan'] - (float)$row['qty_masuk'], 2, ',', '.') ?></td>
-                                        <td><button class="btn btn-primary btn-sm btnTerima" data-detail="<?= $row['po_detail_id'] ?>" data-item="<?= esc($row['nama_item']) ?>" data-sisa="<?= (float)$row['qty_pesan'] - (float)$row['qty_masuk'] ?>"><i class="fas fa-check"></i> Terima</button></td>
+                                        <td><button class="btn btn-primary btn-sm btnTerima" data-detail="<?= \App\Libraries\PublicId::encode($row['po_detail_id'], 'bhp-po-detail-id') ?>" data-item="<?= esc($row['nama_item']) ?>" data-sisa="<?= (float)$row['qty_pesan'] - (float)$row['qty_masuk'] ?>"><i class="fas fa-check"></i> Terima</button></td>
                                     </tr><?php endforeach; ?></tbody>
                         </table>
                     </div>
@@ -158,7 +158,7 @@ $pendingCount = count(array_filter($permintaan, static fn($row) => ($row['status
                                     </tr>
                                 </thead>
                                 <tbody><?php foreach ($stok as $item): ?><tr>
-                                            <td><?= esc($item['nama']) ?><input type="hidden" name="stok_id[]" value="<?= $item['id'] ?>"></td>
+                                            <td><?= esc($item['nama']) ?><input type="hidden" name="stok_id[]" value="<?= \App\Libraries\PublicId::encode($item['id'], 'bhp-stock-id') ?>"></td>
                                             <td><?= esc($item['satuan']) ?></td>
                                             <td><?= number_format((float)$item['stok'], 2, ',', '.') ?></td>
                                             <td><input type="number" class="form-control form-control-sm" name="qty[]" min="0" step="0.01" value="0"></td>
@@ -192,7 +192,7 @@ $pendingCount = count(array_filter($permintaan, static fn($row) => ($row['status
                                         <td><?= (int)$row['jumlah_item'] ?></td>
                                         <td><span class="badge badge-<?= $row['status'] === 'DISETUJUI' ? 'success' : ($row['status'] === 'DITOLAK' ? 'danger' : 'warning') ?>"><?= esc($row['status']) ?></span></td>
                                         <td><?= esc($row['catatan'] ?: '-') ?></td>
-                                        <td><?php if ($row['status'] === 'DIAJUKAN'): ?><button class="btn btn-success btn-sm btnPersetujuan" data-url="<?= site_url('baranghabispakai/setujui/' . $row['id']) ?>">Setujui</button> <button class="btn btn-danger btn-sm btnPersetujuan" data-url="<?= site_url('baranghabispakai/tolak/' . $row['id']) ?>">Tolak</button><?php else: ?>-<?php endif; ?></td>
+                                        <td><?php if ($row['status'] === 'DIAJUKAN'): ?><button class="btn btn-success btn-sm btnPersetujuan" data-url="<?= site_url('baranghabispakai/setujui/' . \App\Libraries\PublicId::encode($row['id'], 'bhp-request-id')) ?>">Setujui</button> <button class="btn btn-danger btn-sm btnPersetujuan" data-url="<?= site_url('baranghabispakai/tolak/' . \App\Libraries\PublicId::encode($row['id'], 'bhp-request-id')) ?>">Tolak</button><?php else: ?>-<?php endif; ?></td>
                                     </tr><?php endforeach; ?></tbody>
                         </table>
                     </div>

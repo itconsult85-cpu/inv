@@ -7,6 +7,7 @@ use App\Models\Modelgudang;
 use App\Models\ModelPelanggan;
 use App\Models\Modelstok;
 use App\Models\Modelberat;
+use App\Libraries\PublicId;
 
 class Sampleproduk extends BaseController
 {
@@ -62,7 +63,11 @@ class Sampleproduk extends BaseController
     public function input(string $id = '')
     {
         $db = db_connect();
-        $header = $id !== '' ? $db->table('barangkeluar')->where('faktur', $id)->where('sumber', 'sample')->get()->getRowArray() : null;
+        $fakturAsli = $id !== '' ? PublicId::decode($id, 'sample-faktur') : null;
+        $header = $id !== '' ? $db->table('barangkeluar')
+            ->where('sumber', 'sample')
+            ->where('faktur', $fakturAsli ?? '__invalid_public_id__')
+            ->get()->getRowArray() : null;
         if ($id !== '' && !$header) return redirect()->to(site_url('sampleproduk'))->with('error', 'Sample tidak ditemukan.');
         $details = $header ? $db->table('detail_barangkeluar')->where('detfaktur', $header['faktur'])->orderBy('id')->get()->getResultArray() : [];
         $poByProduct = [];
@@ -177,7 +182,9 @@ class Sampleproduk extends BaseController
     public function hapus(string $faktur)
     {
         $db = db_connect();
-        $row = $db->table('barangkeluar')->where('SHA1(faktur)', $faktur)->where('sumber', 'sample')->get()->getRowArray();
+        $fakturAsli = PublicId::decode($faktur, 'sample-faktur');
+        if ($fakturAsli === null) return redirect()->to(site_url('barangkeluar/data#sample'))->with('error', 'Identifier sample tidak valid.');
+        $row = $db->table('barangkeluar')->where('faktur', $fakturAsli)->where('sumber', 'sample')->get()->getRowArray();
         if (!$row) return redirect()->to(site_url('barangkeluar/data#sample'))->with('error', 'Sample tidak ditemukan.');
         $db->transStart();
         $db->table('detail_barangkeluar')->where('detfaktur', $row['faktur'])->delete();

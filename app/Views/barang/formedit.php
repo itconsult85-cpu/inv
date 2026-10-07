@@ -47,7 +47,7 @@ $labelPemakaianKode = implode(', ', array_map(static function ($row) {
                     <?php else : ?>
                         <small class="text-muted">Tidak bisa diubah, sudah dipakai di: <?= esc($labelPemakaianKode ?: 'transaksi lain') ?>.</small>
                     <?php endif ?>
-                    <input type="hidden" class="form-control" id="old_kodebarang" name="old_kodebarang" value="<?= esc($kodebarang) ?>">
+                    <input type="hidden" class="form-control" id="old_kodebarang" name="old_kodebarang" value="<?= esc($kodebarangToken ?? '') ?>">
                 </div>
             </div>
             <div class="col-md-4">

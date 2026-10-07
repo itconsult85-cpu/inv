@@ -3,6 +3,7 @@
 namespace App\Controllers;
 
 use App\Libraries\AccessControl;
+use App\Libraries\PublicId;
 use App\Models\ModelDetailPermintaanStokProduksi;
 use App\Models\ModelDetailPoKeluar;
 use App\Models\ModelLogStokHabisPakai;
@@ -11,6 +12,12 @@ use App\Models\ModelStokHabisPakai;
 
 class BarangHabisPakai extends BaseController
 {
+    private function resolveToken(string $token, string $context): int
+    {
+        $id = PublicId::decode($token, $context);
+        return $id !== null && ctype_digit($id) && (int) $id > 0 ? (int) $id : 0;
+    }
+
     private function deny(string $message = 'Anda tidak punya akses ke fitur ini.')
     {
         return $this->response->setStatusCode(403)->setJSON(['error' => $message]);
@@ -84,7 +91,7 @@ class BarangHabisPakai extends BaseController
     {
         if (!AccessControl::can('master.stok_habis_pakai.manage_stock')) return $this->deny();
 
-        $id = (int) $this->request->getPost('id');
+        $id = $this->resolveToken((string) $this->request->getPost('id'), 'bhp-stock-id');
         $kode = strtoupper(trim((string) $this->request->getPost('kode')));
         $nama = trim((string) $this->request->getPost('nama'));
         $satuan = trim((string) $this->request->getPost('satuan'));
@@ -117,7 +124,7 @@ class BarangHabisPakai extends BaseController
     {
         if (!AccessControl::can('master.stok_habis_pakai.manage_stock')) return $this->deny();
 
-        $id = (int) $this->request->getPost('id');
+        $id = $this->resolveToken((string) $this->request->getPost('id'), 'bhp-stock-id');
         $model = new ModelStokHabisPakai();
         $item = $id > 0 ? $model->find($id) : null;
         if (!$item) return $this->response->setJSON(['error' => 'Data stok tidak ditemukan.']);
@@ -130,7 +137,7 @@ class BarangHabisPakai extends BaseController
     public function terimaBarangVendor()
     {
         if (!AccessControl::can('master.stok_habis_pakai.receive')) return $this->deny();
-        $detailId = (int) $this->request->getPost('po_detail_id');
+        $detailId = $this->resolveToken((string) $this->request->getPost('po_detail_id'), 'bhp-po-detail-id');
         $invoice = trim((string) $this->request->getPost('nomor_invoice'));
         $suratJalan = trim((string) $this->request->getPost('nomor_surat_jalan'));
         $qty = (float) $this->request->getPost('qty_diterima');
@@ -165,7 +172,7 @@ class BarangHabisPakai extends BaseController
         $catatan = trim((string) $this->request->getPost('catatan'));
         $items = [];
         foreach ($ids as $index => $stockId) {
-            $stockId = (int) $stockId;
+            $stockId = $this->resolveToken((string) $stockId, 'bhp-stock-id');
             $qty = (float) ($qtys[$index] ?? 0);
             if ($stockId > 0 && $qty > 0) $items[$stockId] = ($items[$stockId] ?? 0) + $qty;
         }
@@ -192,16 +199,16 @@ class BarangHabisPakai extends BaseController
         return $this->response->setJSON(['sukses' => "Permintaan {$nomor} berhasil diajukan dan menunggu persetujuan Supervisor."]);
     }
 
-    public function setujui($id)
+    public function setujui($token)
     {
         if (!AccessControl::can('master.stok_habis_pakai.approve') || !in_array((int) session()->get('idlevel'), [1, 4, 5], true)) return $this->deny('Persetujuan hanya dapat dilakukan oleh Supervisor/Admin/Pimpinan.');
-        return $this->prosesPersetujuan((int) $id, 'DISETUJUI', trim((string) $this->request->getPost('catatan')));
+        return $this->prosesPersetujuan($this->resolveToken((string) $token, 'bhp-request-id'), 'DISETUJUI', trim((string) $this->request->getPost('catatan')));
     }
 
-    public function tolak($id)
+    public function tolak($token)
     {
         if (!AccessControl::can('master.stok_habis_pakai.approve') || !in_array((int) session()->get('idlevel'), [1, 4, 5], true)) return $this->deny('Penolakan hanya dapat dilakukan oleh Supervisor/Admin/Pimpinan.');
-        return $this->prosesPersetujuan((int) $id, 'DITOLAK', trim((string) $this->request->getPost('catatan')));
+        return $this->prosesPersetujuan($this->resolveToken((string) $token, 'bhp-request-id'), 'DITOLAK', trim((string) $this->request->getPost('catatan')));
     }
 
     private function prosesPersetujuan(int $id, string $status, string $catatan)

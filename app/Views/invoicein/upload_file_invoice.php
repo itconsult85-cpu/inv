@@ -4,8 +4,9 @@
 Upload File Invoice In
 <?= $this->endSection('judul') ?>
 
+<?php $invoicePublicId = \App\Libraries\PublicId::encode($invoice['id'], 'invoice-in-id'); ?>
 <?= $this->section('subjudul') ?>
-<a href="<?= site_url('invoiceIn/detail/' . $invoice['id']) ?>" class="btn btn-warning">
+<a href="<?= site_url('invoiceIn/detail/' . $invoicePublicId) ?>" class="btn btn-warning">
     <i class="fas fa-undo"></i> Kembali
 </a>
 <?= $this->endSection('subjudul') ?>
@@ -41,7 +42,7 @@ Upload File Invoice In
                 <tr>
                     <th>File Saat Ini</th>
                     <td>
-                        <a href="<?= site_url('invoiceIn/file/' . $invoice['id']) ?>" target="_blank">
+                        <a href="<?= site_url('invoiceIn/file/' . $invoicePublicId) ?>" target="_blank">
                             <?= esc($invoice['invoice_original_name'] ?: $invoice['invoice_file']) ?>
                         </a>
                     </td>
@@ -49,7 +50,7 @@ Upload File Invoice In
             <?php endif ?>
         </table>
 
-        <?= form_open_multipart('/invoiceIn/simpanFileInvoice/' . $invoice['id']) ?>
+        <?= form_open_multipart('/invoiceIn/simpanFileInvoice/' . $invoicePublicId) ?>
             <div class="form-group">
                 <label>File Invoice</label>
                 <input type="file" name="invoice_file" class="form-control" accept=".pdf,.jpg,.jpeg,.png" required>

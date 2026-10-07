@@ -64,27 +64,28 @@
                     <td><span class="badge badge-<?= $badgeStatus ?>"><?= esc($statusTampil) ?></span></td>
                     <td><span class="badge badge-<?= $badgeBayar ?>"><?= esc($statusBayar) ?></span></td>
                     <td class="text-nowrap">
-                        <a href="<?= site_url('invoiceOut/detail/' . $invoice['id']) ?>" class="btn btn-info btn-sm" title="Lihat"><i class="fas fa-eye"></i></a>
+                        <?php $invoicePublicId = \App\Libraries\PublicId::encode($invoice['id'], 'invoice-out-id'); ?>
+                        <a href="<?= site_url('invoiceOut/detail/' . $invoicePublicId) ?>" class="btn btn-info btn-sm" title="Lihat"><i class="fas fa-eye"></i></a>
                         <div class="btn-group d-inline-block">
                             <button type="button" class="btn btn-primary btn-sm dropdown-toggle" data-toggle="dropdown" title="Extract File">
                                 <i class="fas fa-file-export"></i>
                             </button>
                             <div class="dropdown-menu dropdown-menu-right">
-                                <a class="dropdown-item" href="<?= site_url('invoiceOut/cetak/' . $invoice['id']) ?>" target="_blank"><i class="fas fa-print mr-2"></i>Print</a>
-                                <a class="dropdown-item" href="<?= site_url('invoiceOut/cetakExcel/' . $invoice['id']) ?>"><i class="fas fa-file-excel mr-2"></i>Excel</a>
+                                <a class="dropdown-item" href="<?= site_url('invoiceOut/cetak/' . $invoicePublicId) ?>" target="_blank"><i class="fas fa-print mr-2"></i>Print</a>
+                                <a class="dropdown-item" href="<?= site_url('invoiceOut/cetakExcel/' . $invoicePublicId) ?>"><i class="fas fa-file-excel mr-2"></i>Excel</a>
                             </div>
                         </div>
                         <?php if ($invoice['status'] === 'AKTIF' && $statusBayar !== 'Lunas') : ?>
-                            <form action="<?= site_url('invoiceOut/tandaiLunas/' . $invoice['id']) ?>" method="post" class="d-inline" data-bootstrap-confirm="Tandai invoice ini sudah Lunas?">
+                            <form action="<?= site_url('invoiceOut/tandaiLunas/' . $invoicePublicId) ?>" method="post" class="d-inline" data-bootstrap-confirm="Tandai invoice ini sudah Lunas?">
                                 <?= csrf_field() ?><button class="btn btn-success btn-sm" title="Tandai Lunas"><i class="fas fa-money-check-alt"></i></button>
                             </form>
                         <?php endif ?>
                         <?php if ($invoice['status'] === 'AKTIF') : ?>
-                            <form action="<?= site_url('invoiceOut/cancel/' . $invoice['id']) ?>" method="post" class="d-inline" data-bootstrap-confirm="Batalkan invoice ini? Qty-nya akan dapat ditagihkan kembali.">
+                            <form action="<?= site_url('invoiceOut/cancel/' . $invoicePublicId) ?>" method="post" class="d-inline" data-bootstrap-confirm="Batalkan invoice ini? Qty-nya akan dapat ditagihkan kembali.">
                                 <?= csrf_field() ?><button class="btn btn-danger btn-sm" title="Batalkan"><i class="fas fa-ban"></i></button>
                             </form>
                         <?php else : ?>
-                            <form action="<?= site_url('invoiceOut/hapus/' . $invoice['id']) ?>" method="post" class="d-inline" data-bootstrap-confirm="Hapus permanen invoice yang sudah dibatalkan ini?">
+                            <form action="<?= site_url('invoiceOut/hapus/' . $invoicePublicId) ?>" method="post" class="d-inline" data-bootstrap-confirm="Hapus permanen invoice yang sudah dibatalkan ini?">
                                 <?= csrf_field() ?><button class="btn btn-danger btn-sm" title="Hapus"><i class="fas fa-trash"></i></button>
                             </form>
                         <?php endif ?>

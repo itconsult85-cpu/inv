@@ -4,6 +4,7 @@ namespace App\Controllers;
 
 use App\Models\ModelInvoiceOut;
 use App\Models\ModelInvoiceOutDetail;
+use App\Libraries\PublicId;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
 class InvoiceOut extends BaseController
@@ -11,6 +12,12 @@ class InvoiceOut extends BaseController
     private $db;
     private ModelInvoiceOut $invoiceModel;
     private ModelInvoiceOutDetail $detailModel;
+
+    private function resolveInvoiceToken(string $token): int
+    {
+        $id = PublicId::decode($token, 'invoice-out-id');
+        return $id !== null && ctype_digit($id) && (int) $id > 0 ? (int) $id : 0;
+    }
 
     public function __construct()
     {
@@ -37,10 +44,9 @@ class InvoiceOut extends BaseController
     {
         $poNo = null;
         if ($poHash) {
+            $poNoToken = PublicId::decode($poHash, 'po-masuk-no');
             $po = $this->db->table('po')
-                // Nilai hash tetap harus di-escape. Parameter false sebelumnya
-                // membuat hash dibaca MySQL sebagai nama kolom.
-                ->where('SHA1(nopo)', $poHash)
+                ->where('nopo', $poNoToken ?? '__invalid_public_id__')
                 ->get()->getRowArray();
             $poNo = $po['nopo'] ?? null;
         }
@@ -226,7 +232,7 @@ class InvoiceOut extends BaseController
             }
             $this->db->transCommit();
 
-            return redirect()->to('/invoiceOut/detail/' . $invoiceId)
+            return redirect()->to('/invoiceOut/detail/' . PublicId::encode($invoiceId, 'invoice-out-id'))
                 ->with('message', 'Invoice Out berhasil dibuat.');
         } catch (\Throwable $e) {
             $this->db->transRollback();
@@ -240,8 +246,9 @@ class InvoiceOut extends BaseController
         }
     }
 
-    public function detail(int $id)
+    public function detail(string $token)
     {
+        $id = $this->resolveInvoiceToken($token);
         $data = $this->getInvoice($id);
         if (!$data) {
             throw \CodeIgniter\Exceptions\PageNotFoundException::forPageNotFound('Invoice Out tidak ditemukan.');
@@ -249,8 +256,9 @@ class InvoiceOut extends BaseController
         return view('invoiceout/detail', $data);
     }
 
-    public function cetak(int $id)
+    public function cetak(string $token)
     {
+        $id = $this->resolveInvoiceToken($token);
         $data = $this->getInvoice($id);
         if (!$data) {
             throw \CodeIgniter\Exceptions\PageNotFoundException::forPageNotFound('Invoice Out tidak ditemukan.');
@@ -265,8 +273,9 @@ class InvoiceOut extends BaseController
      * (header, delivered to, tabel item, totals, terbilang, bank, tanda
      * tangan) tapi dalam bentuk sheet asli, bukan cuma dump data mentah.
      */
-    public function cetakExcel(int $id)
+    public function cetakExcel(string $token)
     {
+        $id = $this->resolveInvoiceToken($token);
         $data = $this->getInvoice($id);
         if (!$data) {
             throw \CodeIgniter\Exceptions\PageNotFoundException::forPageNotFound('Invoice Out tidak ditemukan.');
@@ -316,8 +325,10 @@ class InvoiceOut extends BaseController
         return array_values($grouped);
     }
 
-    public function cancel(int $id)
+    public function cancel(string $token)
     {
+        $id = $this->resolveInvoiceToken($token);
+        if ($id <= 0) return redirect()->to('/invoiceOut/data')->with('error', 'Identifier Invoice Out tidak valid.');
         if (strtolower($this->request->getMethod()) !== 'post') {
             return redirect()->to('/invoiceOut/data');
         }
@@ -330,8 +341,10 @@ class InvoiceOut extends BaseController
         return redirect()->to('/invoiceOut/data')->with('message', 'Invoice Out berhasil dibatalkan.');
     }
 
-    public function hapus(int $id)
+    public function hapus(string $token)
     {
+        $id = $this->resolveInvoiceToken($token);
+        if ($id <= 0) return redirect()->to('/invoiceOut/data')->with('error', 'Identifier Invoice Out tidak valid.');
         if (strtolower($this->request->getMethod()) !== 'post') {
             return redirect()->to('/invoiceOut/data');
         }
@@ -367,8 +380,10 @@ class InvoiceOut extends BaseController
         }
     }
 
-    public function tandaiLunas(int $id)
+    public function tandaiLunas(string $token)
     {
+        $id = $this->resolveInvoiceToken($token);
+        if ($id <= 0) return redirect()->to('/invoiceOut/data')->with('error', 'Identifier Invoice Out tidak valid.');
         if (strtolower($this->request->getMethod()) !== 'post') {
             return redirect()->to('/invoiceOut/data');
         }

@@ -30,8 +30,8 @@ class Gudang extends BaseController
             return DataTable::of($builder)
                 ->addNumbering('nomor')
                 ->add('aksi', function ($row) {
-                    return "<button type=\"button\" class=\"btn btn-sm btn-primary\" title=\"Edit Data\" onclick=\"edit('" . sha1($row->gdgid) . "')\"><i class=\"fa fa-edit\"></i></button>&nbsp
-                    <button type=\"button\" class=\"btn btn-sm btn-danger\" title=\"Hapus Data\" onclick=\"hapus('" . $row->gdgid . "','" . $row->gdgnama . "')\"><i class=\"fa fa-trash-alt\"></i></button>";
+                    return "<button type=\"button\" class=\"btn btn-sm btn-primary\" title=\"Edit Data\" onclick=\"edit('" . $this->publicId($row->gdgid, 'gudang-id') . "')\"><i class=\"fa fa-edit\"></i></button>&nbsp
+                    <button type=\"button\" class=\"btn btn-sm btn-danger\" title=\"Hapus Data\" onclick=\"hapus('" . $this->publicId($row->gdgid, 'gudang-id') . "','" . $row->gdgnama . "')\"><i class=\"fa fa-trash-alt\"></i></button>";
                 })
                 ->toJson(true);
         }
@@ -103,12 +103,14 @@ class Gudang extends BaseController
     public function formedit($id)
     {
         $modelGudang = new Modelgudang();
-        $cekId = $modelGudang->cekId($id);
+        $idAsli = $this->resolvePublicId((string) $id, 'gudang-id');
+        if ($idAsli === null || !ctype_digit($idAsli)) { exit('Token gudang tidak valid'); }
+        $cekId = $modelGudang->cekId(sha1($idAsli));
 
         if ($cekId->getNumRows() > 0) {
             $row = $cekId->getRowArray();
             $data = [
-                'id' => $id,
+                'id' => $this->publicId($idAsli, 'gudang-id'),
                 'nama' => $row['gdgnama']
             ];
             return view('gudang/formedit', $data);
@@ -119,10 +121,12 @@ class Gudang extends BaseController
 
     public function updatedata()
     {
-        $idgudang = $this->request->getVar('idgudang');
+        $idgudang = $this->resolvePublicId($this->request->getVar('idgudang'), 'gudang-id');
+        if ($idgudang === null || !ctype_digit($idgudang)) { return redirect()->to('/gudang/index')->with('error', 'Token gudang tidak valid.'); }
+        $idgudang = (int) $idgudang;
         $namagudang = $this->request->getVar('namagudang');
         $modelGudang = new Modelgudang();
-        $cekId = $modelGudang->cekId($idgudang);
+        $cekId = $modelGudang->cekId(sha1((string) $idgudang));
 
         if ($cekId->getNumRows() === 0) {
             return redirect()->to('/gudang/index')->with('error', 'Data gudang tidak ditemukan.');
@@ -153,7 +157,7 @@ class Gudang extends BaseController
         } else {
             $modelGudang = new Modelgudang();
 
-            $cekId = $modelGudang->cekId($idgudang);
+            $cekId = $modelGudang->cekId(sha1((string) $idgudang));
             if ($cekId->getNumRows() > 0) {
                 $row = $cekId->getRowArray();
                 $idAsli = $row['gdgid'];
@@ -216,7 +220,9 @@ class Gudang extends BaseController
     public function hapus()
     {
         if ($this->request->isAJAX()) {
-            $kode = $this->request->getPost('id');
+            $kode = $this->resolvePublicId($this->request->getPost('id'), 'gudang-id');
+            if ($kode === null || !ctype_digit($kode)) { return $this->response->setJSON(['error' => 'Token gudang tidak valid']); }
+            $kode = (int) $kode;
             $nama = $this->request->getPost('nama');
 
             $db = \Config\Database::connect();

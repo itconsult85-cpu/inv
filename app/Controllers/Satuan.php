@@ -110,8 +110,8 @@ class Satuan extends BaseController
             return DataTable::of($builder)
                 ->addNumbering('nomor')
                 ->add('aksi', function ($row) {
-                    $kode = htmlspecialchars((string) $row->satid, ENT_QUOTES, 'UTF-8');
-                    $hash = htmlspecialchars(sha1($row->satid), ENT_QUOTES, 'UTF-8');
+                    $kode = htmlspecialchars($this->publicId($row->satid, 'satuan-id'), ENT_QUOTES, 'UTF-8');
+                    $hash = $kode;
                     $nama = htmlspecialchars((string) $row->satnama, ENT_QUOTES, 'UTF-8');
 
                     return "<button type=\"button\" class=\"btn btn-sm btn-primary\" title=\"Edit Data\" data-kode=\"{$kode}\" data-hash=\"{$hash}\" data-nama=\"{$nama}\" onclick=\"editSatuan(this)\"><i class=\"fa fa-edit\"></i></button>&nbsp;
@@ -123,7 +123,11 @@ class Satuan extends BaseController
 
     public function pemakaian()
     {
-        $kode = (int) $this->request->getGet('kode');
+        $kodeAsli = $this->resolvePublicId($this->request->getGet('kode'), 'satuan-id');
+        if ($kodeAsli === null || !ctype_digit($kodeAsli)) {
+            return $this->response->setStatusCode(400)->setJSON(['error' => 'Token satuan tidak valid']);
+        }
+        $kode = (int) $kodeAsli;
         $satuan = $this->satuan->find($kode);
 
         if (!$satuan) {
@@ -206,12 +210,14 @@ class Satuan extends BaseController
     public function formedit($id)
     {
         $modelSatuan = new Modelsatuan();
-        $cekId = $modelSatuan->cekId($id);
+        $idAsli = $this->resolvePublicId((string) $id, 'satuan-id');
+        if ($idAsli === null || !ctype_digit($idAsli)) { exit('Token satuan tidak valid'); }
+        $cekId = $modelSatuan->cekId(sha1($idAsli));
 
         if ($cekId->getNumRows() > 0) {
             $row = $cekId->getRowArray();
             $data = [
-                'id' => $id,
+                'id' => $this->publicId($idAsli, 'satuan-id'),
                 'nama' => $row['satnama']
             ];
             return view('satuan/formedit', $data);
@@ -222,10 +228,12 @@ class Satuan extends BaseController
 
     public function updatedata()
     {
-        $idsatuan = $this->request->getVar('idsatuan');
+        $idsatuan = $this->resolvePublicId($this->request->getVar('idsatuan'), 'satuan-id');
+        if ($idsatuan === null || !ctype_digit($idsatuan)) { return redirect()->to('/satuan/index')->with('error', 'Token satuan tidak valid.'); }
+        $idsatuan = (int) $idsatuan;
         $namasatuan = $this->request->getVar('namasatuan');
         $modelSatuan = new Modelsatuan();
-        $cekId = $modelSatuan->cekId($idsatuan);
+        $cekId = $modelSatuan->cekId(sha1((string) $idsatuan));
 
         if ($cekId->getNumRows() === 0) {
             return redirect()->to('/satuan/index')->with('error', 'Data satuan tidak ditemukan.');
@@ -256,7 +264,7 @@ class Satuan extends BaseController
         } else {
             $modelSatuan = new Modelsatuan();
 
-            $cekId = $modelSatuan->cekId($idsatuan);
+            $cekId = $modelSatuan->cekId(sha1((string) $idsatuan));
             if ($cekId->getNumRows() > 0) {
                 $row = $cekId->getRowArray();
                 $idAsli = $row['satid'];
@@ -319,7 +327,9 @@ class Satuan extends BaseController
     public function hapus()
     {
         if ($this->request->isAJAX()) {
-            $kode = (int) $this->request->getPost('kode');
+            $kodeAsli = $this->resolvePublicId($this->request->getPost('kode'), 'satuan-id');
+            if ($kodeAsli === null || !ctype_digit($kodeAsli)) { return $this->response->setJSON(['error' => 'Token satuan tidak valid', 'pemakaian' => []]); }
+            $kode = (int) $kodeAsli;
             $satuan = $this->satuan->find($kode);
 
             if (!$satuan) {

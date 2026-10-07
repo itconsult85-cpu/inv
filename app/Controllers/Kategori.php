@@ -116,8 +116,8 @@ class Kategori extends BaseController
             return DataTable::of($builder)
                 ->addNumbering('nomor')
                 ->add('aksi', function ($row) {
-                    $kode = htmlspecialchars((string) $row->katid, ENT_QUOTES, 'UTF-8');
-                    $hash = htmlspecialchars(sha1($row->katid), ENT_QUOTES, 'UTF-8');
+                    $kode = htmlspecialchars($this->publicId($row->katid, 'kategori-id'), ENT_QUOTES, 'UTF-8');
+                    $hash = $kode;
                     $nama = htmlspecialchars((string) $row->katnama, ENT_QUOTES, 'UTF-8');
 
                     return "<button type=\"button\" class=\"btn btn-sm btn-primary\" title=\"Edit Data\" data-kode=\"{$kode}\" data-hash=\"{$hash}\" data-nama=\"{$nama}\" onclick=\"editKategori(this)\"><i class=\"fa fa-edit\"></i></button>&nbsp;
@@ -129,7 +129,11 @@ class Kategori extends BaseController
 
     public function pemakaian()
     {
-        $kode = (int) $this->request->getGet('kode');
+        $kodeAsli = $this->resolvePublicId($this->request->getGet('kode'), 'kategori-id');
+        if ($kodeAsli === null || !ctype_digit($kodeAsli)) {
+            return $this->response->setStatusCode(400)->setJSON(['error' => 'Token kategori tidak valid']);
+        }
+        $kode = (int) $kodeAsli;
         $kategori = $this->kategori->find($kode);
 
         if (!$kategori) {
@@ -213,12 +217,14 @@ class Kategori extends BaseController
     public function formedit($id)
     {
         $modelKategori = new Modelkategori();
-        $cekId = $modelKategori->cekId($id);
+        $idAsli = $this->resolvePublicId((string) $id, 'kategori-id');
+        if ($idAsli === null || !ctype_digit($idAsli)) { exit('Token kategori tidak valid'); }
+        $cekId = $modelKategori->cekId(sha1($idAsli));
 
         if ($cekId->getNumRows() > 0) {
             $row = $cekId->getRowArray();
             $data = [
-                'id' => $id,
+                'id' => $this->publicId($idAsli, 'kategori-id'),
                 'nama' => $row['katnama']
             ];
             return view('kategori/formedit', $data);
@@ -229,10 +235,12 @@ class Kategori extends BaseController
 
     public function updatedata()
     {
-        $idkategori = $this->request->getVar('idkategori');
+        $idkategori = $this->resolvePublicId($this->request->getVar('idkategori'), 'kategori-id');
+        if ($idkategori === null || !ctype_digit($idkategori)) { return redirect()->to('/kategori/index')->with('error', 'Token kategori tidak valid.'); }
+        $idkategori = (int) $idkategori;
         $namakategori = $this->request->getVar('namakategori');
         $modelKategori = new Modelkategori();
-        $cekId = $modelKategori->cekId($idkategori);
+        $cekId = $modelKategori->cekId(sha1((string) $idkategori));
 
         if ($cekId->getNumRows() === 0) {
             return redirect()->to('/kategori/index')->with('error', 'Data kategori tidak ditemukan.');
@@ -262,7 +270,7 @@ class Kategori extends BaseController
             return redirect()->to('/kategori/formedit/' . $idkategori);
         } else {
             $modelKategori = new Modelkategori();
-            $cekId = $modelKategori->cekId($idkategori);
+            $cekId = $modelKategori->cekId(sha1((string) $idkategori));
             if ($cekId->getNumRows() > 0) {
                 $row = $cekId->getRowArray();
                 $idAsli = $row['katid'];
@@ -325,7 +333,9 @@ class Kategori extends BaseController
     public function hapus()
     {
         if ($this->request->isAJAX()) {
-            $kode = (int) $this->request->getPost('kode');
+            $kodeAsli = $this->resolvePublicId($this->request->getPost('kode'), 'kategori-id');
+            if ($kodeAsli === null || !ctype_digit($kodeAsli)) { return $this->response->setJSON(['error' => 'Token kategori tidak valid', 'pemakaian' => []]); }
+            $kode = (int) $kodeAsli;
             $kategori = $this->kategori->find($kode);
 
             if (!$kategori) {

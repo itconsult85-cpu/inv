@@ -412,21 +412,22 @@ Data PO Keluar
                     </td>
                     <td class="text-center">
                         <div class="aksi-buttons">
-                            <a href="<?= site_url('poKeluar/detail/' . $row['id']) ?>" class="btn btn-sm btn-info" title="Detail">
+                            <?php $poPublicId = \App\Libraries\PublicId::encode($row['id'], 'po-keluar-id'); ?>
+                            <a href="<?= site_url('poKeluar/detail/' . $poPublicId) ?>" class="btn btn-sm btn-info" title="Detail">
                                 <i class="fa fa-eye"></i>
                             </a>
-                            <a href="<?= site_url('poKeluar/edit/' . $row['id']) ?>" class="btn btn-sm btn-secondary" title="Edit">
+                            <a href="<?= site_url('poKeluar/edit/' . $poPublicId) ?>" class="btn btn-sm btn-secondary" title="Edit">
                                 <i class="fa fa-pencil-alt"></i>
                             </a>
                             <?php if ($row['status'] === 'AKTIF') : ?>
-                                <?= form_open('/poKeluar/batal/' . $row['id'], ['class' => 'd-inline form-batal']) ?>
+                                <?= form_open('/poKeluar/batal/' . $poPublicId, ['class' => 'd-inline form-batal']) ?>
                                 <button type="submit" class="btn btn-sm btn-danger" title="Batalkan">
                                     <i class="fa fa-ban"></i>
                                 </button>
                                 <?= form_close() ?>
                             <?php endif ?>
                             <?php if ($row['status'] === 'DIBATALKAN') : ?>
-                                <?= form_open('/poKeluar/hapus/' . $row['id'], ['class' => 'd-inline form-hapus']) ?>
+                                <?= form_open('/poKeluar/hapus/' . $poPublicId, ['class' => 'd-inline form-hapus']) ?>
                                 <button type="submit" class="btn btn-sm btn-danger" title="Hapus">
                                     <i class="fa fa-trash-alt"></i>
                                 </button>

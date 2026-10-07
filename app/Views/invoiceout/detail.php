@@ -1,8 +1,9 @@
 <?= $this->extend('main/layout') ?>
 <?= $this->section('judul') ?>Detail Invoice Out<?= $this->endSection('judul') ?>
 <?= $this->section('subjudul') ?>
+<?php $invoicePublicId = \App\Libraries\PublicId::encode($invoice['id'], 'invoice-out-id'); ?>
 <a href="<?= site_url('invoiceOut/data') ?>" class="btn btn-warning"><i class="fas fa-undo"></i> Kembali</a>
-<a href="<?= site_url('invoiceOut/cetak/' . $invoice['id']) ?>" target="_blank" class="btn btn-primary"><i class="fas fa-print"></i> Print</a>
+<a href="<?= site_url('invoiceOut/cetak/' . $invoicePublicId) ?>" target="_blank" class="btn btn-primary"><i class="fas fa-print"></i> Print</a>
 <?= $this->endSection('subjudul') ?>
 
 <?= $this->section('isi') ?>
@@ -32,7 +33,7 @@ $badgeStatus = $statusTampil === 'SELESAI'
                 <td>
                     <span class="badge badge-<?= $badgeBayar ?>"><?= esc($statusBayar) ?></span>
                     <?php if ($invoice['status'] === 'AKTIF' && $statusBayar !== 'Lunas') : ?>
-                        <form action="<?= site_url('invoiceOut/tandaiLunas/' . $invoice['id']) ?>" method="post" class="d-inline ml-2" data-bootstrap-confirm="Tandai invoice ini sudah Lunas?">
+                        <form action="<?= site_url('invoiceOut/tandaiLunas/' . $invoicePublicId) ?>" method="post" class="d-inline ml-2" data-bootstrap-confirm="Tandai invoice ini sudah Lunas?">
                             <?= csrf_field() ?><button class="btn btn-success btn-sm"><i class="fas fa-money-check-alt"></i> Tandai Lunas</button>
                         </form>
                     <?php endif ?>

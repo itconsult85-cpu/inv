@@ -172,14 +172,14 @@ class Berat extends BaseController
                         <button type=\"button\"
                             class=\"btn btn-sm btn-primary\"
                             title=\"Edit Data\"
-                            onclick=\"edit('" . sha1($row->kodeprd) . "')\">
+                            onclick=\"edit('" . $this->publicId($row->kodeprd, 'berat-kodeprd') . "')\">
                             <i class=\"fa fa-edit\"></i>
                         </button>&nbsp;
 
                         <button type=\"button\"
                             class=\"btn btn-sm btn-danger\"
                             title=\"Hapus Data\"
-                            onclick=\"hapus('" . $row->kodeprd . "')\">
+                            onclick=\"hapus('" . $this->publicId($row->kodeprd, 'berat-kodeprd') . "')\">
                             <i class=\"fa fa-trash-alt\"></i>
                         </button>
                     ";
@@ -314,7 +314,11 @@ class Berat extends BaseController
     public function edit($kode)
     {
         $modelBerat = new Modelberat();
-        $cekKode = $modelBerat->cekKode($kode);
+        $kodeAsli = $this->resolvePublicId((string) $kode, 'berat-kodeprd');
+        if ($kodeAsli === null) {
+            exit('Token berat tidak valid');
+        }
+        $cekKode = $modelBerat->cekKode(sha1($kodeAsli));
 
         if ($cekKode->getNumRows() === 0) {
             exit('Data tidak ditemukan');
@@ -358,6 +362,7 @@ class Berat extends BaseController
 
         $data = [
             'kodeprd'       => $row['kodeprd'],
+            'kodeprdToken'  => $this->publicId($row['kodeprd'], 'berat-kodeprd'),
             'kodemat'       => $row['kodemat'],
             'materialProduk' => $materialProduk,
             'satuan'        => $row['satuan'],
@@ -370,7 +375,10 @@ class Berat extends BaseController
 
     public function updatedata()
     {
-        $kodeprd = $this->request->getVar('kodeprd');
+        $kodeprd = $this->resolvePublicId($this->request->getVar('kodeprd'), 'berat-kodeprd');
+        if ($kodeprd === null) {
+            return redirect()->to('/berat/index')->with('error', 'Token berat tidak valid.');
+        }
         $satuan = $this->request->getVar('satuan');
 
         $validation = \Config\Services::validation();
@@ -473,7 +481,10 @@ class Berat extends BaseController
     public function hapus()
     {
         if ($this->request->isAJAX()) {
-            $kode = $this->request->getPost('kode');
+            $kode = $this->resolvePublicId($this->request->getPost('kode'), 'berat-kodeprd');
+            if ($kode === null) {
+                return $this->response->setJSON(['error' => 'Token berat tidak valid']);
+            }
 
             $db = \Config\Database::connect();
 

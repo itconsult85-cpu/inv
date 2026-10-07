@@ -17,6 +17,15 @@ use Config\Services;
 
 class Produksi extends BaseController
 {
+    private function decodePublicToken(?string $token, string $context): ?string
+    {
+        if ($token === null || $token === '') {
+            return null;
+        }
+
+        return \App\Libraries\PublicId::decode($token, $context);
+    }
+
     private $db;
 
     public function __construct()
@@ -381,7 +390,9 @@ class Produksi extends BaseController
             return DataTable::of($builder)
                 ->addNumbering('nomor')
                 ->add('aksi', function ($row) {
-                    return "<button type=\"button\" class=\"btn btn-sm btn-info\" onclick=\"editProduksi('" . sha1($row->no_produksi) . "')\"><i class=\"fa fa-edit\"></i></button>&nbsp;<button type=\"button\" class=\"btn btn-sm btn-danger\" onclick=\"hapusProduksi(" . $row->produksi_produk_id . ")\"><i class=\"fa fa-trash-alt\"></i></button>";
+                    $batchToken = \App\Libraries\PublicId::encode($row->no_produksi, 'produksi-batch');
+                    $lineToken = \App\Libraries\PublicId::encode($row->produksi_produk_id, 'produksi-line-id');
+                    return "<button type=\"button\" class=\"btn btn-sm btn-info\" onclick=\"editProduksi('" . $batchToken . "')\"><i class=\"fa fa-edit\"></i></button>&nbsp;<button type=\"button\" class=\"btn btn-sm btn-danger\" onclick=\"hapusProduksi('" . $lineToken . "')\"><i class=\"fa fa-trash-alt\"></i></button>";
                 })
                 ->format('keterangan', function ($value) {
                     return $value !== null && $value !== '' ? esc($value) : '-';
@@ -779,7 +790,15 @@ class Produksi extends BaseController
 
     public function edit($hash)
     {
-        $produksi = (new ModelProduksi())->cekProduksi($hash)->getRowArray();
+        $noProduksi = $this->decodePublicToken((string) $hash, 'produksi-batch');
+        if ($noProduksi === null || $noProduksi === '') {
+            exit('Data produksi tidak ditemukan');
+        }
+        $produksi = $this->db->table('produksi p')
+            ->select('p.*, g.gdgnama')
+            ->join('gudang g', 'g.gdgid = p.gudang', 'left')
+            ->where('p.no_produksi', $noProduksi)
+            ->get()->getRowArray();
         if (!$produksi) {
             exit('Data produksi tidak ditemukan');
         }
@@ -1081,7 +1100,13 @@ class Produksi extends BaseController
             return;
         }
 
-        $id = (int) $this->request->getPost('id');
+        $idToken = (string) $this->request->getPost('id');
+        $id = $this->decodePublicToken($idToken, 'produksi-line-id');
+        if ($id === null || !ctype_digit($id) || (int) $id <= 0) {
+            echo json_encode(['error' => 'Token data produksi tidak valid']);
+            return;
+        }
+        $id = (int) $id;
         $modelLine = new ModelProduksiProduk();
         $line = $modelLine->find($id);
         if (!$line) {

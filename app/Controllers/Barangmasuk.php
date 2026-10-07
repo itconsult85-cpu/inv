@@ -21,6 +21,15 @@ use Config\Services;
 
 class Barangmasuk extends BaseController
 {
+    private function decodePublicToken(?string $token, string $context): ?string
+    {
+        if ($token === null || $token === '') {
+            return null;
+        }
+
+        return \App\Libraries\PublicId::decode($token, $context);
+    }
+
     private function currentUserReference(): ?int
     {
         $userid = trim((string) session()->get('userid'));
@@ -238,13 +247,14 @@ class Barangmasuk extends BaseController
             return DataTable::of($builder)
                 ->addNumbering('nomor')
                 ->add('aksi', function ($row) {
-                    $retur = !empty($row->po_keluar_id) ? "<button type=\"button\" class=\"btn btn-sm btn-warning\" onclick=\"location.href='/barangmasuk/retur/" . sha1($row->faktur) . "'\" title=\"Retur NG\"><i class=\"fa fa-exchange-alt\"></i></button>&nbsp;" : '';
-                    $kelolaRetur = !empty($row->po_keluar_id) ? "<button type=\"button\" class=\"btn btn-sm btn-secondary\" onclick=\"location.href='" . site_url('produkretur/kelola/' . sha1($row->faktur)) . "'\" title=\"Koreksi/Batalkan Retur NG\"><i class=\"fa fa-tools\"></i></button>&nbsp;" : '';
+                    $fakturToken = \App\Libraries\PublicId::encode($row->faktur, 'barangmasuk-faktur');
+                    $retur = !empty($row->po_keluar_id) ? "<button type=\"button\" class=\"btn btn-sm btn-warning\" onclick=\"location.href='/barangmasuk/retur/" . $fakturToken . "'\" title=\"Retur NG\"><i class=\"fa fa-exchange-alt\"></i></button>&nbsp;" : '';
+                    $kelolaRetur = !empty($row->po_keluar_id) ? "<button type=\"button\" class=\"btn btn-sm btn-secondary\" onclick=\"location.href='" . site_url('produkretur/kelola/' . $fakturToken) . "'\" title=\"Koreksi/Batalkan Retur NG\"><i class=\"fa fa-tools\"></i></button>&nbsp;" : '';
                     if (\App\Libraries\AccessControl::can('produk.masuk.delete')) {
-                        return $retur . $kelolaRetur . "<button type=\"button\" class=\"btn btn-sm btn-primary\" onclick=\"edit('" . sha1($row->faktur) . "')\"><i class=\"fa fa-edit\"></i></button>&nbsp
-                        <button type=\"button\" class=\"btn btn-sm btn-danger\" onclick=\"hapus('" . $row->faktur . "')\"><i class=\"fa fa-trash-alt\"></i></button>";
+                        return $retur . $kelolaRetur . "<button type=\"button\" class=\"btn btn-sm btn-primary\" onclick=\"edit('" . $fakturToken . "')\"><i class=\"fa fa-edit\"></i></button>&nbsp
+                        <button type=\"button\" class=\"btn btn-sm btn-danger\" onclick=\"hapus('" . $fakturToken . "')\"><i class=\"fa fa-trash-alt\"></i></button>";
                     }
-                    return $retur . $kelolaRetur . "<button type=\"button\" class=\"btn btn-sm btn-primary\" onclick=\"edit('" . sha1($row->faktur) . "')\"><i class=\"fa fa-edit\"></i></button>";
+                    return $retur . $kelolaRetur . "<button type=\"button\" class=\"btn btn-sm btn-primary\" onclick=\"edit('" . $fakturToken . "')\"><i class=\"fa fa-edit\"></i></button>";
                 })
                 ->format('qtymasuk', function ($value) {
                     return number_format($value, 0, ',', '.');
@@ -886,7 +896,10 @@ class Barangmasuk extends BaseController
     function hapusTransaksi()
     {
         if ($this->request->isAJAX()) {
-            $faktur = $this->request->getPost('faktur');
+            $faktur = $this->decodePublicToken($this->request->getPost('faktur'), 'barangmasuk-faktur');
+            if ($faktur === null || $faktur === '') {
+                return $this->response->setJSON(['error' => 'Token transaksi Barang Masuk tidak valid.']);
+            }
 
             $modelBarangMasuk = new Modelbarangmasuk();
 
@@ -935,8 +948,20 @@ class Barangmasuk extends BaseController
 
     public function edit($faktur)
     {
+        $faktur = $this->decodePublicToken((string) $faktur, 'barangmasuk-faktur');
+        if ($faktur === null || $faktur === '') {
+            throw \CodeIgniter\Exceptions\PageNotFoundException::forPageNotFound('Transaksi Barang Masuk tidak ditemukan.');
+        }
+
         $modelBarangMasuk = new Modelbarangmasuk();
-        $cekFaktur = $modelBarangMasuk->cekFaktur($faktur);
+        // cekFaktur() lama menerima SHA1. Setelah migrasi, gunakan faktur
+        // hasil decode token secara langsung agar tidak meng-hash ulang token.
+        $cekFaktur = db_connect()->table('barangmasuk')
+            ->select("barangmasuk.*, supplier.supid, COALESCE(supplier.supnama, 'Adjustment Stok') AS supnama, gudang.gdgid, gudang.gdgnama", false)
+            ->join('supplier', 'supid = idsup', 'left')
+            ->join('gudang', 'gdgid = gudang')
+            ->where('barangmasuk.faktur', $faktur)
+            ->get();
 
         if ($cekFaktur->getNumRows() > 0) {
             $row = $cekFaktur->getRowArray();
@@ -992,7 +1017,11 @@ class Barangmasuk extends BaseController
     function hapusItemDetail()
     {
         if ($this->request->isAJAX()) {
-            $id = $this->request->getPost('id');
+            $id = $this->decodePublicToken($this->request->getPost('id'), 'barangmasuk-detail-id');
+            if ($id === null || !ctype_digit($id) || (int) $id <= 0) {
+                return $this->response->setJSON(['error' => 'Token detail Barang Masuk tidak valid.']);
+            }
+            $id = (int) $id;
             $tglfaktur = $this->request->getPost('tglfaktur');
             $nofaktur = $this->request->getPost('nofaktur');
             $kodebarang = $this->request->getPost('kodebarang');
@@ -1070,7 +1099,11 @@ class Barangmasuk extends BaseController
     public function editItem()
     {
         if ($this->request->isAJAX()) {
-            $iddetail = $this->request->getPost('iddetail');
+            $iddetail = $this->decodePublicToken($this->request->getPost('iddetail'), 'barangmasuk-detail-id');
+            if ($iddetail === null || !ctype_digit($iddetail) || (int) $iddetail <= 0) {
+                return $this->response->setJSON(['error' => 'Token detail Barang Masuk tidak valid.']);
+            }
+            $iddetail = (int) $iddetail;
             $idgudang = $this->resolveGudangId($this->request->getPost('idgudang'));
             $kodebarang = $this->request->getPost('kodebarang');
             $jml = $this->request->getPost('jml');

@@ -6,12 +6,19 @@ use App\Models\ModelDetailPoKeluar;
 use App\Models\Modelpo;
 use App\Models\ModelPoKeluar;
 use App\Models\ModelSupplier;
+use App\Libraries\PublicId;
 
 class PoKeluar extends BaseController
 {
     private $db;
     private ModelPoKeluar $poModel;
     private ModelDetailPoKeluar $detailModel;
+
+    private function resolvePublicId(string $token): int
+    {
+        $id = PublicId::decode($token, 'po-keluar-id');
+        return $id !== null && ctype_digit($id) && (int) $id > 0 ? (int) $id : 0;
+    }
 
     public function __construct()
     {
@@ -234,8 +241,10 @@ class PoKeluar extends BaseController
         }
     }
 
-    public function detail(int $id)
+    public function detail(string $token)
     {
+        $id = $this->resolvePublicId($token);
+        if ($id <= 0) throw \CodeIgniter\Exceptions\PageNotFoundException::forPageNotFound('Identifier PO Keluar tidak valid.');
         $po = $this->poModel->find($id);
         if (!$po) {
             throw \CodeIgniter\Exceptions\PageNotFoundException::forPageNotFound('PO Keluar tidak ditemukan.');
@@ -330,8 +339,10 @@ class PoKeluar extends BaseController
      * (detail_po_keluar.no_po, invoice_in.source_no, materialmasuk/
      * barangmasuk.po_keluar_id) -- mengubahnya bisa bikin data itu nyasar.
      */
-    public function edit(int $id)
+    public function edit(string $token)
     {
+        $id = $this->resolvePublicId($token);
+        if ($id <= 0) throw \CodeIgniter\Exceptions\PageNotFoundException::forPageNotFound('Identifier PO Keluar tidak valid.');
         $po = $this->poModel->find($id);
         if (!$po) {
             throw \CodeIgniter\Exceptions\PageNotFoundException::forPageNotFound('PO Keluar tidak ditemukan.');
@@ -351,8 +362,10 @@ class PoKeluar extends BaseController
         ]);
     }
 
-    public function update(int $id)
+    public function update(string $token)
     {
+        $id = $this->resolvePublicId($token);
+        if ($id <= 0) return redirect()->to('/poKeluar/data')->with('error', 'Identifier PO Keluar tidak valid.');
         $po = $this->poModel->find($id);
         if (!$po) {
             throw \CodeIgniter\Exceptions\PageNotFoundException::forPageNotFound('PO Keluar tidak ditemukan.');
@@ -539,8 +552,10 @@ class PoKeluar extends BaseController
 
         return redirect()->to('/poKeluar/detail/' . $id)->with('message', 'PO Keluar berhasil diperbarui.');
     }
-    public function cetak(int $id)
+    public function cetak(string $token)
     {
+        $id = $this->resolvePublicId($token);
+        if ($id <= 0) throw \CodeIgniter\Exceptions\PageNotFoundException::forPageNotFound('Identifier PO Keluar tidak valid.');
         $po = $this->poModel->find($id);
         if (!$po) {
             throw \CodeIgniter\Exceptions\PageNotFoundException::forPageNotFound('PO Keluar tidak ditemukan.');
@@ -916,8 +931,10 @@ class PoKeluar extends BaseController
             ->get()->getResultArray();
     }
 
-    public function batal(int $id)
+    public function batal(string $token)
     {
+        $id = $this->resolvePublicId($token);
+        if ($id <= 0) return redirect()->to('/poKeluar/data')->with('error', 'Identifier PO Keluar tidak valid.');
         if (strtolower($this->request->getMethod()) !== 'post') {
             return redirect()->to('/poKeluar/data');
         }
@@ -931,8 +948,10 @@ class PoKeluar extends BaseController
         return redirect()->to('/poKeluar/data')->with('message', 'PO Keluar berhasil dibatalkan.');
     }
 
-    public function hapus(int $id)
+    public function hapus(string $token)
     {
+        $id = $this->resolvePublicId($token);
+        if ($id <= 0) return redirect()->to('/poKeluar/data')->with('error', 'Identifier PO Keluar tidak valid.');
         if (strtolower($this->request->getMethod()) !== 'post') {
             return redirect()->to('/poKeluar/data');
         }

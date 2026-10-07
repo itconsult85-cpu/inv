@@ -4,6 +4,7 @@
 <a href="<?= site_url('invoiceIn/data') ?>" class="btn btn-warning"><i class="fas fa-undo"></i> Kembali</a>
 <?= $this->endSection('subjudul') ?>
 <?= $this->section('isi') ?>
+<?php $invoicePublicId = \App\Libraries\PublicId::encode($invoice['id'], 'invoice-in-id'); ?>
 <?php if (session('message')) : ?><div class="alert alert-success"><?= esc(session('message')) ?></div><?php endif ?>
 <?php if (session('error')) : ?><div class="alert alert-danger"><?= esc(session('error')) ?></div><?php endif ?>
 <div class="row">
@@ -29,16 +30,16 @@
                 <th>File Invoice</th>
                 <td>
                     <?php if (!empty($invoice['invoice_file'])) : ?>
-                        <a href="<?= site_url('invoiceIn/file/' . $invoice['id']) ?>" target="_blank" class="btn btn-outline-secondary btn-sm">
+                        <a href="<?= site_url('invoiceIn/file/' . $invoicePublicId) ?>" target="_blank" class="btn btn-outline-secondary btn-sm">
                             <i class="fas fa-paperclip"></i> Lihat
                         </a>
                     <?php endif ?>
                     <?php if ($invoice['status'] !== 'DIBATALKAN') : ?>
-                        <a href="<?= site_url('invoiceIn/uploadFileInvoice/' . $invoice['id']) ?>" class="btn btn-outline-primary btn-sm">
+                        <a href="<?= site_url('invoiceIn/uploadFileInvoice/' . $invoicePublicId) ?>" class="btn btn-outline-primary btn-sm">
                             <i class="fas fa-upload"></i> <?= !empty($invoice['invoice_file']) ? 'Ganti' : 'Upload' ?>
                         </a>
                         <?php if (!empty($invoice['invoice_file'])) : ?>
-                            <?= form_open('/invoiceIn/hapusFileInvoice/' . $invoice['id'], ['class' => 'd-inline', 'data-bootstrap-confirm' => 'Hapus file invoice ini? Data Invoice In tetap tersimpan.']) ?>
+                            <?= form_open('/invoiceIn/hapusFileInvoice/' . $invoicePublicId, ['class' => 'd-inline', 'data-bootstrap-confirm' => 'Hapus file invoice ini? Data Invoice In tetap tersimpan.']) ?>
                             <button type="submit" class="btn btn-outline-danger btn-sm">
                                 <i class="fas fa-trash"></i> Hapus
                             </button>
@@ -56,12 +57,12 @@
                 <th>Bukti Transfer</th>
                 <td>
                     <?php if (!empty($invoice['bukti_transfer_file'])) : ?>
-                        <a href="<?= site_url('invoiceIn/buktiTransfer/' . $invoice['id']) ?>" target="_blank" class="btn btn-outline-success btn-sm">
+                        <a href="<?= site_url('invoiceIn/buktiTransfer/' . $invoicePublicId) ?>" target="_blank" class="btn btn-outline-success btn-sm">
                             <i class="fas fa-receipt"></i> Lihat
                         </a>
                     <?php endif ?>
                     <?php if ($invoice['status'] !== 'DIBATALKAN') : ?>
-                        <a href="<?= site_url('invoiceIn/uploadBuktiTransfer/' . $invoice['id']) ?>" class="btn btn-outline-success btn-sm">
+                        <a href="<?= site_url('invoiceIn/uploadBuktiTransfer/' . $invoicePublicId) ?>" class="btn btn-outline-success btn-sm">
                             <i class="fas fa-upload"></i> <?= !empty($invoice['bukti_transfer_file']) ? 'Ganti' : 'Upload' ?>
                         </a>
                     <?php elseif (empty($invoice['bukti_transfer_file'])) : ?>

@@ -45,6 +45,20 @@ abstract class BaseController extends Controller
      */
     protected $helpers = ['form'];
 
+    protected function publicId($value, string $context): string
+    {
+        return \App\Libraries\PublicId::encode($value, $context);
+    }
+
+    protected function resolvePublicId(?string $token, string $context): ?string
+    {
+        if ($token === null || $token === '') {
+            return null;
+        }
+
+        return \App\Libraries\PublicId::decode($token, $context);
+    }
+
     /**
      * @return void
      */

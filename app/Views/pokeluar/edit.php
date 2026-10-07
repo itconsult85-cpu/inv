@@ -72,7 +72,7 @@ $selectedPoMasuk = (string) old('po_masuk_terkait', $po['po_masuk_terkait'] ?? '
     </div>
 <?php endif ?>
 
-<?= form_open('/poKeluar/update/' . $po['id']) ?>
+<?= form_open('/poKeluar/update/' . \App\Libraries\PublicId::encode($po['id'], 'po-keluar-id')) ?>
 
 <div class="row">
     <div class="col-md-3">

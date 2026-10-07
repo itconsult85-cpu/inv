@@ -32,7 +32,7 @@
                 <tr>
                     <td style="text-align: center;">
                         <?= $nomor++; ?>
-                        <input type="hidden" value="<?= $row['id'] ?>" id="iddetail">
+                        <input type="hidden" value="<?= \App\Libraries\PublicId::encode($row['id'], 'barangmasuk-detail-id') ?>" id="iddetail">
                     </td>
                     <td style="text-align: center;"><?= $row['kodebarang'] ?>
                         <input type="hidden" value="<?= $row['detbrgkode'] ?>" class="kodebarang">
@@ -51,7 +51,7 @@
                     </td>
                     <?php if (\App\Libraries\AccessControl::can('produk.masuk.delete')) :  ?>
                         <td style="text-align: center;">
-                            <button type="button" class="btn btn-sm btn-danger" onclick="hapusItem('<?= $row['id'] ?>')">
+                            <button type="button" class="btn btn-sm btn-danger" onclick="hapusItem('<?= \App\Libraries\PublicId::encode($row['id'], 'barangmasuk-detail-id') ?>')">
                                 <i class="fa fa-trash-alt"></i>
                             </button>
                             <input type="hidden" value="<?= $row['gudang'] ?>" id="idgudang">

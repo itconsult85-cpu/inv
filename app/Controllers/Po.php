@@ -4,6 +4,7 @@ namespace App\Controllers;
 
 use App\Controllers\BaseController;
 use App\Libraries\PoPdfParser;
+use App\Libraries\PublicId;
 use App\Models\Modelbarang;
 use App\Models\Modelberat;
 use App\Models\ModelDataStok;
@@ -21,6 +22,12 @@ class Po extends BaseController
 {
     protected $db;
     protected $modelPelanggan;
+
+    private function resolvePoToken(string $token): ?string
+    {
+        $nopo = PublicId::decode($token, 'po-masuk-no');
+        return $nopo !== null && $nopo !== '' ? $nopo : null;
+    }
 
     public function __construct()
     {
@@ -260,15 +267,16 @@ class Po extends BaseController
                     return "<span class=\"badge badge-{$latestProgress['class']}\">" . esc($latestProgress['label']) . '</span>';
                 })
                 ->add('aksi', function ($row) {
-                    $tombolProgress = "<a class=\"btn btn-sm btn-info\" href=\"/po/progress/" . sha1($row->nopo) . "\" title=\"Lihat Progress\"><i class=\"fa fa-eye\"></i></a>";
+                    $poPublicId = PublicId::encode($row->nopo, 'po-masuk-no');
+                    $tombolProgress = "<a class=\"btn btn-sm btn-info\" href=\"/po/progress/" . $poPublicId . "\" title=\"Lihat Progress\"><i class=\"fa fa-eye\"></i></a>";
                     if (\App\Libraries\AccessControl::can('order.po_masuk.delete')) {
                         return "<div class=\"po-action-buttons\">
                         $tombolProgress
-                        <button type=\"button\" class=\"btn btn-sm btn-primary\" title=\"Edit PO\" onclick=\"edit('" . sha1($row->nopo) . "')\"><i class=\"fa fa-edit\"></i></button>
-                        <button type=\"button\" class=\"btn btn-sm btn-danger\" title=\"Hapus PO\" onclick=\"hapus('" . $row->nopo . "')\"><i class=\"fa fa-trash-alt\"></i></button>
+                        <button type=\"button\" class=\"btn btn-sm btn-primary\" title=\"Edit PO\" onclick=\"edit('" . $poPublicId . "')\"><i class=\"fa fa-edit\"></i></button>
+                        <button type=\"button\" class=\"btn btn-sm btn-danger\" title=\"Hapus PO\" onclick=\"hapus('" . $poPublicId . "')\"><i class=\"fa fa-trash-alt\"></i></button>
                         </div>";
                     }
-                    return "<div class=\"po-action-buttons\">$tombolProgress<button type=\"button\" class=\"btn btn-sm btn-primary\" title=\"Edit PO\" onclick=\"edit('" . sha1($row->nopo) . "')\"><i class=\"fa fa-edit\"></i></button></div>";
+                    return "<div class=\"po-action-buttons\">$tombolProgress<button type=\"button\" class=\"btn btn-sm btn-primary\" title=\"Edit PO\" onclick=\"edit('" . $poPublicId . "')\"><i class=\"fa fa-edit\"></i></button></div>";
                 })
                 ->format('qty', function ($value) {
                     return number_format($value, 0, ',', '.');
@@ -858,7 +866,8 @@ class Po extends BaseController
     function hapusTransaksi()
     {
         if ($this->request->isAJAX()) {
-            $nopo = $this->request->getPost('nopo');
+            $nopo = $this->resolvePoToken((string) $this->request->getPost('nopo'));
+            if ($nopo === null) return $this->response->setJSON(['error' => 'Identifier PO tidak valid.']);
 
             $modelpo = new Modelpo();
             $modeloutstanding = new Modeloutstand();
@@ -910,8 +919,10 @@ class Po extends BaseController
 
     public function edit($po)
     {
+        $po = $this->resolvePoToken((string) $po);
+        if ($po === null) exit('Identifier PO tidak valid');
         $modelpo = new Modelpo();
-        $cekPo = $modelpo->cekPo($po);
+        $cekPo = $modelpo->cekPo(sha1($po));
         if ($cekPo->getNumRows() > 0) {
             $row = $cekPo->getRowArray();
             $lockReasons = $this->poMasukEditLockReasons($row['nopo']);
@@ -939,8 +950,10 @@ class Po extends BaseController
 
     public function progress($po)
     {
+        $po = $this->resolvePoToken((string) $po);
+        if ($po === null) exit('Identifier PO tidak valid');
         $modelpo = new Modelpo();
-        $cekPo = $modelpo->cekPo($po);
+        $cekPo = $modelpo->cekPo(sha1($po));
         if ($cekPo->getNumRows() === 0) {
             exit('Data tidak ditemukan');
         }
@@ -1874,11 +1887,11 @@ class Po extends BaseController
     {
         if ($this->request->isAJAX()) {
             $newNopo = $this->request->getPost('newNopo');
-            $originalNopoSha1 = $this->request->getPost('originalNopoSha1');
+            $originalNopo = $this->resolvePoToken((string) $this->request->getPost('originalNopoSha1'));
 
             if (is_string($newNopo) && !empty($newNopo)) {
                 $modelPo = new Modelpo();
-                $poLama = $modelPo->where('sha1(nopo)', $originalNopoSha1)->first();
+                $poLama = $originalNopo === null ? null : $modelPo->where('nopo', $originalNopo)->first();
 
                 if (!$poLama) {
                     $json = ['error' => 'Data Purchase Order tidak ditemukan'];
@@ -1905,7 +1918,7 @@ class Po extends BaseController
                             ? ['error' => 'Gagal mengubah No. Purchase Order. Tidak ada data yang diubah.']
                             : [
                                 'sukses' => 'No. Purchase Order berhasil diubah',
-                                'newNopoSha1' => sha1($newNopo)
+                                'newNopoSha1' => PublicId::encode($newNopo, 'po-masuk-no')
                             ];
                     }
                 }
@@ -2061,11 +2074,12 @@ class Po extends BaseController
     public function updatePelanggan()
     {
         if ($this->request->isAJAX()) {
-            $nopoSha1 = (string) $this->request->getPost('nopoSha1');
+            $nopoToken = (string) $this->request->getPost('nopoSha1');
+            $nopo = $this->resolvePoToken($nopoToken);
             $idpelanggan = (int) $this->request->getPost('idpelanggan');
 
             $modelPo = new Modelpo();
-            $po = $modelPo->where('sha1(nopo)', $nopoSha1)->first();
+            $po = $nopo === null ? null : $modelPo->where('nopo', $nopo)->first();
             if (!$po) {
                 return $this->response->setJSON(['error' => 'Data Purchase Order tidak ditemukan']);
             }
@@ -2105,11 +2119,12 @@ class Po extends BaseController
     public function updateTanggal()
     {
         if ($this->request->isAJAX()) {
-            $nopoSha1 = (string) $this->request->getPost('nopoSha1');
+            $nopoToken = (string) $this->request->getPost('nopoSha1');
+            $nopo = $this->resolvePoToken($nopoToken);
             $tanggal = trim((string) $this->request->getPost('tanggal'));
 
             $modelPo = new Modelpo();
-            $po = $modelPo->where('sha1(nopo)', $nopoSha1)->first();
+            $po = $nopo === null ? null : $modelPo->where('nopo', $nopo)->first();
             if (!$po) {
                 return $this->response->setJSON(['error' => 'Data Purchase Order tidak ditemukan']);
             }

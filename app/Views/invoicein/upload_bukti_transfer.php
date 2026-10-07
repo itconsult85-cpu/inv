@@ -4,8 +4,9 @@
 Upload Bukti Transfer Invoice In
 <?= $this->endSection('judul') ?>
 
+<?php $invoicePublicId = \App\Libraries\PublicId::encode($invoice['id'], 'invoice-in-id'); ?>
 <?= $this->section('subjudul') ?>
-<a href="<?= site_url('invoiceIn/detail/' . $invoice['id']) ?>" class="btn btn-warning">
+<a href="<?= site_url('invoiceIn/detail/' . $invoicePublicId) ?>" class="btn btn-warning">
     <i class="fas fa-undo"></i> Kembali
 </a>
 <?= $this->endSection('subjudul') ?>
@@ -41,7 +42,7 @@ Upload Bukti Transfer Invoice In
                 <tr>
                     <th>Bukti Saat Ini</th>
                     <td>
-                        <a href="<?= site_url('invoiceIn/buktiTransfer/' . $invoice['id']) ?>" target="_blank">
+                        <a href="<?= site_url('invoiceIn/buktiTransfer/' . $invoicePublicId) ?>" target="_blank">
                             <?= esc($invoice['bukti_transfer_original_name'] ?: $invoice['bukti_transfer_file']) ?>
                         </a>
                     </td>
@@ -49,7 +50,7 @@ Upload Bukti Transfer Invoice In
             <?php endif ?>
         </table>
 
-        <?= form_open_multipart('/invoiceIn/simpanBuktiTransfer/' . $invoice['id']) ?>
+        <?= form_open_multipart('/invoiceIn/simpanBuktiTransfer/' . $invoicePublicId) ?>
             <div class="form-group">
                 <label>Bukti Transfer</label>
                 <input type="file" name="bukti_transfer" class="form-control" accept=".pdf,.jpg,.jpeg,.png" required>

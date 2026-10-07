@@ -98,6 +98,9 @@ class Jasa extends BaseController
 
             return DataTable::of($builder)
                 ->addNumbering('nomor')
+                ->add('harga_modal_raw', static function ($row) {
+                    return (float) $row->harga_modal;
+                })
                 ->add('aksi', function ($row) {
                     return "<button type=\"button\" class=\"btn btn-sm btn-info\" title=\"Pilih Data\" onclick=\"pilih('" . $row->idjasa . "','" . $row->namajasa . "')\"><i class=\"fa fa-check\"></i></button>&nbsp
                     <button type=\"button\" class=\"btn btn-sm btn-primary\" title=\"Edit Data\" id=\"tombolEditJasa\" onclick=\"editData('" . $row->idjasa . "','" . $row->namajasa . "','" . (float) $row->harga_modal . "')\"><i class=\"fa fa-edit\"></i></button>&nbsp

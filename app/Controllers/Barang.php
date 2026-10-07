@@ -393,21 +393,21 @@ class Barang extends BaseController
                         <button type=\"button\"
                             class=\"btn btn-sm btn-primary\"
                             title=\"Edit Data\"
-                            onclick=\"edit('" . sha1($row->brgkode) . "')\">
+                            onclick=\"edit('" . $this->publicId($row->brgkode, 'barang-kode') . "')\">
                             <i class=\"fa fa-edit\"></i>
                         </button>&nbsp;
 
                         <button type=\"button\"
                             class=\"btn btn-sm btn-secondary\"
                             title=\"Riwayat Perubahan\"
-                            onclick=\"riwayat('" . sha1($row->brgkode) . "')\">
+                            onclick=\"riwayat('" . $this->publicId($row->brgkode, 'barang-kode') . "')\">
                             <i class=\"fa fa-history\"></i>
                         </button>&nbsp;
 
                         <button type=\"button\"
                             class=\"btn btn-sm btn-danger\"
                             title=\"Hapus Data\"
-                            onclick=\"hapus('" . $row->brgkode . "')\">
+                            onclick=\"hapus('" . $this->publicId($row->brgkode, 'barang-kode') . "')\">
                             <i class=\"fa fa-trash-alt\"></i>
                         </button>
                     ";
@@ -647,7 +647,11 @@ class Barang extends BaseController
 
     public function riwayat($kode)
     {
-        $cekId = $this->barang->cekId($kode);
+        $kodeAsli = $this->resolvePublicId((string) $kode, 'barang-kode');
+        if ($kodeAsli === null) {
+            exit('Token produk tidak valid');
+        }
+        $cekId = $this->barang->cekId(sha1($kodeAsli));
         if ($cekId->getNumRows() === 0) {
             exit('Data tidak ditemukan');
         }
@@ -674,7 +678,11 @@ class Barang extends BaseController
     public function edit($kode)
     {
         $modelBarang = new Modelbarang();
-        $cekId = $modelBarang->cekId($kode);
+        $kodeAsli = $this->resolvePublicId((string) $kode, 'barang-kode');
+        if ($kodeAsli === null) {
+            exit('Token produk tidak valid');
+        }
+        $cekId = $modelBarang->cekId(sha1($kodeAsli));
 
         if ($cekId->getNumRows() > 0) {
             $row = $cekId->getRowArray();
@@ -719,6 +727,7 @@ class Barang extends BaseController
 
             $data = [
                 'kodebarang' => $row['brgkode'],
+                'kodebarangToken' => $this->publicId($row['brgkode'], 'barang-kode'),
                 'kodeDapatDiubah' => empty($pemakaianTransaksi),
                 'pemakaianKodeProduk' => $pemakaianTransaksi,
                 'namabarang' => $row['brgnama'],
@@ -752,7 +761,11 @@ class Barang extends BaseController
 
     public function updatedata()
     {
-        $kodebarang_lama = trim((string) $this->request->getVar('old_kodebarang'));
+        $kodebarangToken = trim((string) $this->request->getVar('old_kodebarang'));
+        $kodebarang_lama = $this->resolvePublicId($kodebarangToken, 'barang-kode');
+        if ($kodebarang_lama === null) {
+            return redirect()->back()->withInput()->with('error', 'Token produk tidak valid.');
+        }
         $kodebarang_input = trim((string) $this->request->getVar('kodebarang'));
 
         $cekLama = $this->barang->cekId(sha1($kodebarang_lama));
@@ -914,7 +927,10 @@ class Barang extends BaseController
     public function hapus()
     {
         if ($this->request->isAJAX()) {
-            $kode = $this->request->getPost('kode');
+            $kode = $this->resolvePublicId($this->request->getPost('kode'), 'barang-kode');
+            if ($kode === null) {
+                return $this->response->setJSON(['error' => 'Token produk tidak valid']);
+            }
 
             $db = \Config\Database::connect();
 

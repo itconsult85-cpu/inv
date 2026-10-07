@@ -150,9 +150,9 @@ class PermintaanPengiriman extends BaseController
                 'usernama' => $row['usernama'] ?? '-',
                 'total_produk' => number_format($row['total_produk'], 0, ',', '.'),
                 'status' => $statusBadge,
-                'aksi' => '<button class="btn btn-sm btn-primary" title="Edit / Proses Permintaan" onclick="proses(\'' . sha1($row['id']) . '\')"><i class="fa fa-edit"></i></button>&nbsp;'
-                    . '<button class="btn btn-sm btn-primary" title="Print" onclick="cetak(\'' . sha1($row['id']) . '\')"><i class="fa fa-print"></i></button>&nbsp;'
-                    . '<button class="btn btn-sm btn-danger" title="Hapus" onclick="hapusPengiriman(' . $row['id'] . ')"><i class="fa fa-trash-alt"></i></button>',
+                'aksi' => '<button class="btn btn-sm btn-primary" title="Edit / Proses Permintaan" onclick="proses(\'' . \App\Libraries\PublicId::encode($row['id'], 'permintaan-pengiriman-id') . '\')"><i class="fa fa-edit"></i></button>&nbsp;'
+                    . '<button class="btn btn-sm btn-primary" title="Print" onclick="cetak(\'' . \App\Libraries\PublicId::encode($row['id'], 'permintaan-pengiriman-id') . '\')"><i class="fa fa-print"></i></button>&nbsp;'
+                    . '<button class="btn btn-sm btn-danger" title="Hapus" onclick="hapusPengiriman(\'' . \App\Libraries\PublicId::encode($row['id'], 'permintaan-pengiriman-id') . '\')"><i class="fa fa-trash-alt"></i></button>',
             ];
         }
 
@@ -416,7 +416,11 @@ class PermintaanPengiriman extends BaseController
             return $this->response->setStatusCode(404);
         }
 
-        $id = (int) $this->request->getPost('id');
+        $id = \App\Libraries\PublicId::decode((string) $this->request->getPost('id'), 'permintaan-pengiriman-id');
+        if ($id === null || !ctype_digit($id) || (int) $id <= 0) {
+            return $this->response->setJSON(['error' => 'Token permintaan pengiriman tidak valid.']);
+        }
+        $id = (int) $id;
         $db = \Config\Database::connect();
         $db->transStart();
         $db->table('rencana_pengiriman')->delete(['permintaan_id' => $id]);
@@ -1002,7 +1006,7 @@ class PermintaanPengiriman extends BaseController
         return $this->response->setJSON([
             'sukses' => 'Barang yang akan dikirim ditambahkan',
             'permintaan_id' => (int) $detail['permintaan_id'],
-            'permintaan_hash' => sha1((int) $detail['permintaan_id']),
+            'permintaan_hash' => \App\Libraries\PublicId::encode($detail['permintaan_id'], 'permintaan-pengiriman-id'),
             'rencana_id' => $rencanaId,
             'qty_total' => $qtyGabungan,
             'digabung' => $rencanaSama !== null,

@@ -18,7 +18,7 @@
     }
     ?>
     <div class="tre-inline-combobox tre-inline-combobox-solo" id="pilihPoCombobox">
-        <input type="hidden" id="pilihPo" value="<?= $selectedPo ? esc(sha1($selectedPo)) : '' ?>">
+        <input type="hidden" id="pilihPo" value="<?= $selectedPo ? esc(\App\Libraries\PublicId::encode($selectedPo, 'po-masuk-no')) : '' ?>">
         <input type="text" id="pilihPoText" class="form-control" value="<?= esc($selectedPoLabel) ?>" placeholder="-- Pilih PO --">
         <div class="tre-inline-combobox-menu" id="pilihPoComboboxMenu"></div>
     </div>
@@ -29,7 +29,7 @@
         <div class="card-header"><strong>List Surat Jalan berdasarkan PO yang dipilih</strong></div>
         <div class="card-body">
             <p class="text-muted">pilih satu atau beberapa surat jalan yang mau digabung jadi 1 invoice. Surat jalan yang qty-nya sudah full ditagihkan tidak muncul lagi di daftar ini.</p>
-            <form method="get" action="<?= site_url('invoiceOut/create/' . sha1($selectedPo)) ?>">
+            <form method="get" action="<?= site_url('invoiceOut/create/' . \App\Libraries\PublicId::encode($selectedPo, 'po-masuk-no')) ?>">
                 <table class="table table-bordered table-sm">
                     <thead>
                         <tr>
@@ -195,7 +195,7 @@ $(function() {
         menu: '#pilihPoComboboxMenu',
         options: <?= json_encode(array_map(static function ($candidate) {
             return [
-                'id' => sha1($candidate['nopo']),
+                'id' => \App\Libraries\PublicId::encode($candidate['nopo'], 'po-masuk-no'),
                 'text' => $candidate['nopo'] . ' | ' . date('d-m-Y', strtotime($candidate['tglpo'])) . ' | ' . $candidate['pelnama'],
                 'value' => $candidate['nopo'],
             ];

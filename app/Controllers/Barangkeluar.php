@@ -17,6 +17,15 @@ use \Hermawan\DataTables\DataTable;
 
 class Barangkeluar extends BaseController
 {
+    private function decodePublicToken(?string $token, string $context): ?string
+    {
+        if ($token === null || $token === '') {
+            return null;
+        }
+
+        return \App\Libraries\PublicId::decode($token, $context);
+    }
+
     public function data()
     {
         return view('barangkeluar/viewdata');
@@ -46,12 +55,12 @@ class Barangkeluar extends BaseController
             return DataTable::of($builder)
                 ->addNumbering('nomor')
                 ->add('aksi', function ($row) {
-                    $hash = sha1($row->faktur);
+                    $token = \App\Libraries\PublicId::encode($row->faktur, 'barangkeluar-faktur');
                     // Tombol Hapus dipindah ke tab List Pengiriman (aksi
                     // hapusPengirimanLangsung), jadi di sini cuma cetak.
                     return "<div class=\"d-flex justify-content-center align-items-center\" style=\"gap:4px;\">"
-                        . "<button type=\"button\" class=\"btn btn-sm btn-info\" title=\"Lihat Delivery Order\" onclick=\"lihatDo('{$hash}')\"><i class=\"fa fa-eye\"></i></button>"
-                        . "<button type=\"button\" class=\"btn btn-sm btn-success\" title=\"Print Delivery Order\" onclick=\"cetakDo('{$hash}')\"><i class=\"fa fa-print\"></i></button>"
+                        . "<button type=\"button\" class=\"btn btn-sm btn-info\" title=\"Lihat Delivery Order\" onclick=\"lihatDo('{$token}')\"><i class=\"fa fa-eye\"></i></button>"
+                        . "<button type=\"button\" class=\"btn btn-sm btn-success\" title=\"Print Delivery Order\" onclick=\"cetakDo('{$token}')\"><i class=\"fa fa-print\"></i></button>"
                         . "</div>";
                 })
                 ->add('jenis_badge', function ($row) {
@@ -171,33 +180,36 @@ class Barangkeluar extends BaseController
             $daftarPo = trim((string) ($row['daftar_po'] ?? ''));
             $kirimLangsung = ($row['keterangan'] ?? '') === 'Kirim langsung';
 
+            $permintaanToken = \App\Libraries\PublicId::encode($row['id'], 'permintaan-pengiriman-id');
             if ($status === 'Draft') {
                 // Kirim Langsung: draft-nya dikelola di halaman Input Pengiriman.
                 // Buat Permintaan bertahap: draft-nya dikelola di halaman Proses
                 // Permintaan yang sama seperti biasa (sudah otomatis nunjukin
                 // rencana yang belum dikirim), jadi tombolnya arahnya beda.
+                $permintaanToken = \App\Libraries\PublicId::encode($row['id'], 'permintaan-pengiriman-id');
                 $tombolEdit = $kirimLangsung
-                    ? '<button type="button" class="btn btn-sm btn-primary" title="Lanjutkan Input Pengiriman" onclick="lanjutkanPengiriman(\'' . sha1((int) $row['id']) . '\')"><i class="fa fa-edit"></i></button>'
-                    : '<a class="btn btn-sm btn-primary" title="Lanjutkan Proses Permintaan" href="/permintaanPengiriman/proses/' . sha1((int) $row['id']) . '"><i class="fa fa-edit"></i></a>';
+                    ? '<button type="button" class="btn btn-sm btn-primary" title="Lanjutkan Input Pengiriman" onclick="lanjutkanPengiriman(\'' . $permintaanToken . '\')"><i class="fa fa-edit"></i></button>'
+                    : '<a class="btn btn-sm btn-primary" title="Lanjutkan Proses Permintaan" href="/permintaanPengiriman/proses/' . $permintaanToken . '"><i class="fa fa-edit"></i></a>';
                 $tombolEditDokumen = '<button type="button" class="btn btn-sm btn-secondary" title="Belum ada surat jalan resmi" disabled><i class="fa fa-file-signature"></i></button>';
                 $tombolCetakDo = '<button type="button" class="btn btn-sm btn-secondary" title="Belum ada surat jalan resmi" disabled><i class="fa fa-print"></i></button>';
             } else {
                 // Sekarang $noDo itu punya baris ini sendiri (bukan lagi
                 // "yang pertama dari daftar gabungan"), jadi tombol Edit
                 // selalu ngebuka surat jalan yang beneran sesuai barisnya.
+                $noDoToken = $noDo !== '' ? \App\Libraries\PublicId::encode($noDo, 'barangkeluar-faktur') : '';
                 $tombolEdit = $noDo !== ''
-                    ? '<button type="button" class="btn btn-sm btn-primary" title="Edit Pengiriman" onclick="edit(\'' . sha1($noDo) . '\')"><i class="fa fa-edit"></i></button>'
+                    ? '<button type="button" class="btn btn-sm btn-primary" title="Edit Pengiriman" onclick="edit(\'' . $noDoToken . '\')"><i class="fa fa-edit"></i></button>'
                     : '<button type="button" class="btn btn-sm btn-secondary" title="Belum ada surat jalan" disabled><i class="fa fa-edit"></i></button>';
                 $itemTanpaBtb = (int) ($row['item_tanpa_btb'] ?? 0);
                 $badgeBtb = $itemTanpaBtb > 0
                     ? '<span class="badge badge-danger badge-pill" style="position:absolute; top:-6px; right:-6px; font-size:10px; color:#fff;">' . $itemTanpaBtb . '</span>'
                     : '';
                 $tombolEditDokumen = $noDo !== ''
-                    ? '<button type="button" class="btn btn-sm btn-warning position-relative" title="Dokumen BTB' . ($itemTanpaBtb > 0 ? ' -- ' . $itemTanpaBtb . ' item belum diisi' : '') . '" onclick="editDokumenPengiriman(\'' . sha1($noDo) . '\')"><i class="fa fa-file-signature"></i>' . $badgeBtb . '</button>'
+                    ? '<button type="button" class="btn btn-sm btn-warning position-relative" title="Dokumen BTB' . ($itemTanpaBtb > 0 ? ' -- ' . $itemTanpaBtb . ' item belum diisi' : '') . '" onclick="editDokumenPengiriman(\'' . $noDoToken . '\')"><i class="fa fa-file-signature"></i>' . $badgeBtb . '</button>'
                     : '<button type="button" class="btn btn-sm btn-secondary" title="Belum ada surat jalan" disabled><i class="fa fa-file-signature"></i></button>';
                 $tombolCetakDo = $noDo !== ''
-                    ? '<button type="button" class="btn btn-sm btn-info" title="Lihat Delivery Order" onclick="lihatDo(\'' . sha1($noDo) . '\')"><i class="fa fa-eye"></i></button>'
-                    . '<button type="button" class="btn btn-sm btn-primary" title="Print Delivery Order" onclick="cetakDo(\'' . sha1($noDo) . '\')"><i class="fa fa-print"></i></button>'
+                    ? '<button type="button" class="btn btn-sm btn-info" title="Lihat Delivery Order" onclick="lihatDo(\'' . $noDoToken . '\')"><i class="fa fa-eye"></i></button>'
+                    . '<button type="button" class="btn btn-sm btn-primary" title="Print Delivery Order" onclick="cetakDo(\'' . $noDoToken . '\')"><i class="fa fa-print"></i></button>'
                     : '<button type="button" class="btn btn-sm btn-secondary" title="Belum ada surat jalan" disabled><i class="fa fa-print"></i></button>';
             }
 
@@ -210,11 +222,11 @@ class Barangkeluar extends BaseController
                 // No Surat Jalan sekaligus (HOTFIX128), jadi hapus per-ID
                 // permintaan yang lama bisa ikut ngehapus surat jalan lain
                 // yang harusnya nggak disentuh.
-                $tombolHapus = '<button type="button" class="btn btn-sm btn-danger" title="Hapus Surat Jalan ini" onclick="hapusSuratJalan(\'' . sha1($noDo) . '\')"><i class="fa fa-trash-alt"></i></button>';
+                $tombolHapus = '<button type="button" class="btn btn-sm btn-danger" title="Hapus Surat Jalan ini" onclick="hapusSuratJalan(\'' . $noDoToken . '\')"><i class="fa fa-trash-alt"></i></button>';
             } else {
                 // Belum ada No Surat Jalan (masih Draft) -- nggak ada yang
                 // bisa di-scope, jadi tetap hapus seluruh sesi/permintaan.
-                $tombolHapus = '<button type="button" class="btn btn-sm btn-danger" title="Hapus (seluruh permintaan ini)" onclick="hapusPengirimanLangsung(' . (int) $row['id'] . ')"><i class="fa fa-trash-alt"></i></button>';
+                $tombolHapus = '<button type="button" class="btn btn-sm btn-danger" title="Hapus (seluruh permintaan ini)" onclick="hapusPengirimanLangsung(\'' . $permintaanToken . '\')"><i class="fa fa-trash-alt"></i></button>';
             }
 
             $tanggalTampil = trim((string) ($row['tglfaktur_asli'] ?? '')) !== ''
@@ -222,8 +234,8 @@ class Barangkeluar extends BaseController
                 : (string) $row['tanggal'];
 
             return [
-                'id' => (int) $row['id'],
-                'hash' => sha1((int) $row['id']),
+                'id' => \App\Libraries\PublicId::encode($row['id'], 'permintaan-pengiriman-id'),
+                'hash' => $permintaanToken,
                 'tanggal_sort' => $tanggalTampil,
                 'tanggal' => date('d-m-Y', strtotime($tanggalTampil)),
                 'status' => $status,
@@ -281,9 +293,13 @@ class Barangkeluar extends BaseController
         ]);
     }
 
-    public function cetakDo(string $hash)
+    public function cetakDo(string $token)
     {
         $db = \Config\Database::connect();
+        $faktur = $this->decodePublicToken($token, 'barangkeluar-faktur');
+        if ($faktur === null || $faktur === '') {
+            return $this->response->setStatusCode(404, 'Data tidak ditemukan');
+        }
         $header = $db->query(
             "SELECT bk.faktur, bk.detpo, bk.tglfaktur, bk.idpel, bk.qtykeluar, bk.totalberatbarang,
                     p.pelnama, p.pelpic, p.peltelp, p.pelemail, p.pelalamat,
@@ -293,8 +309,8 @@ class Barangkeluar extends BaseController
              JOIN pelanggan p ON p.pelid = bk.idpel
              LEFT JOIN gudang g ON g.gdgid = bk.gudang
              LEFT JOIN po ON po.nopo = bk.detpo
-             WHERE SHA1(bk.faktur) = ?",
-            [$hash]
+             WHERE bk.faktur = ?",
+            [$faktur]
         )->getRowArray();
 
         if (!$header) {
@@ -334,19 +350,23 @@ class Barangkeluar extends BaseController
         ]);
     }
 
-    public function detailDo(string $hash)
+    public function detailDo(string $token)
     {
         if (!$this->request->isAJAX()) {
             return $this->response->setStatusCode(404);
         }
 
         $db = \Config\Database::connect();
+        $faktur = $this->decodePublicToken($token, 'barangkeluar-faktur');
+        if ($faktur === null || $faktur === '') {
+            return $this->response->setStatusCode(404)->setJSON(['error' => 'Data tidak ditemukan']);
+        }
         $header = $db->query(
             "SELECT bk.faktur, p.pelnama
              FROM barangkeluar bk
              JOIN pelanggan p ON p.pelid = bk.idpel
-             WHERE SHA1(bk.faktur) = ?",
-            [$hash]
+             WHERE bk.faktur = ?",
+            [$faktur]
         )->getRowArray();
 
         if (!$header) {
@@ -1066,7 +1086,10 @@ class Barangkeluar extends BaseController
     function hapusTransaksi()
     {
         if ($this->request->isAJAX()) {
-            $faktur = $this->request->getPost('faktur');
+            $faktur = $this->decodePublicToken($this->request->getPost('faktur'), 'barangkeluar-faktur');
+            if ($faktur === null || $faktur === '') {
+                return $this->response->setJSON(['error' => 'Token Surat Jalan tidak valid.']);
+            }
             $db = \Config\Database::connect();
 
             $db->transBegin();
@@ -1100,7 +1123,11 @@ class Barangkeluar extends BaseController
             return $this->response->setStatusCode(404);
         }
 
-        $id = (int) $this->request->getPost('id');
+        $id = $this->decodePublicToken($this->request->getPost('id'), 'permintaan-pengiriman-id');
+        if ($id === null || !ctype_digit($id) || (int) $id <= 0) {
+            return $this->response->setJSON(['error' => 'Token pengiriman tidak valid.']);
+        }
+        $id = (int) $id;
         $db = \Config\Database::connect();
 
         $header = $db->table('permintaan_pengiriman')->where('id', $id)->get()->getRowArray();
@@ -1152,8 +1179,9 @@ class Barangkeluar extends BaseController
             return $this->response->setStatusCode(404);
         }
 
-        $hash = trim((string) $this->request->getPost('hash'));
-        if ($hash === '') {
+        $token = trim((string) $this->request->getPost('hash'));
+        $noDo = $this->decodePublicToken($token, 'barangkeluar-faktur');
+        if ($noDo === null || $noDo === '') {
             return $this->response->setJSON(['error' => 'No Surat Jalan tidak valid.']);
         }
 
@@ -1165,7 +1193,7 @@ class Barangkeluar extends BaseController
         // jadi barangkeluar-nya belum ada sama sekali.
         $rencanaTerdampak = $db->table('rencana_pengiriman')
             ->select('id, permintaan_id, detail_id, qty, no_do')
-            ->where('SHA1(no_do)', $hash)
+            ->where('no_do', $noDo)
             ->get()
             ->getResultArray();
 
@@ -1245,7 +1273,19 @@ class Barangkeluar extends BaseController
         $modelStok = new ModelStok();
         $db = \Config\Database::connect();
 
-        $cekFaktur = $modelBarangKeluar->cekFaktur($faktur);
+        // URL edit sekarang membawa PublicId AES-256-GCM. Model lama tetap
+        // memakai SHA1(faktur), jadi token harus didekripsi terlebih dahulu
+        // sebelum dibuat hash untuk pencarian. Raw faktur lama tetap diterima
+        // agar tautan lama tidak langsung rusak saat migrasi keamanan.
+        $fakturAsli = $this->decodePublicToken((string) $faktur, 'barangkeluar-faktur');
+        if ($fakturAsli === null) {
+            if (str_starts_with((string) $faktur, 'p1.')) {
+                exit('Token faktur tidak valid atau sudah tidak dapat didekripsi');
+            }
+            $fakturAsli = (string) $faktur;
+        }
+
+        $cekFaktur = $modelBarangKeluar->cekFaktur(sha1($fakturAsli));
 
         if ($cekFaktur->getNumRows() > 0) {
             $row = $cekFaktur->getRowArray();
@@ -1793,8 +1833,8 @@ class Barangkeluar extends BaseController
 
         $this->ensureBtbFileColumns();
 
-        $hash = trim((string) $this->request->getPost('no_do_hash'));
-        $rows = $this->rencanaPengirimanDokumenList($hash);
+        $token = trim((string) $this->request->getPost('no_do_hash'));
+        $rows = $this->rencanaPengirimanDokumenList($token);
 
         if (!$rows) {
             return $this->response->setJSON([
@@ -1806,7 +1846,7 @@ class Barangkeluar extends BaseController
             'sukses' => true,
             'data' => array_map(static function (array $row) {
                 return [
-                    'id' => (int) $row['id'],
+                    'id' => \App\Libraries\PublicId::encode($row['id'], 'btb-id'),
                     'no_do' => $row['no_do'] ?: '-',
                     'no_po' => $row['no_po'] ?: '-',
                     'tanggal_po' => $row['tanggal_po'] ?: '-',
@@ -1814,7 +1854,7 @@ class Barangkeluar extends BaseController
                     'qty' => (float) $row['qty'],
                     'no_btb' => $row['no_btb'] ?: '',
                     'btb_original_name' => $row['btb_original_name'] ?: '',
-                    'btb_file_url' => !empty($row['btb_file']) ? site_url('barangkeluar/file-btb/' . $row['id']) : '',
+                    'btb_file_url' => !empty($row['btb_file']) ? site_url('barangkeluar/file-btb/' . \App\Libraries\PublicId::encode($row['id'], 'btb-id')) : '',
                 ];
             }, $rows),
         ]);
@@ -1827,19 +1867,30 @@ class Barangkeluar extends BaseController
      *
      * @return int[]
      */
-    private function idPengirimanTerpilih(string $hash): array
+    private function idPengirimanTerpilih(string $token): array
     {
-        $ids = array_map('intval', (array) $this->request->getPost('ids'));
+        $noDo = $this->decodePublicToken($token, 'barangkeluar-faktur');
+        if ($noDo === null || $noDo === '') {
+            return [];
+        }
+        $ids = [];
+        foreach ((array) $this->request->getPost('ids') as $idToken) {
+            $id = $this->decodePublicToken((string) $idToken, 'btb-id');
+            if ($id !== null && ctype_digit($id) && (int) $id > 0) {
+                $ids[] = (int) $id;
+            }
+        }
+        $ids = array_values(array_unique(array_filter($ids, static fn($id) => $id > 0)));
         $ids = array_values(array_unique(array_filter($ids, static fn($id) => $id > 0)));
 
-        if ($hash === '' || !$ids) {
+        if (!$ids) {
             return [];
         }
 
         $rows = \Config\Database::connect()
             ->table('rencana_pengiriman')
             ->select('id')
-            ->where('SHA1(no_do)', $hash)
+            ->where('no_do', $noDo)
             ->where('status', 1)
             ->whereIn('id', $ids)
             ->get()
@@ -1857,6 +1908,9 @@ class Barangkeluar extends BaseController
         $this->ensureBtbFileColumns();
 
         $hash = trim((string) $this->request->getPost('no_do_hash'));
+        if ($this->decodePublicToken($hash, 'barangkeluar-faktur') === null) {
+            return $this->response->setJSON(['error' => 'Token Surat Jalan tidak valid.']);
+        }
         $noBtb = trim((string) $this->request->getPost('no_btb'));
         $ids = $this->idPengirimanTerpilih($hash);
 
@@ -2028,9 +2082,15 @@ class Barangkeluar extends BaseController
         ]);
     }
 
-    public function fileBtb(int $id)
+    public function fileBtb(string $token)
     {
         $this->ensureBtbFileColumns();
+
+        $id = \App\Libraries\PublicId::decode($token, 'btb-id');
+        if ($id === null || !ctype_digit($id) || (int) $id <= 0) {
+            throw \CodeIgniter\Exceptions\PageNotFoundException::forPageNotFound('File BTB tidak ditemukan.');
+        }
+        $id = (int) $id;
 
         $db = \Config\Database::connect();
         $row = $db->table('rencana_pengiriman')
@@ -2059,16 +2119,17 @@ class Barangkeluar extends BaseController
      * milih per ITEM (checkbox), bukan per No. PO, karena 1 PO bisa punya
      * lebih dari 1 item dan 1 surat jalan sekarang boleh gabungan PO.
      */
-    private function rencanaPengirimanDokumenList(string $hash): array
+    private function rencanaPengirimanDokumenList(string $token): array
     {
-        if ($hash === '') {
+        $noDo = $this->decodePublicToken($token, 'barangkeluar-faktur');
+        if ($noDo === null || $noDo === '') {
             return [];
         }
 
         return \Config\Database::connect()
             ->table('rencana_pengiriman')
             ->select('id, no_do, no_po, tanggal_po, kode_produk, qty, no_btb, btb_file, btb_original_name')
-            ->where('SHA1(no_do)', $hash)
+            ->where('no_do', $noDo)
             ->where('status', 1)
             ->orderBy('no_po', 'ASC')
             ->orderBy('id', 'ASC')

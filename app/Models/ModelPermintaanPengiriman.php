@@ -14,12 +14,17 @@ class ModelPermintaanPengiriman extends Model
         'idpel', 'pic_pengirim', 'nominal', 'keterangan', 'status',
     ];
 
-    public function cekHash(string $hash)
+    public function cekHash(string $token)
     {
+        $id = \App\Libraries\PublicId::decode($token, 'permintaan-pengiriman-id');
+        if ($id === null || !ctype_digit($id) || (int) $id <= 0) {
+            return $this->db->table($this->table)->where('id', 0)->get();
+        }
+
         return $this->db->table($this->table . ' p')
             ->select('p.*, u.usernama')
             ->join('users u', 'u.id = p.iduser', 'left')
-            ->where('SHA1(p.id)', $hash)
+            ->where('p.id', (int) $id)
             ->get();
     }
 }

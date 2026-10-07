@@ -20,7 +20,8 @@ Form Edit Data Berat/Ukuran Bersih Barang
 <div class="form-group row">
     <label for="kodeprd" class="col-sm-4 col-form-label">Kode Produk</label>
     <div class="col-sm-4">
-        <input type="text" class="form-control" id="kodeprd" name="kodeprd" readonly value="<?= $kodeprd ?>">
+        <input type="text" class="form-control" id="kodeprd_display" readonly value="<?= esc($kodeprd) ?>">
+        <input type="hidden" id="kodeprd" name="kodeprd" value="<?= esc($kodeprdToken ?? '') ?>">
     </div>
 </div>
 

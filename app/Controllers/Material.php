@@ -38,8 +38,11 @@ class Material extends BaseController
 
     public function pemakaian()
     {
-        $hash = (string) $this->request->getGet('hash');
-        $cekId = $this->material->cekId($hash);
+        $materialId = $this->resolvePublicId($this->request->getGet('hash'), 'material-id');
+        if ($materialId === null || !ctype_digit($materialId)) {
+            return $this->response->setStatusCode(400)->setJSON(['error' => 'Token material tidak valid.']);
+        }
+        $cekId = $this->material->cekId(sha1($materialId));
 
         if ($cekId->getNumRows() === 0) {
             return $this->response->setStatusCode(404)->setJSON(['error' => 'Data material tidak ditemukan.']);
@@ -78,9 +81,9 @@ class Material extends BaseController
             return DataTable::of($builder)
                 ->addNumbering('nomor')
                 ->add('aksi', function ($row) {
-                    return "<button type=\"button\" class=\"btn btn-sm btn-primary\" title=\"Edit Data\" onclick=\"edit('" . sha1($row->matid) . "')\"><i class=\"fa fa-edit\"></i></button>&nbsp
-                    <button type=\"button\" class=\"btn btn-sm btn-info\" title=\"Label Nama per Supplier (buat PO Keluar)\" onclick=\"labelSupplier('" . sha1($row->matid) . "')\"><i class=\"fa fa-tag\"></i></button>&nbsp
-                    <button type=\"button\" class=\"btn btn-sm btn-danger\" title=\"Hapus Data\" onclick=\"hapus('" . $row->matid . "','" . $row->matkode . "')\"><i class=\"fa fa-trash-alt\"></i></button>";
+                    return "<button type=\"button\" class=\"btn btn-sm btn-primary\" title=\"Edit Data\" onclick=\"edit('" . $this->publicId($row->matid, 'material-id') . "')\"><i class=\"fa fa-edit\"></i></button>&nbsp
+                    <button type=\"button\" class=\"btn btn-sm btn-info\" title=\"Label Nama per Supplier (buat PO Keluar)\" onclick=\"labelSupplier('" . $this->publicId($row->matid, 'material-id') . "')\"><i class=\"fa fa-tag\"></i></button>&nbsp
+                    <button type=\"button\" class=\"btn btn-sm btn-danger\" title=\"Hapus Data\" onclick=\"hapus('" . $this->publicId($row->matid, 'material-id') . "','" . $row->matkode . "')\"><i class=\"fa fa-trash-alt\"></i></button>";
                 })
                 ->toJson(true);
         }
@@ -189,7 +192,10 @@ class Material extends BaseController
     public function edit($id)
     {
         $modelMaterial = new Modelmaterial();
-        $cekId = $modelMaterial->cekId($id);
+        $idAsli = $this->resolvePublicId((string) $id, 'material-id');
+        if ($idAsli === null || !ctype_digit($idAsli)) { return redirect()->to('/material/index')->with('error', 'Token material tidak valid.'); }
+        $id = (int) $idAsli;
+        $cekId = $modelMaterial->cekId(sha1((string) $id));
 
         if ($cekId->getNumRows() > 0) {
             $row = $cekId->getRowArray();
@@ -198,7 +204,7 @@ class Material extends BaseController
             $modelsatuan = new Modelsatuan();
 
             $data = [
-                'id' => $id,
+                'id' => $this->publicId($id, 'material-id'),
                 'kodematerial' => $row['matkode'],
                 'namamaterial' => $row['matnama'],
                 'kategori' => $row['matkatid'],
@@ -226,6 +232,10 @@ class Material extends BaseController
     public function updatedata()
     {
         $request = $this->request->getVar();
+        $idToken = $request['idmaterial'] ?? '';
+        $idDecoded = $this->resolvePublicId((string) $idToken, 'material-id');
+        if ($idDecoded === null || !ctype_digit($idDecoded)) { return redirect()->to('/material/index')->with('error', 'Token material tidak valid.'); }
+        $request['idmaterial'] = (int) $idDecoded;
         $validation = \Config\Services::validation();
         $modelMaterial = new Modelmaterial();
         $cekId = $modelMaterial->cekId($request['idmaterial']);
@@ -360,7 +370,10 @@ class Material extends BaseController
         $modelMaterial = new Modelmaterial();
         $modelStokMaterial = new ModelStokMaterial();
 
-        $cekId = $modelMaterial->cekId($idmaterial);
+        $idAsli = $this->resolvePublicId((string) $idmaterial, 'material-id');
+        if ($idAsli === null || !ctype_digit($idAsli)) { return redirect()->to('/material/index')->with('error', 'Token material tidak valid.'); }
+        $idmaterial = (int) $idAsli;
+        $cekId = $modelMaterial->cekId(sha1((string) $idmaterial));
         if ($cekId->getNumRows() > 0) {
             $pemakaian = $this->relasiMaterial((int) $idmaterial);
             if ($pemakaian) {
@@ -460,8 +473,11 @@ class Material extends BaseController
 
         $this->ensureMaterialLabelSupplierTable();
 
-        $hash = trim((string) $this->request->getPost('hash'));
-        $cekId = $this->material->cekId($hash);
+        $materialId = $this->resolvePublicId($this->request->getPost('hash'), 'material-id');
+        if ($materialId === null || !ctype_digit($materialId)) {
+            return $this->response->setJSON(['error' => 'Token material tidak valid.']);
+        }
+        $cekId = $this->material->cekId(sha1($materialId));
         if ($cekId->getNumRows() === 0) {
             return $this->response->setJSON(['error' => 'Data material tidak ditemukan.']);
         }
@@ -496,8 +512,11 @@ class Material extends BaseController
 
         $this->ensureMaterialLabelSupplierTable();
 
-        $hash = trim((string) $this->request->getPost('hash'));
-        $cekId = $this->material->cekId($hash);
+        $materialId = $this->resolvePublicId($this->request->getPost('hash'), 'material-id');
+        if ($materialId === null || !ctype_digit($materialId)) {
+            return $this->response->setJSON(['error' => 'Token material tidak valid.']);
+        }
+        $cekId = $this->material->cekId(sha1($materialId));
         if ($cekId->getNumRows() === 0) {
             return $this->response->setJSON(['error' => 'Data material tidak ditemukan.']);
         }
@@ -565,7 +584,11 @@ class Material extends BaseController
     function hapus()
     {
         if ($this->request->isAJAX()) {
-            $kode = $this->request->getPost('kode');
+            $kode = $this->resolvePublicId($this->request->getPost('kode'), 'material-id');
+            if ($kode === null || !ctype_digit($kode)) {
+                return $this->response->setJSON(['error' => 'Token material tidak valid']);
+            }
+            $kode = (int) $kode;
             $nama = $this->request->getPost('nama');
 
             $db = \Config\Database::connect();

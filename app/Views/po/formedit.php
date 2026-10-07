@@ -334,7 +334,7 @@ Ubah PO
 </style>
 <div class="po-edit-shell">
     <input type="hidden" id="nopo" value="<?= $nopo ?>">
-    <input type="hidden" id="nopoOriginalSha1" value="<?= sha1($nopo) ?>">
+    <input type="hidden" id="nopoOriginalSha1" value="<?= \App\Libraries\PublicId::encode($nopo, 'po-masuk-no') ?>">
     <input type="hidden" id="idpelanggan" value="<?= esc($idpelanggan) ?>">
     <input type="hidden" id="tglfaktur" value="<?= $tanggal ?>">
 

@@ -11,7 +11,7 @@ Detail PO Keluar
         <a href="<?= site_url('poKeluar/data') ?>" class="btn btn-outline-secondary">
             <i class="fa fa-arrow-left"></i> Kembali
         </a>
-        <a href="<?= site_url('poKeluar/cetak/' . $po['id']) ?>" target="_blank" class="btn btn-info">
+        <a href="<?= site_url('poKeluar/cetak/' . \App\Libraries\PublicId::encode($po['id'], 'po-keluar-id')) ?>" target="_blank" class="btn btn-info">
             <i class="fa fa-print"></i> Cetak PO
         </a>
     </div>

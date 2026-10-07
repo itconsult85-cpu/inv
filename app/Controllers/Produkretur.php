@@ -4,9 +4,14 @@ namespace App\Controllers;
 
 class Produkretur extends BaseController
 {
-    private function headerByHash(string $hash): ?array
+    private function headerByToken(string $token): ?array
     {
-        return db_connect()->table('barangmasuk bm')->select('bm.*, s.supnama, g.gdgnama')->join('supplier s', 's.supid = bm.idsup', 'left')->join('gudang g', 'g.gdgid = bm.gudang', 'left')->where('SHA1(bm.faktur) = ' . db_connect()->escape($hash), null, false)->get()->getRowArray() ?: null;
+        $faktur = \App\Libraries\PublicId::decode($token, 'barangmasuk-faktur');
+        if ($faktur === null || $faktur === '') {
+            return null;
+        }
+
+        return db_connect()->table('barangmasuk bm')->select('bm.*, s.supnama, g.gdgnama')->join('supplier s', 's.supid = bm.idsup', 'left')->join('gudang g', 'g.gdgid = bm.gudang', 'left')->where('bm.faktur', $faktur)->get()->getRowArray() ?: null;
     }
 
     private function nomor(): string
@@ -14,9 +19,9 @@ class Produkretur extends BaseController
         $db = db_connect(); do { $no = 'RTP-' . date('Ymd-His') . '-' . random_int(100, 999); } while ($db->table('retur_produk')->where('nomor_retur', $no)->countAllResults()); return $no;
     }
 
-    public function form(string $hash)
+    public function form(string $token)
     {
-        $header = $this->headerByHash($hash); if (!$header) throw \CodeIgniter\Exceptions\PageNotFoundException::forPageNotFound('Transaksi Produk Masuk tidak ditemukan.');
+        $header = $this->headerByToken($token); if (!$header) throw \CodeIgniter\Exceptions\PageNotFoundException::forPageNotFound('Transaksi Produk Masuk tidak ditemukan.');
         $db = db_connect();
         $details = $db->table('detail_barangmasuk dbm')->select("dbm.id, dbm.detfaktur, dbm.detbrgkode, dbm.detbrgnama, dbm.detjml, COALESCE(r.qty_retur, 0) AS qty_retur, (dbm.detjml - COALESCE(r.qty_retur, 0)) AS sisa_retur", false)->join('(SELECT barang_masuk_detail_id, SUM(qty_retur) AS qty_retur FROM retur_produk_detail GROUP BY barang_masuk_detail_id) r', 'r.barang_masuk_detail_id = dbm.id', 'left')->where('dbm.detfaktur', $header['faktur'])->orderBy('dbm.id', 'ASC')->get()->getResultArray();
         return view('produkretur/form', ['header' => $header, 'details' => $details]);
@@ -40,9 +45,9 @@ class Produkretur extends BaseController
         $db->transComplete(); if ($db->transStatus() === false) return redirect()->back()->withInput()->with('error', 'Retur produk gagal disimpan.'); return redirect()->to(site_url('barangmasuk/data'))->with('success', 'Retur produk NG berhasil disimpan dan stok dikurangi.');
     }
 
-    public function kelola(string $hash)
+    public function kelola(string $token)
     {
-        $header = $this->headerByHash($hash);
+        $header = $this->headerByToken($token);
         if (!$header) throw \CodeIgniter\Exceptions\PageNotFoundException::forPageNotFound('Transaksi Produk Masuk tidak ditemukan.');
         $db = db_connect();
         $returns = $db->table('retur_produk_detail rd')
