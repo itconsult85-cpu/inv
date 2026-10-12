@@ -410,14 +410,14 @@ Reporting
 
             <div class="tab-pane fade" id="tabOmzetSuratJalan" role="tabpanel">
                 <form class="reporting-tab-filter" data-target="#tabOmzetSuratJalanContent" data-url="<?= site_url('invoiceHub/reportingOmzetSuratJalan') ?>">
-                    <input type="hidden" name="periode" id="omzetPeriode" value="<?= esc($reportBulananAwal['periode']) ?>">
                     <div class="row align-items-end">
-                        <div class="col-md-4 form-group mb-2">
-                            <label>Periode</label>
-                            <div class="input-group">
-                                <button type="button" class="btn btn-outline-secondary" id="omzetPeriodePrev"><i class="fa fa-chevron-left"></i> Sebelumnya</button>
-                                <button type="button" class="btn btn-outline-secondary" id="omzetPeriodeNext">Berikutnya <i class="fa fa-chevron-right"></i></button>
-                            </div>
+                        <div class="col-md-3 form-group mb-2">
+                            <label>Tanggal Awal</label>
+                            <input type="date" name="tglawal" class="form-control" value="<?= esc($reportBulananAwal['tglawal']) ?>" required>
+                        </div>
+                        <div class="col-md-3 form-group mb-2">
+                            <label>Tanggal Akhir</label>
+                            <input type="date" name="tglakhir" class="form-control" value="<?= esc($reportBulananAwal['tglakhir']) ?>" required>
                         </div>
                         <div class="col-md-6 form-group mb-2">
                             <label>Pelanggan</label>
@@ -601,17 +601,6 @@ Reporting
         });
     });
 
-    $('#omzetPeriodePrev').on('click', function () {
-        const $input = $('#omzetPeriode');
-        $input.val(parseInt($input.val(), 10) - 1);
-        $input.closest('form').trigger('submit');
-    });
-
-    $('#omzetPeriodeNext').on('click', function () {
-        const $input = $('#omzetPeriode');
-        $input.val(parseInt($input.val(), 10) + 1);
-        $input.closest('form').trigger('submit');
-    });
 </script>
 
 <?= $this->endSection('isi') ?>

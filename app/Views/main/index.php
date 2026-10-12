@@ -66,6 +66,15 @@ $isAllTimePeriod = !empty($dashboardPeriod['is_all_time']);
 $periodLabel = $isAllTimePeriod
     ? 'Semua data (tidak dibatasi tanggal)'
     : date('d M', strtotime($dashboardPeriod['start_date'])) . ' - ' . date('d M Y', strtotime($dashboardPeriod['end_date']));
+$fscmSummary = $fscm_summary ?? [
+    'surat_jalan_belum' => 0,
+    'nilai_belum' => 0,
+    'surat_jalan_sudah' => 0,
+    'nilai_sudah' => 0,
+    'surat_jalan_total' => 0,
+    'nilai_total' => 0,
+    'due_dates' => [],
+];
 ?>
 
 <style>
@@ -451,6 +460,28 @@ $periodLabel = $isAllTimePeriod
         color: #111827;
     }
 
+    .fscm-dashboard-grid {
+        display: grid;
+        gap: 1.15rem;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .fscm-summary-card {
+        background: linear-gradient(135deg, #f7fbff, #fff);
+        border: 1px solid #dcecf5;
+        border-radius: 18px;
+        box-shadow: 0 12px 28px rgba(15, 23, 42, .05);
+        padding: 1rem 1.15rem;
+    }
+
+    .fscm-summary-card .tre-stat-label { color: #147a91; }
+    .fscm-summary-card .tre-stat-value { font-size: 1.18rem; }
+    .fscm-summary-card .tre-stat-hint { color: #64748b; }
+    .fscm-due-card { grid-column: 1 / -1; }
+    .fscm-due-table { margin-bottom: 0; }
+    .fscm-due-table th { background: #f8fafc; color: #334155; font-size: .82rem; }
+    .fscm-due-table td { color: #475569; font-size: .86rem; vertical-align: middle; }
+
     @media (max-width: 1200px) {
         .tre-stat-grid {
             grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -464,11 +495,16 @@ $periodLabel = $isAllTimePeriod
         .dashboard-charts {
             grid-template-columns: 1fr;
         }
+
+        .fscm-dashboard-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
     }
 
     @media (max-width: 768px) {
         .tre-stat-grid,
-        .dashboard-charts {
+        .dashboard-charts,
+        .fscm-dashboard-grid {
             grid-template-columns: 1fr;
         }
 
@@ -595,6 +631,60 @@ $periodLabel = $isAllTimePeriod
                 </button>
             </div>
         </div>
+    </section>
+
+    <section class="fscm-dashboard-grid">
+        <div class="fscm-summary-card">
+            <div class="tre-stat-label">FSCM Surat Jalan Belum Ditagihkan</div>
+            <div class="tre-stat-value"><?= number_format((int) $fscmSummary['surat_jalan_belum'], 0, ',', '.') ?></div>
+            <div class="tre-stat-hint">Sisa nilai: Rp <?= number_format((float) $fscmSummary['nilai_belum'], 0, ',', '.') ?></div>
+        </div>
+        <div class="fscm-summary-card">
+            <div class="tre-stat-label">FSCM Surat Jalan Sudah Ditagihkan</div>
+            <div class="tre-stat-value"><?= number_format((int) $fscmSummary['surat_jalan_sudah'], 0, ',', '.') ?></div>
+            <div class="tre-stat-hint">Nilai tertagih: Rp <?= number_format((float) $fscmSummary['nilai_sudah'], 0, ',', '.') ?></div>
+        </div>
+        <div class="fscm-summary-card">
+            <div class="tre-stat-label">Total Nilai Surat Jalan FSCM</div>
+            <div class="tre-stat-value">Rp <?= number_format((float) $fscmSummary['nilai_total'], 0, ',', '.') ?></div>
+            <div class="tre-stat-hint"><?= number_format((int) $fscmSummary['surat_jalan_total'], 0, ',', '.') ?> surat jalan unik pada periode</div>
+        </div>
+
+        <section class="payroll-style-card fscm-due-card">
+            <div class="payroll-style-header">
+                <div>
+                    <h3 class="payroll-style-title">Due Date Invoice FSCM</h3>
+                    <span class="payroll-style-note">Sisa tagihan aktif berdasarkan jatuh tempo bulan berikutnya</span>
+                </div>
+                <span class="payroll-style-note">Tanggal 15 / 25</span>
+            </div>
+            <div class="payroll-style-body">
+                <div class="table-responsive">
+                    <table class="table table-sm table-bordered fscm-due-table">
+                        <thead>
+                            <tr>
+                                <th>Due Date</th>
+                                <th class="text-center">Jumlah Invoice</th>
+                                <th class="text-right">Total Tagihan</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php if (empty($fscmSummary['due_dates'])) : ?>
+                                <tr><td colspan="3" class="text-center text-muted">Tidak ada invoice FSCM aktif yang memiliki sisa tagihan.</td></tr>
+                            <?php else : ?>
+                                <?php foreach ($fscmSummary['due_dates'] as $due) : ?>
+                                    <tr>
+                                        <td><?= date('d-m-Y', strtotime($due['due_date'])) ?></td>
+                                        <td class="text-center"><?= number_format((int) $due['invoice_count'], 0, ',', '.') ?></td>
+                                        <td class="text-right font-weight-bold">Rp <?= number_format((float) $due['amount'], 0, ',', '.') ?></td>
+                                    </tr>
+                                <?php endforeach ?>
+                            <?php endif ?>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
     </section>
 
     <section class="payroll-style-card po-running-panel is-hidden" id="po-in-berjalan-list" aria-hidden="true">

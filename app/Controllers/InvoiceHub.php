@@ -38,7 +38,7 @@ class InvoiceHub extends BaseController
     {
         return view('invoicehub/reporting', [
             'pelanggans' => $this->daftarPelanggan(),
-            'reportBulananAwal' => $this->ambilDataReportBulanan($this->periodeUntukTanggal(date('Y-m-d'))),
+            'reportBulananAwal' => $this->ambilDataReportBulananByDate(date('Y-m-01'), date('Y-m-t')),
         ]);
     }
 
@@ -168,8 +168,12 @@ class InvoiceHub extends BaseController
      */
     public function reportingOmzetSuratJalan()
     {
-        $periodeRaw = $this->request->getPost('periode') ?? $this->request->getGet('periode');
-        $n = ($periodeRaw !== null && $periodeRaw !== '') ? (int) $periodeRaw : $this->periodeUntukTanggal(date('Y-m-d'));
+        $tglawal = trim((string) ($this->request->getPost('tglawal') ?? $this->request->getGet('tglawal')));
+        $tglakhir = trim((string) ($this->request->getPost('tglakhir') ?? $this->request->getGet('tglakhir')));
+        $periodeDipilih = $this->isValidReportingDate($tglawal) && $this->isValidReportingDate($tglakhir);
+        if ($periodeDipilih && strtotime($tglawal) > strtotime($tglakhir)) {
+            [$tglawal, $tglakhir] = [$tglakhir, $tglawal];
+        }
 
         $pelangganRaw = $this->request->getPost('pelanggan') ?? $this->request->getGet('pelanggan');
         $pelanggan = $pelangganRaw !== null && $pelangganRaw !== '' ? (int) $pelangganRaw : null;
@@ -184,11 +188,11 @@ class InvoiceHub extends BaseController
             }
         }
 
-        $report = $this->ambilDataReportBulanan($n, $pelanggan);
+        $report = $periodeDipilih ? $this->ambilDataReportBulananByDate($tglawal, $tglakhir, $pelanggan) : null;
 
         return $this->response->setJSON([
             'data' => view('invoicehub/tab_omzet_surat_jalan', [
-                'periodeDipilih' => true,
+                'periodeDipilih' => $periodeDipilih,
                 'namaPelanggan' => $namaPelanggan,
                 'report' => $report,
             ]),
@@ -446,6 +450,12 @@ class InvoiceHub extends BaseController
         return $nama[$bulan] ?? '';
     }
 
+    private function namaHariIndonesia(int $hari): string
+    {
+        $nama = ['', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'];
+        return $nama[$hari] ?? '';
+    }
+
     /**
      * Nilai per hari dihitung dari ITEM DI SURAT JALAN (detail_barangkeluar),
      * bukan dari Invoice Out -- sengaja begitu karena banyak surat jalan lama
@@ -467,6 +477,99 @@ class InvoiceHub extends BaseController
      * lain) -- sengaja diseragamkan supaya totalnya selalu pas sama dengan
      * TOTAL KESELURUHAN di atasnya, nggak ada lagi selisih karena klip bulan.
      */
+    private function isValidReportingDate(string $date): bool
+    {
+        $parsed = \DateTime::createFromFormat('Y-m-d', $date);
+        return $parsed !== false && $parsed->format('Y-m-d') === $date;
+    }
+
+    /** Omzet invoice per bulan/kategori dan tagihan FSCM per due date. */
+    private function ambilDataReportBulananByDate(string $tglawal, string $tglakhir, ?int $pelanggan = null): array
+    {
+        $db = db_connect();
+        $monthly = [];
+        $cursor = new \DateTimeImmutable(date('Y-m-01', strtotime($tglawal)));
+        $lastMonth = new \DateTimeImmutable(date('Y-m-01', strtotime($tglakhir)));
+        while ($cursor <= $lastMonth) {
+            $key = $cursor->format('Y-m');
+            $monthly[$key] = [
+                'bulan' => $key,
+                'label' => $this->namaBulan((int) $cursor->format('n')) . ' ' . $cursor->format('Y'),
+                'categories' => [],
+                'total' => 0.0,
+            ];
+            $cursor = $cursor->modify('+1 month');
+        }
+
+        // Nilai omzet mengikuti invoice aktual (iod.amount), bukan harga master
+        // atau surat jalan, sehingga partial billing dan perubahan harga invoice
+        // tetap tercermin dengan benar.
+        $builder = $db->table('invoice_out_detail iod')
+            ->select("DATE_FORMAT(io.invoice_date, '%Y-%m') AS bulan,
+                COALESCE(k.katnama, 'Tanpa Kategori') AS kategori,
+                SUM(COALESCE(iod.amount, iod.qty * iod.unit_price, 0)) AS total", false)
+            ->join('invoice_out io', 'io.id = iod.invoice_id')
+            ->join('barang b', 'b.brgkode = iod.product_code', 'left')
+            ->join('kategori k', 'k.katid = b.brgkatid', 'left')
+            ->where('io.status', 'AKTIF')
+            ->where('io.invoice_date >=', $tglawal)
+            ->where('io.invoice_date <=', $tglakhir)
+            ->groupBy("DATE_FORMAT(io.invoice_date, '%Y-%m'), k.katid, k.katnama", false)
+            ->orderBy('bulan', 'ASC')
+            ->orderBy('kategori', 'ASC');
+        if ($pelanggan !== null) $builder->where('io.customer_id', $pelanggan);
+
+        foreach ($builder->get()->getResultArray() as $row) {
+            $bulan = (string) $row['bulan'];
+            if (!isset($monthly[$bulan])) continue;
+            $total = (float) ($row['total'] ?? 0);
+            $monthly[$bulan]['categories'][] = ['nama' => (string) $row['kategori'], 'total' => $total];
+            $monthly[$bulan]['total'] += $total;
+        }
+
+        // Kebijakan FSCM: invoice tanggal 1-15 jatuh tempo tanggal 15 bulan
+        // berikutnya, invoice tanggal 16-akhir bulan jatuh tempo tanggal 25.
+        // Yang ditampilkan adalah sisa tagihan, bukan pembayaran yang sudah masuk.
+        $invoiceBuilder = $db->table('invoice_out io')
+            ->select('io.invoice_date, io.grand_total, io.paid_total, io.customer_id')
+            ->where('io.status', 'AKTIF')
+            ->where('io.invoice_date >=', $tglawal)
+            ->where('io.invoice_date <=', $tglakhir)
+            ->groupStart()
+                ->like('io.customer_name', 'FSCM')
+                ->orWhere("EXISTS (SELECT 1 FROM invoice_out_detail iod_fscm WHERE iod_fscm.invoice_id = io.id AND iod_fscm.source_no LIKE '%FSCM%')", null, false)
+            ->groupEnd();
+        if ($pelanggan !== null) $invoiceBuilder->where('io.customer_id', $pelanggan);
+
+        $dueDates = [];
+        foreach ($invoiceBuilder->get()->getResultArray() as $invoice) {
+            $invoiceDate = (string) ($invoice['invoice_date'] ?? '');
+            $timestamp = strtotime($invoiceDate);
+            if (!$timestamp) continue;
+            $remaining = max((float) ($invoice['grand_total'] ?? 0) - (float) ($invoice['paid_total'] ?? 0), 0);
+            if ($remaining <= 0) continue;
+            $dueDay = (int) date('j', $timestamp) <= 15 ? 15 : 25;
+            $dueMonth = (new \DateTimeImmutable($invoiceDate))->modify('first day of next month');
+            $dueDate = $dueMonth->format('Y-m-') . str_pad((string) $dueDay, 2, '0', STR_PAD_LEFT);
+            if (!isset($dueDates[$dueDate])) $dueDates[$dueDate] = ['due_date' => $dueDate, 'invoice_count' => 0, 'total' => 0.0];
+            $dueDates[$dueDate]['invoice_count']++;
+            $dueDates[$dueDate]['total'] += $remaining;
+        }
+        ksort($dueDates);
+        $monthly = array_values($monthly);
+
+        return [
+            'tglawal' => $tglawal,
+            'tglakhir' => $tglakhir,
+            'namaBulan' => count($monthly) === 1 ? $monthly[0]['label'] : 'Periode Dipilih',
+            'tahun' => date('Y', strtotime($tglawal)),
+            'rentangLabel' => date('d M Y', strtotime($tglawal)) . ' - ' . date('d M Y', strtotime($tglakhir)),
+            'months' => $monthly,
+            'dueDates' => array_values($dueDates),
+            'grandTotal' => array_sum(array_column($monthly, 'total')),
+        ];
+    }
+
     private function ambilDataReportBulanan(int $n, ?int $pelanggan = null): array
     {
         $db = db_connect();

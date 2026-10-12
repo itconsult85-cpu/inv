@@ -15,8 +15,17 @@ $adaPenyesuaian = $discount > 0 || !$ppnIncluded || (int) ($po['pph23_enabled'] 
 $specLabel = trim((string) ($po['print_spec_label'] ?? '')) ?: 'Lebar Sliting';
 $notes = trim((string) ($po['print_notes'] ?? ''));
 $materialColumnEnabled = $jenisPo !== 'produk' || (int) ($po['material_column_enabled'] ?? 1) === 1;
+$showSpecColumn = false;
+foreach ($details as $detail) {
+    if (trim((string) ($detail['print_spec'] ?? '')) !== '') {
+        $showSpecColumn = true;
+        break;
+    }
+}
 $summaryLabelColspan = 2;
-$totalColumns = ($jenisPo === 'produk' && !$materialColumnEnabled) ? 6 : 7;
+$totalColumns = $jenisPo === 'produk'
+    ? ($materialColumnEnabled ? 7 : 6)
+    : ($showSpecColumn ? 7 : 6);
 $summaryBlankColspan = $totalColumns - $summaryLabelColspan - 1;
 $preparedName = trim((string) ($po['created_by'] ?? ''));
 $approvedName = trim((string) ($po['approved_by'] ?? ''));
@@ -287,16 +296,18 @@ if ($notes !== '') {
                 <?php if ($jenisPo === 'jasa') : ?>
                     <tr>
                         <th rowspan="2" style="width:28px;">No</th>
-                        <th style="width:120px;">UKURAN</th>
+                        <?php if ($showSpecColumn) : ?><th style="width:120px;">UKURAN</th><?php endif ?>
                         <th rowspan="2">DESCRIPTION</th>
                         <th rowspan="2" style="width:80px;">Quantity</th>
                         <th rowspan="2" style="width:60px;">UoM</th>
                         <th rowspan="2" style="width:90px;">Unit<br>Price (Rp)</th>
                         <th rowspan="2" style="width:100px;">Total<br>Price (Rp)</th>
                     </tr>
-                    <tr>
-                        <th><?= esc($specLabel) ?></th>
-                    </tr>
+                    <?php if ($showSpecColumn) : ?>
+                        <tr>
+                            <th><?= esc($specLabel) ?></th>
+                        </tr>
+                    <?php endif ?>
                 <?php elseif ($jenisPo === 'produk') : ?>
                     <tr>
                         <th style="width:28px;">No</th>
@@ -312,7 +323,7 @@ if ($notes !== '') {
                 <?php else : ?>
                     <tr>
                         <th style="width:28px;">No</th>
-                        <th style="width:60px;">SIZE</th>
+                        <?php if ($showSpecColumn) : ?><th style="width:60px;">SIZE</th><?php endif ?>
                         <th>DESCRIPTION</th>
                         <th style="width:80px;">QTY</th>
                         <th style="width:60px;">UoM</th>
@@ -331,7 +342,7 @@ if ($notes !== '') {
                     <?php $printSpec = trim((string) ($d['print_spec'] ?? '')); ?>
                     <tr class="item-row">
                         <td class="center"><?= $i + 1 ?></td>
-                        <?php if ($materialColumnEnabled) : ?>
+                        <?php if ($jenisPo !== 'produk' ? $showSpecColumn : $materialColumnEnabled) : ?>
                             <td class="center"><?= esc($printSpec !== '' ? $printSpec : '-') ?></td>
                         <?php endif ?>
                         <td><?= esc($d['nama_item']) ?></td>

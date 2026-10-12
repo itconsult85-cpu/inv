@@ -3,6 +3,7 @@
 namespace App\Controllers;
 
 use App\Controllers\BaseController;
+use App\Libraries\DashboardFscmSummary;
 use App\Models\ModelDetailBarangKeluar;
 use App\Models\Modeldetailpo;
 
@@ -105,6 +106,7 @@ class Main extends BaseController
         $data['dashboard_period'] = $period;
         $data['inventory_summary'] = $this->buildInventorySummary($db, $period);
         $data['po_in_summary'] = $this->buildPoInSummary($db, $period);
+        $data['fscm_summary'] = DashboardFscmSummary::build($db, $period);
 
             // Get data from barang table
             $barangQuery = $db->table('barang')->where('minstok >', 0);
