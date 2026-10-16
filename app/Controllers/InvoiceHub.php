@@ -483,7 +483,7 @@ class InvoiceHub extends BaseController
         return $parsed !== false && $parsed->format('Y-m-d') === $date;
     }
 
-    /** Omzet invoice per bulan/kategori dan tagihan FSCM per due date. */
+    /** Omzet invoice per bulan/kategori dan tagihan invoice global per due date. */
     private function ambilDataReportBulananByDate(string $tglawal, string $tglakhir, ?int $pelanggan = null): array
     {
         $db = db_connect();
@@ -500,6 +500,43 @@ class InvoiceHub extends BaseController
             ];
             $cursor = $cursor->modify('+1 month');
         }
+
+        $dailyBuilder = $db->table('invoice_out_detail iod')
+            ->select('DATE(io.invoice_date) AS tanggal, SUM(COALESCE(iod.amount, iod.qty * iod.unit_price, 0)) AS total', false)
+            ->join('invoice_out io', 'io.id = iod.invoice_id')
+            ->where('io.status', 'AKTIF')
+            ->where('io.invoice_date >=', $tglawal)
+            ->where('io.invoice_date <=', $tglakhir)
+            ->groupBy('DATE(io.invoice_date)', false);
+        if ($pelanggan !== null) $dailyBuilder->where('io.customer_id', $pelanggan);
+        $dailyTotals = [];
+        foreach ($dailyBuilder->get()->getResultArray() as $row) {
+            $dailyTotals[(string) $row['tanggal']] = (float) ($row['total'] ?? 0);
+        }
+        $weeks = [];
+        $weekStart = new \DateTimeImmutable($tglawal);
+        $weekEnd = new \DateTimeImmutable($tglakhir);
+        $namaHari = ['', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'];
+        $namaMinggu = ['Minggu Pertama', 'Minggu Kedua', 'Minggu Ketiga', 'Minggu Keempat'];
+        for ($weekIndex = 0; $weekIndex < 4; $weekIndex++) {
+            $start = $weekStart->modify('+' . ($weekIndex * 7) . ' days');
+            if ($start > $weekEnd) break;
+            $days = [];
+            $weekTotal = 0.0;
+            for ($dayIndex = 0; $dayIndex < 7; $dayIndex++) {
+                $date = $start->modify('+' . $dayIndex . ' days');
+                if ($date > $weekEnd) break;
+                $dateKey = $date->format('Y-m-d');
+                $total = $dailyTotals[$dateKey] ?? 0.0;
+                $days[] = ['tanggal' => $dateKey, 'nama_hari' => $namaHari[(int) $date->format('N')], 'total' => $total];
+                $weekTotal += $total;
+            }
+            $weeks[] = ['label' => $namaMinggu[$weekIndex], 'days' => $days, 'total' => $weekTotal];
+        }
+        $tahap = [
+            ['label' => 'Tahap 1', 'total' => ($weeks[0]['total'] ?? 0) + ($weeks[1]['total'] ?? 0)],
+            ['label' => 'Tahap 2', 'total' => ($weeks[2]['total'] ?? 0) + ($weeks[3]['total'] ?? 0)],
+        ];
 
         // Nilai omzet mengikuti invoice aktual (iod.amount), bukan harga master
         // atau surat jalan, sehingga partial billing dan perubahan harga invoice
@@ -527,7 +564,7 @@ class InvoiceHub extends BaseController
             $monthly[$bulan]['total'] += $total;
         }
 
-        // Kebijakan FSCM: invoice tanggal 1-15 jatuh tempo tanggal 15 bulan
+        // Kebijakan due date global: invoice tanggal 1-15 jatuh tempo tanggal 15 bulan
         // berikutnya, invoice tanggal 16-akhir bulan jatuh tempo tanggal 25.
         // Yang ditampilkan adalah sisa tagihan, bukan pembayaran yang sudah masuk.
         $invoiceBuilder = $db->table('invoice_out io')
@@ -535,10 +572,7 @@ class InvoiceHub extends BaseController
             ->where('io.status', 'AKTIF')
             ->where('io.invoice_date >=', $tglawal)
             ->where('io.invoice_date <=', $tglakhir)
-            ->groupStart()
-                ->like('io.customer_name', 'FSCM')
-                ->orWhere("EXISTS (SELECT 1 FROM invoice_out_detail iod_fscm WHERE iod_fscm.invoice_id = io.id AND iod_fscm.source_no LIKE '%FSCM%')", null, false)
-            ->groupEnd();
+            ;
         if ($pelanggan !== null) $invoiceBuilder->where('io.customer_id', $pelanggan);
 
         $dueDates = [];
@@ -565,6 +599,8 @@ class InvoiceHub extends BaseController
             'tahun' => date('Y', strtotime($tglawal)),
             'rentangLabel' => date('d M Y', strtotime($tglawal)) . ' - ' . date('d M Y', strtotime($tglakhir)),
             'months' => $monthly,
+            'weeks' => $weeks,
+            'tahap' => $tahap,
             'dueDates' => array_values($dueDates),
             'grandTotal' => array_sum(array_column($monthly, 'total')),
         ];

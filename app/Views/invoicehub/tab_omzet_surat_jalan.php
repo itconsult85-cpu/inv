@@ -29,6 +29,29 @@
         <?php if ($namaPelanggan !== '') : ?><span class="text-muted">| Pelanggan: <?= esc($namaPelanggan) ?></span><?php endif ?>
     </p>
 
+    <?php
+        $warnaMinggu = ['#f6b26b', '#ffff00', '#e06fce', '#f6b26b'];
+        $posisiGrid = [0 => 'grid-row:1; grid-column:1;', 1 => 'grid-row:2; grid-column:1;', 2 => 'grid-row:1; grid-column:2;', 3 => 'grid-row:2; grid-column:2;'];
+    ?>
+    <div class="report-bulanan-grid">
+        <?php foreach ($report['weeks'] as $i => $week) : ?>
+            <div class="report-bulanan-week report-bulanan-week-posisi" style="<?= esc($posisiGrid[$i] ?? '') ?>">
+                <div class="report-bulanan-week-header" style="background: <?= esc($warnaMinggu[$i] ?? '#dbe9f7') ?>;"><?= esc(strtoupper($week['label'])) ?></div>
+                <table><tbody>
+                    <?php foreach ($week['days'] as $day) : ?>
+                        <tr><td><?= esc($day['nama_hari']) ?>, <?= esc(date('d M Y', strtotime($day['tanggal']))) ?></td><td class="report-bulanan-nominal"><?= $formatRupiah($day['total']) ?></td></tr>
+                    <?php endforeach ?>
+                    <tr class="report-bulanan-total"><td>TOTAL</td><td class="report-bulanan-nominal"><?= $formatRupiah($week['total']) ?></td></tr>
+                </tbody></table>
+            </div>
+        <?php endforeach ?>
+    </div>
+    <div class="report-bulanan-grid">
+        <?php foreach ($report['tahap'] as $tahap) : ?>
+            <div class="report-bulanan-total-keseluruhan"><span>TOTAL KESELURUHAN</span><span><?= $formatRupiah($tahap['total']) ?></span></div>
+        <?php endforeach ?>
+    </div>
+
     <div class="report-bulanan-grid">
         <div class="report-bulanan-kategori">
             <div class="report-bulanan-kategori-header">Omzet Invoice per Kategori per Bulan</div>
