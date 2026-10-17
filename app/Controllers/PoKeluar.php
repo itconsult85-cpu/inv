@@ -14,7 +14,7 @@ class PoKeluar extends BaseController
     private ModelPoKeluar $poModel;
     private ModelDetailPoKeluar $detailModel;
 
-    private function resolvePublicId(string $token): int
+    private function resolvePoKeluarId(string $token): int
     {
         $id = PublicId::decode($token, 'po-keluar-id');
         return $id !== null && ctype_digit($id) && (int) $id > 0 ? (int) $id : 0;
@@ -243,7 +243,7 @@ class PoKeluar extends BaseController
 
     public function detail(string $token)
     {
-        $id = $this->resolvePublicId($token);
+        $id = $this->resolvePoKeluarId($token);
         if ($id <= 0) throw \CodeIgniter\Exceptions\PageNotFoundException::forPageNotFound('Identifier PO Keluar tidak valid.');
         $po = $this->poModel->find($id);
         if (!$po) {
@@ -341,7 +341,7 @@ class PoKeluar extends BaseController
      */
     public function edit(string $token)
     {
-        $id = $this->resolvePublicId($token);
+        $id = $this->resolvePoKeluarId($token);
         if ($id <= 0) throw \CodeIgniter\Exceptions\PageNotFoundException::forPageNotFound('Identifier PO Keluar tidak valid.');
         $po = $this->poModel->find($id);
         if (!$po) {
@@ -364,7 +364,7 @@ class PoKeluar extends BaseController
 
     public function update(string $token)
     {
-        $id = $this->resolvePublicId($token);
+        $id = $this->resolvePoKeluarId($token);
         if ($id <= 0) return redirect()->to('/poKeluar/data')->with('error', 'Identifier PO Keluar tidak valid.');
         $po = $this->poModel->find($id);
         if (!$po) {
@@ -554,7 +554,7 @@ class PoKeluar extends BaseController
     }
     public function cetak(string $token)
     {
-        $id = $this->resolvePublicId($token);
+        $id = $this->resolvePoKeluarId($token);
         if ($id <= 0) throw \CodeIgniter\Exceptions\PageNotFoundException::forPageNotFound('Identifier PO Keluar tidak valid.');
         $po = $this->poModel->find($id);
         if (!$po) {
@@ -933,7 +933,7 @@ class PoKeluar extends BaseController
 
     public function batal(string $token)
     {
-        $id = $this->resolvePublicId($token);
+        $id = $this->resolvePoKeluarId($token);
         if ($id <= 0) return redirect()->to('/poKeluar/data')->with('error', 'Identifier PO Keluar tidak valid.');
         if (strtolower($this->request->getMethod()) !== 'post') {
             return redirect()->to('/poKeluar/data');
@@ -950,7 +950,7 @@ class PoKeluar extends BaseController
 
     public function hapus(string $token)
     {
-        $id = $this->resolvePublicId($token);
+        $id = $this->resolvePoKeluarId($token);
         if ($id <= 0) return redirect()->to('/poKeluar/data')->with('error', 'Identifier PO Keluar tidak valid.');
         if (strtolower($this->request->getMethod()) !== 'post') {
             return redirect()->to('/poKeluar/data');
