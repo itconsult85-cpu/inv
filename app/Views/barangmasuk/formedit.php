@@ -57,7 +57,7 @@ Edit Produk Masuk
                 <input type="text" class="form-control" name="kodebarang" id="kodebarang" autocomplete="off">
                 <input type="hidden" name="kodebarang_pilih" id="kodebarang_pilih">
                 <input type="hidden" name="idmaterial" id="idmaterial">
-                <input type="hidden" name="idgudang" id="idgudang">
+                <input type="hidden" name="idgudang" id="idgudang" value="<?= esc($gdgid) ?>">
                 <input type="hidden" name="iddetail" id="iddetail">
                 <input type="hidden" name="idbarang" id="idbarang" class="idbarang">
                 <div class="tre-inline-combobox-menu" id="produkComboboxMenu"></div>
@@ -146,6 +146,10 @@ Edit Produk Masuk
     function kosong() {
         $('#kodebarang').val('');
         $('#kodebarang_pilih').val('');
+        $('#idbarang').val('');
+        $('#idmaterial').val('');
+        $('#iddetail').val('');
+        $('#idgudang').val($('#gdgid').val());
         $('#stok1').val('');
         $('#berat').val('');
         $('#namabarang').val('');
@@ -157,7 +161,9 @@ Edit Produk Masuk
     function ambilDataBarang() {
         syncProdukCombobox();
         let kodebarang = $('#kodebarang').val();
-        let idgudang = $('#idgudang').val();
+        let idgudang = $('#idgudang').val() || $('#gdgid').val();
+        $('#idgudang').val(idgudang);
+        $('#idbarang').val('');
         let idbarang = $('#idbarang').val();
         let stok = $('#stok1').val();
         if (kodebarang.length == 0) {
@@ -188,6 +194,7 @@ Edit Produk Masuk
                         $('#berat').val(data.berat);
                         $('#stok1').val(data.stok);
                         $('#idmaterial').val(data.idmaterial);
+                        $('#idbarang').val(data.idbarang || '');
                         $('#jml').focus();
                     }
                 },
@@ -320,7 +327,6 @@ Edit Produk Masuk
         $('#tombolSimpanItem').click(function(e) {
             e.preventDefault();
             simpanItem();
-            tampilDataDetail();
         });
 
         produkCombobox = window.treInitInlineCombobox({

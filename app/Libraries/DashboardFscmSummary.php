@@ -11,7 +11,7 @@ namespace App\Libraries;
  */
 class DashboardFscmSummary
 {
-    public static function build($db, array $period): array
+    public static function build($db, array $period, ?array $duePeriod = null): array
     {
         $summary = [
             'surat_jalan_belum' => 0,
@@ -122,10 +122,14 @@ class DashboardFscmSummary
         $summary['nilai_total'] = $summary['nilai_belum'] + $summary['nilai_sudah'];
 
         $invoiceRows = $db->query(
-            "SELECT io.invoice_date, io.grand_total, COALESCE(io.paid_total, 0) AS paid_total
+            "SELECT io.invoice_date, io.grand_total, COALESCE(io.paid_total, 0) AS paid_total,
+                        CASE
+                            WHEN ROUND(COALESCE(io.paid_total, 0)) <= 0 THEN 'Belum Lunas'
+                            WHEN ROUND(COALESCE(io.paid_total, 0)) >= ROUND(io.grand_total) THEN 'Lunas'
+                            ELSE 'Dibayar Sebagian'
+                        END AS payment_status
              FROM invoice_out io
              WHERE io.status = 'AKTIF'
-               AND io.grand_total > COALESCE(io.paid_total, 0)
                AND (
                     UPPER(COALESCE(io.customer_name, '')) LIKE '%FSCM%'
                     OR EXISTS (
@@ -136,6 +140,25 @@ class DashboardFscmSummary
                )
              ORDER BY io.invoice_date ASC, io.id ASC"
         )->getResultArray();
+
+        if ($duePeriod !== null) {
+            $monthCursor = (new \DateTimeImmutable($duePeriod['start_date']))->modify('first day of this month');
+            $lastMonth = (new \DateTimeImmutable($duePeriod['end_date']))->modify('first day of this month');
+            while ($monthCursor <= $lastMonth) {
+                foreach ([15, 25] as $dueDay) {
+                    $dueDate = $monthCursor->format('Y-m-') . str_pad((string) $dueDay, 2, '0', STR_PAD_LEFT);
+                    $summary['due_dates'][$dueDate] = [
+                        'due_date' => $dueDate,
+                        'invoice_count' => 0,
+                        'amount' => 0.0,
+                        'chart_amount' => 0.0,
+                        'statuses' => [],
+                        'month' => substr($dueDate, 0, 7),
+                    ];
+                }
+                $monthCursor = $monthCursor->modify('+1 month');
+            }
+        }
 
         foreach ($invoiceRows as $invoice) {
             $invoiceDate = (string) ($invoice['invoice_date'] ?? '');
@@ -149,15 +172,33 @@ class DashboardFscmSummary
             $dueDay = (int) date('j', $timestamp) <= 15 ? 15 : 25;
             $nextMonth = (new \DateTimeImmutable($invoiceDate))->modify('first day of next month');
             $dueDate = $nextMonth->format('Y-m-') . str_pad((string) $dueDay, 2, '0', STR_PAD_LEFT);
+            if ($duePeriod !== null
+                && ($dueDate < ($duePeriod['start_date'] ?? '0000-00-00')
+                    || $dueDate > ($duePeriod['end_date'] ?? '9999-12-31'))) {
+                continue;
+            }
             if (!isset($summary['due_dates'][$dueDate])) {
                 $summary['due_dates'][$dueDate] = [
                     'due_date' => $dueDate,
                     'invoice_count' => 0,
                     'amount' => 0.0,
+                    'chart_amount' => 0.0,
+                    'statuses' => [],
+                    'month' => substr($dueDate, 0, 7),
                 ];
             }
             $summary['due_dates'][$dueDate]['invoice_count']++;
-            $summary['due_dates'][$dueDate]['amount'] += max((float) $invoice['grand_total'] - (float) $invoice['paid_total'], 0);
+            $remainingAmount = InvoiceRupiah::remaining(
+                $invoice['grand_total'],
+                $invoice['paid_total']
+            );
+            $summary['due_dates'][$dueDate]['amount'] += $remainingAmount;
+            // Grafik menunjukkan total invoice jatuh tempo, termasuk invoice lunas.
+            // Kolom tabel amount tetap menunjukkan sisa tagihan.
+            $summary['due_dates'][$dueDate]['chart_amount'] += InvoiceRupiah::normalize($invoice['grand_total']);
+            $paymentStatus = (string) ($invoice['payment_status'] ?? 'Belum Lunas');
+            $summary['due_dates'][$dueDate]['statuses'][$paymentStatus] =
+                ($summary['due_dates'][$dueDate]['statuses'][$paymentStatus] ?? 0) + 1;
         }
 
         $summary['due_dates'] = array_values($summary['due_dates']);

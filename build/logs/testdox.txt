@@ -1,0 +1,15 @@
+Example Database
+ [x] Model find all
+ [x] Soft delete leaves row
+
+Example Session
+ [x] Session simple
+
+Health
+ [x] Is defined app path
+ [x] Base url has been set
+
+Invoice Rupiah
+ [x] Round half up and down below half
+ [x] Remaining balance uses rounded rupiah amounts
+

@@ -18,10 +18,12 @@ class Dashboard extends BaseController
         $db = \Config\Database::connect();
         $this->ensurePoMigrationColumns($db);
         $period = $this->resolveDashboardPeriod();
+        $fscmDuePeriod = $this->resolveFscmDuePeriod();
         $data['dashboard_period'] = $period;
+        $data['fscm_due_period'] = $fscmDuePeriod;
         $data['inventory_summary'] = $this->buildInventorySummary($db, $period);
         $data['po_in_summary'] = $this->buildPoInSummary($db, $period);
-        $data['fscm_summary'] = DashboardFscmSummary::build($db, $period);
+        $data['fscm_summary'] = DashboardFscmSummary::build($db, $period, $fscmDuePeriod);
 
         // Get data from barang table
         $barangQuery = $db->table('barang')->where('minstok >', 0);
@@ -329,6 +331,29 @@ class Dashboard extends BaseController
         $parsed = \DateTime::createFromFormat('Y-m-d', $date);
 
         return $parsed && $parsed->format('Y-m-d') === $date;
+    }
+
+    private function resolveFscmDuePeriod(): array
+    {
+        $monthInput = trim((string) $this->request->getGet('fscm_month'));
+        if (!preg_match('/^\d{4}-\d{2}$/', $monthInput)) {
+            $monthInput = date('Y-m');
+        }
+
+        $start = \DateTimeImmutable::createFromFormat('!Y-m-d', $monthInput . '-01');
+        if (!$start || $start->format('Y-m') !== $monthInput) {
+            $monthInput = date('Y-m');
+            $start = \DateTimeImmutable::createFromFormat('!Y-m-d', $monthInput . '-01');
+        }
+
+        $end = $start->modify('+2 months')->modify('last day of this month');
+
+        return [
+            'month' => $monthInput,
+            'start_date' => $start->format('Y-m-d'),
+            'end_date' => $end->format('Y-m-d'),
+            'label' => $start->format('M Y') . ' - ' . $end->format('M Y'),
+        ];
     }
 
     private function ensurePoMigrationColumns($db): void

@@ -221,9 +221,10 @@ class Barangmasuk extends BaseController
 
             $db = \Config\Database::connect();
             $builder = $db->table('barangmasuk')
-                ->select("barangmasuk.faktur, barangmasuk.tglfaktur, barangmasuk.po_keluar_id, COALESCE(supplier.supnama, 'Adjustment Stok') AS supnama, barangmasuk.totalberatbarang, gudang.gdgnama, barangmasuk.qtymasuk", false)
+                ->select("barangmasuk.faktur, COALESCE(po_keluar.no_po, barangmasuk.faktur) AS nomor_po_tampil, barangmasuk.tglfaktur, barangmasuk.po_keluar_id, COALESCE(supplier.supnama, 'Adjustment Stok') AS supnama, barangmasuk.totalberatbarang, gudang.gdgnama, barangmasuk.qtymasuk", false)
                 ->join('gudang', 'gdgid = gudang')
-                ->join('supplier', 'supid = idsup', 'left');
+                ->join('supplier', 'supid = idsup', 'left')
+                ->join('po_keluar', 'po_keluar.id = barangmasuk.po_keluar_id', 'left');
 
             if ($tglawal && $tglakhir) {
                 $builder->whereIn('barangmasuk.faktur', function ($subQuery) use ($tglawal, $tglakhir) {
@@ -318,13 +319,14 @@ class Barangmasuk extends BaseController
         return $nomorInternal !== '' ? $nomorInternal : $this->buatNomorProdukMasuk();
     }
 
-    private function validasiQtyPoKeluar(int $poKeluarId, string $kodeBarang, float $qtyTambahan, float $qtyTempSaatIni = 0): ?string
+    private function validasiQtyPoKeluar(int $poKeluarId, string $kodeBarang, float $qtyTambahan, float $qtyTempSaatIni = 0, string $sumberProduk = 'beli'): ?string
     {
         if ($poKeluarId <= 0) {
             return null;
         }
 
-        $detail = db_connect()->table('detail_po_keluar')
+        $db = db_connect();
+        $detail = $db->table('detail_po_keluar')
             ->select('qty_pesan, qty_masuk')
             ->where('po_keluar_id', $poKeluarId)
             ->where('tipe_item', 'produk')
@@ -335,7 +337,18 @@ class Barangmasuk extends BaseController
             return "Produk {$kodeBarang} tidak ada di PO Keluar yang dipilih.";
         }
 
-        $sisa = (float) $detail['qty_pesan'] - (float) $detail['qty_masuk'];
+        if ($sumberProduk === 'retur_ng' && strtoupper((string) $db->table('po_keluar')->select('status')->where('id', $poKeluarId)->get()->getRowArray()['status'] ?? '') === 'NG') {
+            $returNg = (float) ($db->table('retur_produk_detail')
+                ->selectSum('qty_retur')->where('po_keluar_id', $poKeluarId)
+                ->where('kode_barang', $kodeBarang)->get()->getRowArray()['qty_retur'] ?? 0);
+            $pengganti = (float) ($db->table('detail_barangmasuk d')
+                ->selectSum('d.detjml')->join('barangmasuk bm', 'bm.faktur = d.detfaktur')
+                ->where('bm.po_keluar_id', $poKeluarId)->where('bm.sumber', 'retur_ng')
+                ->where('d.detbrgkode', $kodeBarang)->get()->getRowArray()['detjml'] ?? 0);
+            $sisa = max(0, $returNg - $pengganti);
+        } else {
+            $sisa = (float) $detail['qty_pesan'] - (float) $detail['qty_masuk'];
+        }
         if (($qtyTempSaatIni + $qtyTambahan) > ($sisa + 0.00001)) {
             return "Qty masuk produk {$kodeBarang} tidak boleh lebih besar dari sisa PO Keluar ({$sisa}).";
         }
@@ -343,7 +356,7 @@ class Barangmasuk extends BaseController
         return null;
     }
 
-    private function validasiTempPoKeluar(int $poKeluarId, array $rowsTemp): ?string
+    private function validasiTempPoKeluar(int $poKeluarId, array $rowsTemp, string $sumberProduk = 'beli'): ?string
     {
         if ($poKeluarId <= 0) {
             return null;
@@ -356,7 +369,7 @@ class Barangmasuk extends BaseController
         }
 
         foreach ($qtyPerKode as $kode => $qty) {
-            $error = $this->validasiQtyPoKeluar($poKeluarId, $kode, $qty);
+            $error = $this->validasiQtyPoKeluar($poKeluarId, $kode, $qty, 0, $sumberProduk);
             if ($error !== null) {
                 return $error;
             }
@@ -483,7 +496,7 @@ class Barangmasuk extends BaseController
             $jml = $this->request->getPost('jml');
             $poKeluarId = (int) $this->request->getPost('po_keluar_id');
             $sumberProdukInput = $this->request->getPost('sumber_produk');
-            $sumberProduk = in_array($sumberProdukInput, ['adjustment', 'produksi', 'produksi_pelanggan'], true) ? $sumberProdukInput : 'beli';
+            $sumberProduk = in_array($sumberProdukInput, ['adjustment', 'produksi', 'produksi_pelanggan', 'retur_ng'], true) ? $sumberProdukInput : 'beli';
             if ($sumberProduk === 'adjustment' || $sumberProduk === 'produksi' || $sumberProduk === 'produksi_pelanggan') {
                 $poKeluarId = 0;
                 $idsupplier = null;
@@ -541,7 +554,8 @@ class Barangmasuk extends BaseController
                     $poKeluarId,
                     (string) $kodebarang,
                     (float) $jml,
-                    $existingRow ? (float) $existingRow['detjml'] : 0
+                    $existingRow ? (float) $existingRow['detjml'] : 0,
+                    $sumberProduk
                 );
 
                 if ($errorQtyPoKeluar !== null) {
@@ -706,7 +720,7 @@ class Barangmasuk extends BaseController
                     'error' => 'Maaf, data item untuk faktur ini belum ada'
                 ];
             } else {
-                $errorQtyPoKeluar = $this->validasiTempPoKeluar($poKeluarId, $rowsTemp);
+                $errorQtyPoKeluar = $this->validasiTempPoKeluar($poKeluarId, $rowsTemp, $sumberProduk);
                 if ($errorQtyPoKeluar !== null) {
                     echo json_encode(['error' => $errorQtyPoKeluar]);
                     return;
@@ -807,12 +821,11 @@ class Barangmasuk extends BaseController
                     ];
 
                     $fieldStok[] = [
-                        'kodebarang' => $row['detbrgkode'],
-                        'gudang' => $gudang,
-                        'stok' => $row['detjml'],
+                        'idbarang' => (int) $idbarang,
+                        'qty' => (float) $row['detjml'],
                     ];
 
-                    if ($poKeluarId) {
+                    if ($poKeluarId && $sumberProduk !== 'retur_ng') {
                         (new PoKeluar())->terimaQty($poKeluarId, 'produk', (string) $row['detbrgkode'], (float) $row['detjml']);
                     }
                 }
@@ -832,12 +845,20 @@ class Barangmasuk extends BaseController
                     (new PoKeluar())->refreshStatusAfterReplacement($poKeluarId);
                 }
 
-                $modelStok = new Modelstok();
-                if (!$modelStok->updateOrInsertBatch($fieldStok)) {
-                    $errorMessage = $this->detailError('Stok produk gagal diperbarui.', $modelStok, $db->error());
-                    $db->transRollback();
-                    echo json_encode(['error' => $errorMessage]);
-                    return;
+                foreach ($fieldStok as $stockChange) {
+                    $updated = $db->query(
+                        'UPDATE stok SET stok = COALESCE(stok, 0) + ? WHERE id = ?',
+                        [$stockChange['qty'], $stockChange['idbarang']]
+                    );
+
+                    if (!$updated || $db->affectedRows() !== 1) {
+                        $errorMessage = !$updated
+                            ? $this->detailError('Stok produk gagal diperbarui.', null, $db->error())
+                            : 'Stok produk tidak berubah. Baris stok tidak ditemukan atau Qty masuk nol; transaksi dibatalkan.';
+                        $db->transRollback();
+                        echo json_encode(['error' => $errorMessage]);
+                        return;
+                    }
                 }
 
                 if ($sumberProduk === 'produksi_pelanggan') {
@@ -908,8 +929,21 @@ class Barangmasuk extends BaseController
             $header = $db->table('barangmasuk')->where('faktur', $faktur)->get()->getRowArray();
             $details = $db->table('detail_barangmasuk')->where('detfaktur', $faktur)->get()->getResultArray();
 
+            if (!$header) {
+                return $this->response->setJSON(['error' => 'Transaksi Produk Masuk tidak ditemukan.']);
+            }
+            if ($db->tableExists('retur_produk_detail')) {
+                $dipakaiRetur = $db->table('retur_produk_detail rpd')
+                    ->join('detail_barangmasuk d', 'd.id = rpd.barang_masuk_detail_id')
+                    ->where('d.detfaktur', $faktur)->countAllResults();
+                if ($dipakaiRetur > 0) {
+                    return $this->response->setJSON(['error' => 'Transaksi tidak bisa dihapus karena sudah memiliki detail Retur NG. Hapus atau koreksi retur terlebih dahulu.']);
+                }
+            }
+
             $db->transStart();
 
+            // Trigger tri_restore_stok mengurangi stok untuk setiap detail yang dihapus.
             $db->table('detail_barangmasuk')->delete(['detfaktur' => $faktur]);
             $db->table('ngdata')->delete(['detfaktur' => $faktur]);
             $modelBarangMasuk->delete($faktur);
@@ -917,9 +951,12 @@ class Barangmasuk extends BaseController
             $poKeluarId = (int) ($header['po_keluar_id'] ?? 0);
             if ($poKeluarId > 0) {
                 $poKeluar = new PoKeluar();
-                foreach ($details as $detail) {
-                    $poKeluar->batalkanQty($poKeluarId, 'produk', (string) $detail['detbrgkode'], (float) $detail['detjml']);
+                if (($header['sumber'] ?? 'beli') !== 'retur_ng') {
+                    foreach ($details as $detail) {
+                        $poKeluar->batalkanQty($poKeluarId, 'produk', (string) $detail['detbrgkode'], (float) $detail['detjml']);
+                    }
                 }
+                $poKeluar->refreshStatusAfterReplacement($poKeluarId);
             }
 
             $db->transComplete();
@@ -1033,6 +1070,9 @@ class Barangmasuk extends BaseController
             $modelBarangMasuk = new Modelbarangmasuk();
 
             $rowData = $modelDetail->find($id);
+            if (!$rowData) {
+                return $this->response->setJSON(['error' => 'Detail Produk Masuk tidak ditemukan.']);
+            }
             $noFaktur = $rowData['detfaktur'];
 
             $stokData = $modelNg->select('id')
@@ -1051,6 +1091,13 @@ class Barangmasuk extends BaseController
 
             $header = $db->table('barangmasuk')->where('faktur', $noFaktur)->get()->getRowArray();
 
+            if ($db->tableExists('retur_produk_detail')) {
+                $dipakaiRetur = $db->table('retur_produk_detail')->where('barang_masuk_detail_id', $id)->countAllResults();
+                if ($dipakaiRetur > 0) {
+                    return $this->response->setJSON(['error' => 'Detail tidak bisa dihapus karena sudah memiliki Retur NG. Hapus atau koreksi retur terlebih dahulu.']);
+                }
+            }
+
             $db->transStart();
 
             if ($stokData) {
@@ -1059,11 +1106,17 @@ class Barangmasuk extends BaseController
             if ($existingRow) {
                 $modelNg->delete($materialid);
             }
+            // Trigger tri_restore_stok pada detail_barangmasuk sudah mengurangi
+            // stok ketika detail dihapus; jangan mengurangi stok secara manual lagi.
             $modelDetail->delete($id);
 
             $poKeluarId = (int) ($header['po_keluar_id'] ?? 0);
             if ($poKeluarId > 0) {
-                (new PoKeluar())->batalkanQty($poKeluarId, 'produk', (string) $rowData['detbrgkode'], (float) $rowData['detjml']);
+                $poKeluar = new PoKeluar();
+                if (($header['sumber'] ?? 'beli') !== 'retur_ng') {
+                    $poKeluar->batalkanQty($poKeluarId, 'produk', (string) $rowData['detbrgkode'], (float) $rowData['detjml']);
+                }
+                $poKeluar->refreshStatusAfterReplacement($poKeluarId);
             }
 
             $totalBerat = $modelDetail->ambilTotalBerat($noFaktur);
@@ -1174,67 +1227,103 @@ class Barangmasuk extends BaseController
     function simpanItemDetail()
     {
         if ($this->request->isAJAX()) {
-            $nofaktur = $this->request->getPost('nofaktur');
+            $nofaktur = trim((string) $this->request->getPost('nofaktur'));
             $idgudang = $this->resolveGudangId($this->request->getPost('idgudang'));
-            $gdgid = $this->request->getPost('gdgid');
-            $kodebarang = $this->request->getPost('kodebarang');
-            $jml = $this->request->getPost('jml');
-            $berat = $this->request->getPost('berat');
-            $idbarang = $this->request->getPost('idbarang');
-            $kodebarang = $this->request->getPost('kodebarang');
-            $namabarang = $this->request->getPost('namabarang');
+            $kodebarang = trim((string) $this->request->getPost('kodebarang'));
+            $qtyRaw = $this->request->getPost('jml');
+            $beratRaw = $this->request->getPost('berat');
+            $jml = is_numeric($qtyRaw) ? (float) $qtyRaw : 0;
+            $berat = is_numeric($beratRaw) ? (float) $beratRaw : 0;
+            $namabarang = trim((string) $this->request->getPost('namabarang'));
             $idmaterial = $this->normalisasiMaterialAdjustment($this->request->getPost('idmaterial'));
             $idsupplier = $this->request->getPost('idsupplier');
             $tglfaktur = $this->request->getPost('tglfaktur');
+
+            if ($nofaktur === '' || $kodebarang === '' || $idgudang === null || !is_numeric($qtyRaw) || $jml <= 0) {
+                echo json_encode(['error' => 'Nomor transaksi, produk, gudang, dan Qty lebih dari nol wajib diisi.']);
+                return;
+            }
 
             $modelTempBarangMasuk = new Modeldetailbarangmasuk();
             $modelBarangMasuk = new Modelbarangmasuk();
 
             $modelStok = new Modelstok();
-
-            $stokPerubahan = $jml;
-            $stokBaru = $modelStok->getStokByGudang($kodebarang, $idgudang) + $stokPerubahan;
+            $stockId = $modelStok->getBarangIdByKodeGudang($kodebarang, $idgudang);
+            if (!$stockId) {
+                echo json_encode(['error' => 'Produk tidak memiliki baris stok pada gudang transaksi.']);
+                return;
+            }
+            if (!$modelBarangMasuk->find($nofaktur)) {
+                echo json_encode(['error' => 'Transaksi barang masuk tidak ditemukan.']);
+                return;
+            }
 
             $db = db_connect();
             $db->transStart();
 
-            $modelStok->update($modelStok->getBarangIdByKodeGudang($kodebarang, $idgudang), [
-                'stok' => $stokBaru
-            ]);
+            $stockUpdated = $db->query(
+                'UPDATE stok SET stok = COALESCE(stok, 0) + ? WHERE id = ?',
+                [$jml, $stockId]
+            );
+            if (!$stockUpdated || $db->affectedRows() !== 1) {
+                $db->transRollback();
+                echo json_encode(['error' => 'Stok tidak berubah. Periksa kode produk, gudang, dan Qty; transaksi dibatalkan.']);
+                return;
+            }
 
-            $existingRow = $modelTempBarangMasuk->where('idbarang', $idbarang)->where('detfaktur', $nofaktur)
+            $existingRow = $modelTempBarangMasuk->where('detbrgkode', $kodebarang)
+                ->where('gudang', $idgudang)
+                ->where('detfaktur', $nofaktur)
                 ->first();
 
             if ($existingRow) {
-                $newJml = $existingRow['detjml'] + $jml;
-                $newSubtotal = $existingRow['detsubtotal'] + ($jml * $berat);
+                $newJml = (float) $existingRow['detjml'] + $jml;
+                $newSubtotal = (float) $existingRow['detsubtotal'] + ($jml * $berat);
 
-                $modelTempBarangMasuk->update($existingRow['id'], [
+                $detailSaved = $modelTempBarangMasuk->update($existingRow['id'], [
+                    'idbarang' => $stockId,
+                    'detbrgkode' => $kodebarang,
+                    'detbrgnama' => $namabarang,
+                    'detmatkode' => $idmaterial,
+                    'idsup' => $idsupplier,
+                    'gudang' => $idgudang,
+                    'detberat' => $berat,
                     'detjml' => $newJml,
                     'detsubtotal' => $newSubtotal
                 ]);
             } else {
-                $modelTempBarangMasuk->insert([
+                $detailSaved = $modelTempBarangMasuk->insert([
                     'detfaktur' => $nofaktur,
                     'tgl' => $tglfaktur,
                     'detbrgkode' => $kodebarang,
-                    'idbarang' => $idbarang,
+                    'idbarang' => $stockId,
                     'detbrgnama' => $namabarang,
                     'detmatkode' => $idmaterial,
                     'idsup' => $idsupplier,
-                    'gudang' => $gdgid,
+                    'gudang' => $idgudang,
                     'detberat' => $berat,
                     'detjml' => $jml,
-                    'detsubtotal' => intval($jml) * $berat
+                    'detsubtotal' => $jml * $berat
                 ]);
             }
+            if (!$detailSaved) {
+                $db->transRollback();
+                echo json_encode(['error' => 'Detail produk gagal disimpan; perubahan stok dibatalkan.']);
+                return;
+            }
+
             $totalBerat = $modelTempBarangMasuk->ambilTotalBerat($nofaktur);
             $totalQty = $modelTempBarangMasuk->ambilTotalQty($nofaktur);
 
-            $modelBarangMasuk->update($nofaktur, [
+            $headerUpdated = $modelBarangMasuk->update($nofaktur, [
                 'qtymasuk' => $totalQty,
                 'totalberatbarang' => $totalBerat
             ]);
+            if (!$headerUpdated) {
+                $db->transRollback();
+                echo json_encode(['error' => 'Total transaksi gagal diperbarui; perubahan stok dan detail dibatalkan.']);
+                return;
+            }
             $db->transComplete();
 
             // // Integrasi Pusher

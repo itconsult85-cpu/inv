@@ -248,9 +248,58 @@ class Barangkeluar extends BaseController
                 'belum' => number_format($belum, 0, ',', '.'),
                 'usernama' => $row['usernama'] ?: '-',
                 'keterangan' => $row['keterangan'] ?: '-',
+                '_search_permintaan_id' => (string) $row['id'],
+                '_search_grup_do' => $noDo !== '' ? $noDo : '__draft_' . (string) $row['id'],
                 'aksi' => '<div class="d-flex justify-content-center align-items-center" style="gap:4px;">' . $tombolEdit . $tombolEditDokumen . $tombolCetakDo . $tombolHapus . '</div>',
             ];
         }, $rows);
+
+        // Surat jalan manual yang sudah masuk ke barangkeluar tetapi proses
+        // belum selesai bisa tidak mempunyai rencana_pengiriman. Sebelumnya
+        // data seperti ini tetap muncul di Progress PO, tetapi tidak muncul
+        // di List Pengiriman sehingga user tidak punya tombol pembatalan.
+        $suratJalanTanpaRencana = $db->table('barangkeluar bk')
+            ->select("bk.faktur, bk.tglfaktur, bk.idpel, p.pelnama,
+                GROUP_CONCAT(DISTINCT dk.detpo ORDER BY dk.detpo SEPARATOR ', ') AS daftar_po,
+                SUM(dk.detjml) AS total_qty", false)
+            ->join('pelanggan p', 'p.pelid = bk.idpel', 'left')
+            ->join('detail_barangkeluar dk', 'dk.detfaktur = bk.faktur', 'inner')
+            ->where("NOT EXISTS (SELECT 1 FROM rencana_pengiriman rp WHERE rp.no_do = bk.faktur)", null, false)
+            ->groupBy('bk.faktur, bk.tglfaktur, bk.idpel, p.pelnama')
+            ->get()
+            ->getResultArray();
+
+        foreach ($suratJalanTanpaRencana as $suratJalan) {
+            $faktur = (string) $suratJalan['faktur'];
+            $token = \App\Libraries\PublicId::encode($faktur, 'barangkeluar-faktur');
+            $canDelete = \App\Libraries\AccessControl::can('produk.keluar.delete');
+            $tombolHapus = $canDelete
+                ? '<button type="button" class="btn btn-sm btn-danger" title="Hapus Surat Jalan yatim" onclick="hapusTransaksiSuratJalan(\'' . $token . '\')"><i class="fa fa-trash-alt"></i></button>'
+                : '';
+
+            $mappedRows[] = [
+                'id' => $token,
+                'hash' => $token,
+                'tanggal_sort' => (string) $suratJalan['tglfaktur'],
+                'tanggal' => date('d-m-Y', strtotime($suratJalan['tglfaktur'])),
+                'status' => 'Perlu Diperiksa',
+                'status_badge' => '<span class="badge badge-danger">Perlu Diperiksa</span>',
+                'dokumen' => $faktur,
+                'po' => (string) ($suratJalan['daftar_po'] ?? '-'),
+                'total_produk' => number_format((float) $suratJalan['total_qty'], 0, ',', '.'),
+                'rencana' => '0',
+                'terkirim' => number_format((float) $suratJalan['total_qty'], 0, ',', '.'),
+                'belum' => '0',
+                'usernama' => '-',
+                'keterangan' => 'Surat jalan belum selesai',
+                '_search_permintaan_id' => 'orphan',
+                '_search_grup_do' => $faktur,
+                'aksi' => '<div class="d-flex justify-content-center align-items-center" style="gap:4px;">'
+                    . '<button type="button" class="btn btn-sm btn-info" title="Lihat Delivery Order" onclick="lihatDo(\'' . $token . '\')"><i class="fa fa-eye"></i></button>'
+                    . $tombolHapus
+                    . '</div>',
+            ];
+        }
 
         // Yang belum ada rencana maupun kiriman sama sekali (status Permintaan/Kosong)
         // bukan urusan tab List Pengiriman -- itu ditampilkan di tab List Permintaan.
@@ -266,8 +315,9 @@ class Barangkeluar extends BaseController
 
         $recordsTotal = count($mappedRows);
         if ($search !== '') {
-            $mappedRows = array_values(array_filter($mappedRows, static function (array $row) use ($search): bool {
-                return str_contains(strtolower(implode(' ', [
+            $productSearchKeys = $this->productSearchKeys($db, $search);
+            $mappedRows = array_values(array_filter($mappedRows, static function (array $row) use ($search, $productSearchKeys): bool {
+                $matchesDisplayedData = str_contains(strtolower(implode(' ', [
                     $row['tanggal'],
                     $row['status'],
                     $row['dokumen'],
@@ -275,8 +325,16 @@ class Barangkeluar extends BaseController
                     $row['usernama'],
                     $row['keterangan'],
                 ])), $search);
+                $productKey = $row['_search_permintaan_id'] . '|' . $row['_search_grup_do'];
+
+                return $matchesDisplayedData || isset($productSearchKeys[$productKey]);
             }));
         }
+
+        foreach ($mappedRows as &$row) {
+            unset($row['_search_permintaan_id'], $row['_search_grup_do']);
+        }
+        unset($row);
 
         $recordsFiltered = count($mappedRows);
         $pagedRows = array_slice($mappedRows, $start, $length);
@@ -291,6 +349,48 @@ class Barangkeluar extends BaseController
             'recordsFiltered' => $recordsFiltered,
             'data' => $pagedRows,
         ]);
+    }
+
+    /**
+     * Kunci baris pengiriman yang detail surat jalan atau PO-nya cocok dengan produk.
+     */
+    private function productSearchKeys($db, string $search): array
+    {
+        $groupExpression = "COALESCE(NULLIF(rp.no_do, ''), CONCAT('__draft_', rp.permintaan_id))";
+        $matches = [];
+
+        $detailSuratJalan = $db->table('detail_barangkeluar dk')
+            ->select("rp.permintaan_id, {$groupExpression} AS grup_do", false)
+            ->join('rencana_pengiriman rp', 'rp.no_do = dk.detfaktur', 'inner', false)
+            ->join('barang b', 'b.brgkode = dk.detbrgkode', 'left')
+            ->groupStart()
+                ->like('dk.detbrgkode', $search)
+                ->orLike('dk.namabarang', $search)
+                ->orLike('b.brgnama', $search)
+            ->groupEnd()
+            ->distinct()
+            ->get()
+            ->getResultArray();
+
+        $detailPo = $db->table('detail_po dp')
+            ->select("rp.permintaan_id, {$groupExpression} AS grup_do", false)
+            ->join('rencana_pengiriman rp', 'rp.no_po = dp.detnopo', 'inner', false)
+            ->join('barang b', 'b.brgkode = dp.detkodebrg', 'left')
+            ->groupStart()
+                ->like('dp.detkodebrg', $search)
+                ->orLike('dp.namabarang', $search)
+                ->orLike('b.brgnama', $search)
+            ->groupEnd()
+            ->distinct()
+            ->get()
+            ->getResultArray();
+
+        foreach (array_merge($detailSuratJalan, $detailPo) as $match) {
+            $key = (string) $match['permintaan_id'] . '|' . (string) $match['grup_do'];
+            $matches[$key] = true;
+        }
+
+        return $matches;
     }
 
     public function cetakDo(string $token)
@@ -799,6 +899,10 @@ class Barangkeluar extends BaseController
                         'detsubtotal' => $row['detsubtotal']
                     ];
                 }
+                $poList = array_values(array_unique(array_filter(array_map(
+                    static fn($po): string => trim((string) $po),
+                    array_column($fieldDetail, 'detpo')
+                ))));
 
                 /*
                  * Stok produk sudah dikurangi oleh trigger database ketika
@@ -847,7 +951,9 @@ class Barangkeluar extends BaseController
 
                 $modelBarangKeluar->insert([
                     'faktur' => $nofaktur,
-                    'detpo' => $nopo,
+                    // Header hanya menyimpan satu PO untuk kompatibilitas
+                    // lama; sumber kebenaran multi-PO adalah detail.detpo.
+                    'detpo' => $poList[0] ?? $nopo,
                     'tglfaktur' => $tglfaktur,
                     'idpel' => $idpelanggan,
                     'qtykeluar' => $totalqtykeluar,
@@ -858,9 +964,24 @@ class Barangkeluar extends BaseController
                 $modelDetail = new ModelDetailBarangKeluar();
                 $modelDetail->insertBatch($fieldDetail);
 
+                // Trigger lama memperbarui header berdasarkan barangkeluar.detpo
+                // yang hanya menyimpan PO pertama. Hitung ulang dari seluruh
+                // detail agar total surat jalan multi-PO tidak masuk ke PO
+                // pertama atau terpotong setelah insertBatch.
+                $totalDetail = $db->table('detail_barangkeluar')
+                    ->select('COALESCE(SUM(detjml), 0) AS qty, COALESCE(SUM(detsubtotal), 0) AS berat', false)
+                    ->where('detfaktur', $nofaktur)
+                    ->get()
+                    ->getRowArray();
+                $modelBarangKeluar->update($nofaktur, [
+                    'qtykeluar' => (float) ($totalDetail['qty'] ?? 0),
+                    'totalberatbarang' => (float) ($totalDetail['berat'] ?? 0),
+                ]);
+
                 $myModel = new Modeldetailpo();
                 $myModel->updateDetailPoKurang();
-                (new Modeloutstand())->sinkronByPoList([$nopo]);
+                (new Modeloutstand())->sinkronByPoList($poList ?: [$nopo]);
+                $this->sinkronStatusPermintaanPengirimanByPo($poList ?: [$nopo]);
 
                 $modelTemp->hapusData($nofaktur);
                 $db->transComplete();
@@ -1724,7 +1845,10 @@ class Barangkeluar extends BaseController
 
             log_message('debug', 'Tanggal diterima: ' . $tanggal);
 
-            $modelTempBarangKeluar = new ModelDetailBarangKeluar();
+            // Form edit bekerja pada tabel sementara, bukan detail surat jalan
+            // permanen. PO harus menjadi bagian dari kunci baris agar produk
+            // yang sama dari dua PO pada satu surat jalan tidak tercampur.
+            $modelTempBarangKeluar = new ModelTempBarangKeluar();
             $modelBarangKeluar = new ModelBarangKeluar();
             $modelBarang = new Modelbarang();
 
@@ -1757,6 +1881,7 @@ class Barangkeluar extends BaseController
                 $existingRow = $modelTempBarangKeluar
                     ->where('idbarang', $idbarang)
                     ->where('detfaktur', $nofaktur)
+                    ->where('detpo', $nopo)
                     ->first();
 
                 if ($existingRow) {

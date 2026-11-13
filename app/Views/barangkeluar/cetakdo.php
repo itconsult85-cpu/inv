@@ -394,7 +394,7 @@
             white-space: nowrap;
             overflow: hidden;
             text-overflow: clip;
-            font-size: 8.5pt;
+            font-size: 10.5pt;
             line-height: 1.1;
         }
 
@@ -409,7 +409,7 @@
             left: 160mm;
             top: 47mm;
             width: 48mm;
-            font-size: 7.6pt;
+            font-size: 10.5pt;
             font-weight: 400;
             letter-spacing: -.2px;
         }
@@ -418,7 +418,7 @@
             left: 160mm;
             top: 52mm;
             width: 48mm;
-            font-size: 7.8pt;
+            font-size: 10.5pt;
         }
 
         .plain-kendaraan {
@@ -439,7 +439,7 @@
             left: 34mm;
             top: 77.5mm;
             width: 174mm;
-            font-size: 10pt;
+            font-size: 10.5pt;
         }
 
         .plain-penerima {
@@ -447,7 +447,7 @@
             top: 149mm;
             width: max-content;
             text-align: center;
-            font-size: 8.5pt;
+            font-size: 10.5pt;
             overflow: visible;
             transform: translateX(-50%);
         }
@@ -457,7 +457,7 @@
             left: 0;
             width: 213mm;
             height: 4.5mm;
-            font-size: 8.5pt;
+            font-size: 10.5pt;
             line-height: 1.1;
         }
 
@@ -507,7 +507,7 @@
             top: 149mm;
             width: max-content;
             text-align: center;
-            font-size: 8.5pt;
+            font-size: 10.5pt;
             overflow: visible;
             transform: translateX(-50%);
         }

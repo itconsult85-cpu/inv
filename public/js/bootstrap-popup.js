@@ -29,7 +29,12 @@
     function showBootstrapModal(titleOrOptions, text, icon) {
         var options = normaliseOptions(titleOrOptions, text, icon);
         var modal = $('#appPopupModal');
+        var modalElement = modal[0];
         var dialog = $.Deferred();
+        var focusedBeforeOpen = document.activeElement;
+        if (!modal.hasClass('show') && focusedBeforeOpen && !modalElement.contains(focusedBeforeOpen)) {
+            modal.data('appPopupReturnFocus', focusedBeforeOpen);
+        }
         var hasCancel = options.showCancelButton === true;
         var isConfirm = hasCancel || options.showConfirmButton === true && options.confirmButtonText;
         var title = options.title || (isConfirm ? 'Konfirmasi' : 'Pesan');
@@ -62,7 +67,18 @@
             dialog.resolve({ isConfirmed: true, isDismissed: false, value: value });
             modal.modal('hide');
         });
+        modal.off('hide.bs.modal.appPopupFocus').on('hide.bs.modal.appPopupFocus', function () {
+            var focusedElement = document.activeElement;
+            if (focusedElement && modalElement.contains(focusedElement) && typeof focusedElement.blur === 'function') {
+                focusedElement.blur();
+            }
+        });
         modal.off('hidden.bs.modal.appPopup').on('hidden.bs.modal.appPopup', function () {
+            var returnFocus = modal.data('appPopupReturnFocus');
+            modal.removeData('appPopupReturnFocus');
+            if (returnFocus && document.documentElement.contains(returnFocus) && typeof returnFocus.focus === 'function') {
+                returnFocus.focus({ preventScroll: true });
+            }
             if (dialog.state() !== 'pending') {
                 return;
             }

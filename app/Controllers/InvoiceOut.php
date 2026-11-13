@@ -5,6 +5,7 @@ namespace App\Controllers;
 use App\Models\ModelInvoiceOut;
 use App\Models\ModelInvoiceOutDetail;
 use App\Libraries\PublicId;
+use App\Libraries\InvoiceRupiah;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
 class InvoiceOut extends BaseController
@@ -13,10 +14,16 @@ class InvoiceOut extends BaseController
     private ModelInvoiceOut $invoiceModel;
     private ModelInvoiceOutDetail $detailModel;
 
-    private function resolveInvoiceToken(string $token): int
+    private function resolveInvoiceToken(string $token, bool $allowLegacyNumeric = false): int
     {
         $id = PublicId::decode($token, 'invoice-out-id');
-        return $id !== null && ctype_digit($id) && (int) $id > 0 ? (int) $id : 0;
+        if ($id !== null && ctype_digit($id) && (int) $id > 0) {
+            return (int) $id;
+        }
+
+        return $allowLegacyNumeric && ctype_digit($token) && (int) $token > 0
+            ? (int) $token
+            : 0;
     }
 
     public function __construct()
@@ -38,6 +45,31 @@ class InvoiceOut extends BaseController
             ->findAll();
 
         return view('invoiceout/index', ['invoices' => $invoices]);
+    }
+
+    private function isValidDateFilter(string $date): bool
+    {
+        $parsed = \DateTime::createFromFormat('!Y-m-d', $date);
+        return $date !== '' && $parsed !== false && $parsed->format('Y-m-d') === $date;
+    }
+
+    private function parsePaymentAmount($value): float
+    {
+        $value = trim((string) $value);
+        if ($value === '') {
+            return 0.0;
+        }
+
+        // Format Indonesia: 9.097.071,60. Format angka biasa 9097071.60
+        // juga tetap diterima dari input internal/alokasi.
+        if (str_contains($value, ',')) {
+            $value = str_replace('.', '', $value);
+            $value = str_replace(',', '.', $value);
+        } else {
+            $value = str_replace(' ', '', $value);
+        }
+
+        return is_numeric($value) ? (float) $value : 0.0;
     }
 
     public function create(?string $poHash = null)
@@ -248,7 +280,7 @@ class InvoiceOut extends BaseController
 
     public function detail(string $token)
     {
-        $id = $this->resolveInvoiceToken($token);
+        $id = $this->resolveInvoiceToken($token, true);
         $data = $this->getInvoice($id);
         if (!$data) {
             throw \CodeIgniter\Exceptions\PageNotFoundException::forPageNotFound('Invoice Out tidak ditemukan.');
@@ -392,7 +424,7 @@ class InvoiceOut extends BaseController
             return redirect()->back()->with('error', 'Invoice Out tidak ditemukan.');
         }
         $this->invoiceModel->update($id, [
-            'paid_total' => (float) $invoice['grand_total'],
+            'paid_total' => InvoiceRupiah::normalize($invoice['grand_total']),
             'status_bayar' => 'Lunas',
             'tanggal_lunas' => date('Y-m-d H:i:s'),
         ]);
@@ -404,7 +436,15 @@ class InvoiceOut extends BaseController
         $this->syncInvoicePaymentStatuses();
 
         $customerId = $this->request->getGet('customer_id');
-        $customers = $this->unpaidCustomers();
+        $tanggalAwal = trim((string) $this->request->getGet('tanggal_awal'));
+        $tanggalAkhir = trim((string) $this->request->getGet('tanggal_akhir'));
+        $tanggalAwal = $this->isValidDateFilter($tanggalAwal) ? $tanggalAwal : '';
+        $tanggalAkhir = $this->isValidDateFilter($tanggalAkhir) ? $tanggalAkhir : '';
+        if ($tanggalAwal !== '' && $tanggalAkhir !== '' && $tanggalAwal > $tanggalAkhir) {
+            [$tanggalAwal, $tanggalAkhir] = [$tanggalAkhir, $tanggalAwal];
+        }
+
+        $customers = $this->unpaidCustomers($tanggalAwal, $tanggalAkhir);
         $invoices = [];
         $selectedCustomer = null;
 
@@ -416,7 +456,7 @@ class InvoiceOut extends BaseController
                 }
             }
 
-            $invoices = $this->unpaidInvoicesByCustomer((string) $customerId);
+            $invoices = $this->unpaidInvoicesByCustomer((string) $customerId, $tanggalAwal, $tanggalAkhir);
         }
 
         return view('invoiceout/pembayaran', [
@@ -424,6 +464,8 @@ class InvoiceOut extends BaseController
             'selectedCustomerId' => $customerId,
             'selectedCustomer' => $selectedCustomer,
             'invoices' => $invoices,
+            'tanggalAwal' => $tanggalAwal,
+            'tanggalAkhir' => $tanggalAkhir,
         ]);
     }
 
@@ -436,14 +478,14 @@ class InvoiceOut extends BaseController
         $rules = [
             'payment_date' => 'required|valid_date[Y-m-d]',
             'customer_id' => 'required',
-            'amount' => 'required|numeric',
+            'amount' => 'required',
         ];
         if (!$this->validate($rules)) {
             return redirect()->back()->withInput()->with('error', implode('<br>', $this->validator->getErrors()));
         }
 
         $customerId = (string) $this->request->getPost('customer_id');
-        $amount = (float) str_replace(',', '.', (string) $this->request->getPost('amount'));
+        $amount = (float) round($this->parsePaymentAmount($this->request->getPost('amount')));
         $allocations = (array) $this->request->getPost('alokasi');
         $invoiceIds = array_keys($allocations);
 
@@ -480,12 +522,16 @@ class InvoiceOut extends BaseController
                 continue;
             }
 
-            $allocation = (float) str_replace(',', '.', (string) $allocationValue);
+            // Pembulatan normal: pecahan >= 0,50 naik, di bawah 0,50 turun.
+            $allocation = (float) round($this->parsePaymentAmount($allocationValue));
             if ($allocation <= 0) {
                 continue;
             }
 
-            $remaining = max((float) $rowsById[$invoiceId]['grand_total'] - (float) ($rowsById[$invoiceId]['paid_total'] ?? 0), 0);
+            $remaining = InvoiceRupiah::remaining(
+                $rowsById[$invoiceId]['grand_total'],
+                $rowsById[$invoiceId]['paid_total'] ?? 0
+            );
             if ($allocation - $remaining > 0.01) {
                 return redirect()->back()->withInput()->with('error', 'Alokasi pembayaran melebihi sisa tagihan invoice ' . $rowsById[$invoiceId]['invoice_no'] . '.');
             }
@@ -501,7 +547,7 @@ class InvoiceOut extends BaseController
             return redirect()->back()->withInput()->with('error', 'Isi alokasi pembayaran minimal pada satu invoice.');
         }
 
-        if (abs($allocatedTotal - $amount) > 0.01) {
+        if ((float) round($allocatedTotal) !== $amount) {
             return redirect()->back()->withInput()->with('error', 'Total alokasi harus sama dengan nominal pembayaran.');
         }
 
@@ -522,7 +568,8 @@ class InvoiceOut extends BaseController
                 'payment_date' => $this->request->getPost('payment_date'),
                 'customer_id' => is_numeric($customerId) ? (int) $customerId : null,
                 'customer_name' => $customerName,
-                'amount' => $allocatedTotal,
+                // Nominal pembayaran disimpan sebagai rupiah utuh hasil pembulatan normal.
+                'amount' => $amount,
                 'note' => trim((string) $this->request->getPost('note')),
                 'created_by' => session()->get('namauser'),
                 'created_at' => date('Y-m-d H:i:s'),
@@ -542,7 +589,11 @@ class InvoiceOut extends BaseController
                 ]);
 
                 $paidTotal = (float) ($invoice['paid_total'] ?? 0) + $detail['amount'];
-                $this->updateInvoicePaymentStatus((int) $invoice['id'], $paidTotal, (float) $invoice['grand_total']);
+            $this->updateInvoicePaymentStatus(
+                (int) $invoice['id'],
+                (float) round($paidTotal),
+                (float) round((float) $invoice['grand_total'])
+            );
             }
 
             if (!$this->db->transStatus()) {
@@ -965,12 +1016,21 @@ class InvoiceOut extends BaseController
         return ['po' => $po, 'lines' => $this->shipmentLineRows($poNo, $fakturs)];
     }
 
-    private function unpaidCustomers(): array
+    private function unpaidCustomers(string $tanggalAwal = '', string $tanggalAkhir = ''): array
     {
-        return $this->db->table('invoice_out')
-            ->select('customer_id, customer_name, COUNT(*) AS total_invoice, SUM(grand_total - COALESCE(paid_total, 0)) AS total_sisa', false)
+        $builder = $this->db->table('invoice_out')
+            ->select('customer_id, customer_name, COUNT(*) AS total_invoice, SUM(ROUND(grand_total) - ROUND(COALESCE(paid_total, 0))) AS total_sisa', false)
             ->where('status', 'AKTIF')
-            ->where('grand_total > COALESCE(paid_total, 0)', null, false)
+            ->where('ROUND(grand_total) > ROUND(COALESCE(paid_total, 0))', null, false);
+
+        if ($tanggalAwal !== '') {
+            $builder->where('invoice_date >=', $tanggalAwal);
+        }
+        if ($tanggalAkhir !== '') {
+            $builder->where('invoice_date <=', $tanggalAkhir);
+        }
+
+        return $builder
             ->groupBy('customer_id, customer_name')
             ->orderBy('customer_name', 'ASC')
             ->get()
@@ -984,7 +1044,7 @@ class InvoiceOut extends BaseController
         }
 
         return $this->db->table('invoice_out_payment_detail d')
-            ->select('d.allocated_amount, p.payment_no, p.payment_date, p.amount, p.note, p.created_by')
+            ->select('ROUND(d.allocated_amount) AS allocated_amount, p.payment_no, p.payment_date, ROUND(p.amount) AS amount, p.note, p.created_by', false)
             ->join('invoice_out_payment p', 'p.id = d.payment_id')
             ->where('d.invoice_out_id', $invoiceId)
             ->orderBy('p.payment_date', 'ASC')
@@ -993,13 +1053,22 @@ class InvoiceOut extends BaseController
             ->getResultArray();
     }
 
-    private function unpaidInvoicesByCustomer(string $customerId): array
+    private function unpaidInvoicesByCustomer(string $customerId, string $tanggalAwal = '', string $tanggalAkhir = ''): array
     {
-        return $this->db->table('invoice_out')
-            ->select('*, (grand_total - COALESCE(paid_total, 0)) AS remaining_total', false)
+        $builder = $this->db->table('invoice_out')
+            ->select('invoice_out.*, ROUND(invoice_out.grand_total) AS grand_total, ROUND(COALESCE(invoice_out.paid_total, 0)) AS paid_total, ROUND(invoice_out.grand_total) - ROUND(COALESCE(invoice_out.paid_total, 0)) AS remaining_total', false)
             ->where('status', 'AKTIF')
             ->where('customer_id', $customerId)
-            ->where('grand_total > COALESCE(paid_total, 0)', null, false)
+            ->where('ROUND(grand_total) > ROUND(COALESCE(paid_total, 0))', null, false);
+
+        if ($tanggalAwal !== '') {
+            $builder->where('invoice_date >=', $tanggalAwal);
+        }
+        if ($tanggalAkhir !== '') {
+            $builder->where('invoice_date <=', $tanggalAkhir);
+        }
+
+        return $builder
             ->orderBy('invoice_date', 'ASC')
             ->orderBy('id', 'ASC')
             ->get()
@@ -1024,18 +1093,23 @@ class InvoiceOut extends BaseController
                 continue;
             }
 
-            $this->updateInvoicePaymentStatus((int) $invoice['id'], (float) ($invoice['paid_total'] ?? 0), (float) $invoice['grand_total']);
+            $this->updateInvoicePaymentStatus(
+                (int) $invoice['id'],
+                (float) ($invoice['paid_total'] ?? 0),
+                (float) $invoice['grand_total']
+            );
         }
     }
 
     private function updateInvoicePaymentStatus(int $invoiceId, float $paidTotal, float $grandTotal): void
     {
-        $paidTotal = min(max($paidTotal, 0), $grandTotal);
+        $grandTotal = max(InvoiceRupiah::normalize($grandTotal), 0);
+        $paidTotal = min(max(InvoiceRupiah::normalize($paidTotal), 0), $grandTotal);
         $status = 'Belum Lunas';
         $current = $this->invoiceModel->find($invoiceId) ?: [];
         $tanggalLunas = $current['tanggal_lunas'] ?? null;
 
-        if ($paidTotal >= $grandTotal - 0.01) {
+        if ($paidTotal >= $grandTotal) {
             $status = 'Lunas';
             $tanggalLunas = $tanggalLunas ?: date('Y-m-d H:i:s');
         } elseif ($paidTotal > 0) {

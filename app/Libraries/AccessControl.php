@@ -61,6 +61,7 @@ class AccessControl
                     self::feature('material.waste_produksi', 'Waste/Wise Aktual Produksi', 'materialwasteproduksi/index', 'fas fa-chart-line text-danger', ['materialwasteproduksi']),
                     self::feature('material.masuk', 'Material Masuk', 'materialmasuk/data', 'fa fa-arrow-circle-down text-success', ['materialmasuk']),
                     self::feature('material.keluar', 'Pemakaian Material', 'materialkeluar/data', 'fa fa-arrow-circle-up text-warning', ['materialkeluar']),
+                    self::feature('material.vendor_process', 'Order Proses Vendor', 'vendorprocess/index', 'fas fa-industry text-info', ['vendorprocess']),
                     self::feature('material.produksi', 'Produksi dari Material', 'produksi/data', 'fa fa-industry text-info', ['produksi'], [], false),
                     self::feature('material.raw_produk', 'Data Raw Produk', 'ngdata/data', 'fa fa-truck-loading text-danger', ['ngdata'], [], false),
                 ],
@@ -228,7 +229,7 @@ class AccessControl
             }
         }
 
-        if (in_array($permissionKey, ['produk.masuk.print', 'material.masuk.return_ng'], true) && in_array((int) session()->get('idlevel'), [1, 4, 5], true)) {
+        if (in_array($permissionKey, ['produk.masuk.print', 'produk.masuk.return_ng', 'material.masuk.return_ng'], true) && in_array((int) session()->get('idlevel'), [1, 4, 5], true)) {
             return true;
         }
 
@@ -545,6 +546,7 @@ class AccessControl
                     self::permissionAction($key, 'stock_lookup', 'Cari Produk & Stok', self::patterns(['barangmasuk/modalCariBarang', 'barangmasuk/modalCariGudang', 'barangmasuk/listDataBarang', 'barangmasuk/ambilDataBarang', 'barangmasuk/ambilStok', 'produksi/ambilDataBarangProduksi', 'produksi/materialProduk']), 'view'),
                     self::permissionAction($key, 'save_receipt', 'Simpan Transaksi Produk Masuk', self::patterns(['barangmasuk/selesaiTransaksi']), 'create'),
                     self::permissionAction($key, 'edit_detail', 'Edit Detail Produk Masuk', self::patterns(['barangmasuk/edit', 'barangmasuk/edit/*', 'barangmasuk/ambilTotalBerat', 'barangmasuk/tampilDataDetail', 'barangmasuk/editItem', 'barangmasuk/simpanItemDetail']), 'edit'),
+                    self::permissionAction($key, 'return_ng', 'Retur / Koreksi Produk NG', self::patterns(['barangmasuk/retur', 'barangmasuk/retur/*', 'produkretur/simpan', 'produkretur/kelola', 'produkretur/kelola/*', 'produkretur/koreksi', 'produkretur/hapusDetail']), 'edit'),
                     self::permissionAction($key, 'print', 'Cetak Laporan Stok Produk Masuk', self::patterns(['stok/cetakLaporan']), 'print'),
                     self::permissionAction($key, 'delete', 'Hapus Produk Masuk', self::actionPatterns($basePatterns, ['hapus', 'hapusTransaksi', 'hapusItem', 'hapusItemDetail']), 'delete'),
                 ];
@@ -686,6 +688,17 @@ class AccessControl
                     self::permissionAction($key, 'input', 'Input Pemakaian Material', self::actionPatterns($basePatterns, ['input', 'cekNoDo', 'simpanItem', 'selesaiTransaksi', 'modalCariMaterial', 'listDataMaterial', 'ambilDataMaterial']), 'create'),
                     self::permissionAction($key, 'edit_detail', 'Edit Pemakaian Material', self::actionPatterns($basePatterns, ['edit', 'editItem', 'simpanItemDetail', 'update*']), 'edit'),
                     self::permissionAction($key, 'delete', 'Hapus Pemakaian Material', self::actionPatterns($basePatterns, ['hapus', 'hapus*', 'hapusTransaksi', 'hapusItemDetail']), 'delete'),
+                ];
+
+            case 'material.vendor_process':
+                return [
+                    self::permissionAction($key, 'view', 'Lihat Order Proses Vendor', self::patterns(['vendorprocess', 'vendorprocess/index', 'vendorprocess/detail/*']), 'view'),
+                    self::permissionAction($key, 'manage', 'Kelola Order, BOM, Lokasi, Stok, Scrap & Transfer Vendor', self::patterns([
+                        'vendorprocess/lokasi', 'vendorprocess/bom', 'vendorprocess/bom-line', 'vendorprocess/bom-activate/*',
+                        'vendorprocess/order', 'vendorprocess/input', 'vendorprocess/consumption', 'vendorprocess/result',
+                        'vendorprocess/scrap', 'vendorprocess/scrap-disposition', 'vendorprocess/reconcile',
+                        'vendorprocess/transfer', 'vendorprocess/receive-transfer', 'vendorprocess/complete',
+                    ]), 'edit'),
                 ];
 
             case 'material.produksi':

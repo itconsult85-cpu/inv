@@ -1040,11 +1040,17 @@ class Po extends BaseController
             $kirimStatus = 'sebagian';
         }
 
-        $shipments = $this->db->table('barangkeluar')
-            ->select('faktur, tglfaktur, qtykeluar')
-            ->where('detpo', $nopo)
-            ->orderBy('tglfaktur', 'ASC')
-            ->orderBy('faktur', 'ASC')
+        // Satu surat jalan dapat berisi beberapa PO. PO pada header
+        // barangkeluar hanya menyimpan PO pertama, sehingga daftar pengiriman
+        // harus dihitung dari detail_barangkeluar.detpo agar qty tiap PO tidak
+        // tergabung ke PO pertama.
+        $shipments = $this->db->table('detail_barangkeluar dk')
+            ->select('dk.detfaktur AS faktur, bk.tglfaktur, SUM(dk.detjml) AS qtykeluar', false)
+            ->join('barangkeluar bk', 'bk.faktur = dk.detfaktur', 'inner')
+            ->where('dk.detpo', $nopo)
+            ->groupBy('dk.detfaktur, bk.tglfaktur')
+            ->orderBy('bk.tglfaktur', 'ASC')
+            ->orderBy('dk.detfaktur', 'ASC')
             ->get()->getResultArray();
 
         $this->ensureBtbFileColumnsPo();

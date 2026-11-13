@@ -14,7 +14,7 @@
     <div class="card-body">
         <form method="get" action="<?= site_url('invoiceOut/pembayaran') ?>">
             <div class="row align-items-end">
-                <div class="col-md-8 form-group">
+                <div class="col-md-5 form-group">
                     <label>Pelanggan dengan invoice belum lunas</label>
                     <select name="customer_id" class="form-control select2bs4" required>
                         <option value="">-- Pilih Pelanggan --</option>
@@ -25,7 +25,15 @@
                         <?php endforeach ?>
                     </select>
                 </div>
-                <div class="col-md-4 form-group">
+                <div class="col-md-2 form-group">
+                    <label for="tanggalAwalPembayaran">Tanggal awal</label>
+                    <input type="date" id="tanggalAwalPembayaran" name="tanggal_awal" class="form-control" value="<?= esc($tanggalAwal ?? '') ?>">
+                </div>
+                <div class="col-md-2 form-group">
+                    <label for="tanggalAkhirPembayaran">Tanggal akhir</label>
+                    <input type="date" id="tanggalAkhirPembayaran" name="tanggal_akhir" class="form-control" value="<?= esc($tanggalAkhir ?? '') ?>">
+                </div>
+                <div class="col-md-3 form-group">
                     <button class="btn btn-primary btn-block"><i class="fas fa-search"></i> Tampilkan Invoice</button>
                 </div>
             </div>
@@ -53,7 +61,8 @@
                         </div>
                         <div class="col-md-4 form-group">
                             <label>Nominal Pembayaran</label>
-                            <input type="number" name="amount" id="amount" class="form-control text-right" min="0" step="1" value="<?= old('amount', 0) ?>" required>
+                            <input type="text" name="amount_display" id="amountDisplay" class="form-control text-right" inputmode="decimal" autocomplete="off" value="<?= esc(old('amount', '0')) ?>" required>
+                            <input type="hidden" name="amount" id="amount" value="<?= esc(old('amount', '0')) ?>">
                         </div>
                     </div>
                     <div class="form-group">
@@ -74,7 +83,9 @@
                     <table class="table table-bordered table-sm" id="tablePembayaran">
                         <thead>
                             <tr>
-                                <th style="width: 4%;"></th>
+                                <th style="width: 4%;" class="text-center">
+                                    <input type="checkbox" id="selectAllInvoice" title="Pilih semua invoice">
+                                </th>
                                 <th>No. Invoice</th>
                                 <th>Tanggal</th>
                                 <th>No. PO</th>
@@ -89,7 +100,7 @@
                                 <?php $remaining = (float) $invoice['remaining_total']; ?>
                                 <tr data-remaining="<?= esc($remaining) ?>">
                                     <td class="text-center">
-                                        <input type="checkbox" class="check-invoice">
+                                        <input type="checkbox" class="check-invoice invoice-checkbox">
                                     </td>
                                     <td><?= esc($invoice['invoice_no']) ?></td>
                                     <td><?= date('d-m-Y', strtotime($invoice['invoice_date'])) ?></td>
@@ -103,7 +114,7 @@
                                             name="alokasi[<?= esc($invoice['id']) ?>]"
                                             class="form-control form-control-sm text-right input-alokasi"
                                             min="0"
-                                            step="1"
+                                            step="0.01"
                                             max="<?= esc($remaining) ?>"
                                             value="0"
                                             disabled>
@@ -131,7 +142,8 @@
 
 <script>
 function rupiah(value) {
-    return 'Rp ' + Math.round(Number(value || 0)).toLocaleString('id-ID');
+    const number = Math.round(Number(value || 0));
+    return 'Rp ' + number.toLocaleString('id-ID');
 }
 
 function syncRowState($row, checked) {
@@ -139,10 +151,10 @@ function syncRowState($row, checked) {
     const $input = $row.find('.input-alokasi');
     $input.prop('disabled', !checked);
     if (checked && (parseFloat($input.val()) || 0) <= 0) {
-        $input.val(Math.round(remaining));
+        $input.val(Number(remaining.toFixed(2)));
     }
     if (!checked) {
-        $input.val(0);
+        $input.val('0');
     }
 }
 
@@ -152,19 +164,87 @@ function hitungTotalAlokasi() {
         total += parseFloat(this.value) || 0;
     });
 
-    const amount = parseFloat($('#amount').val()) || 0;
+    // Jumlahkan nilai asli lebih dahulu, lalu bulatkan total satu kali.
+    // Pembulatan per invoice dapat menimbulkan selisih beberapa rupiah.
+    total = Math.round(total);
+    const amount = Math.round(parseFloat($('#amount').val()) || 0);
     const diff = amount - total;
     $('#totalAlokasi').text(rupiah(total));
     $('#selisihAlokasi').text(rupiah(diff));
-    $('#btnSimpanPembayaran').prop('disabled', total <= 0 || Math.abs(diff) > 0.01);
+    $('#btnSimpanPembayaran').prop('disabled', total <= 0 || diff !== 0);
 }
 
 $('.check-invoice').on('change', function() {
     syncRowState($(this).closest('tr'), this.checked);
+    syncSelectAllInvoice();
+    hitungTotalAlokasi();
+});
+
+function syncSelectAllInvoice() {
+    const $checkboxes = $('.invoice-checkbox');
+    const total = $checkboxes.length;
+    const checked = $checkboxes.filter(':checked').length;
+    $('#selectAllInvoice').prop('checked', total > 0 && checked === total);
+    $('#selectAllInvoice').prop('indeterminate', checked > 0 && checked < total);
+}
+
+$('#selectAllInvoice').on('change', function() {
+    const checked = this.checked;
+    $('.invoice-checkbox').each(function() {
+        $(this).prop('checked', checked);
+        syncRowState($(this).closest('tr'), checked);
+    });
+    syncSelectAllInvoice();
     hitungTotalAlokasi();
 });
 
 $(document).on('input', '#amount, .input-alokasi', hitungTotalAlokasi);
+
+function parseNominalIndonesia(value) {
+    value = String(value || '').replace(/[^0-9,.-]/g, '').trim();
+    if (value.indexOf(',') !== -1) {
+        value = value.replace(/\./g, '').replace(',', '.');
+    } else {
+        // Titik pada input tampilan adalah pemisah ribuan, bukan desimal.
+        value = value.replace(/\./g, '');
+    }
+    return parseFloat(value) || 0;
+}
+
+function formatNominalIndonesia(value) {
+    const number = Math.round(parseNominalIndonesia(value));
+    return number.toLocaleString('id-ID');
+}
+
+$('#amountDisplay').on('input', function() {
+    const cursor = this.selectionStart || 0;
+    const digitsBeforeCursor = (this.value.slice(0, cursor).match(/\d/g) || []).length;
+    const digits = this.value.replace(/\D/g, '');
+    const number = digits ? parseInt(digits, 10) : 0;
+    const formatted = digits ? number.toLocaleString('id-ID') : '';
+
+    $('#amount').val(number);
+    this.value = formatted;
+
+    // Pertahankan posisi kursor berdasarkan jumlah digit yang sudah diketik.
+    let newCursor = 0;
+    let digitCount = 0;
+    while (newCursor < formatted.length && digitCount < digitsBeforeCursor) {
+        if (/\d/.test(formatted.charAt(newCursor))) {
+            digitCount++;
+        }
+        newCursor++;
+    }
+    this.setSelectionRange(newCursor, newCursor);
+    hitungTotalAlokasi();
+});
+
+$('#amountDisplay').on('blur', function() {
+    const value = parseNominalIndonesia(this.value);
+    $('#amount').val(Math.round(value));
+    this.value = value ? formatNominalIndonesia(value) : '0';
+    hitungTotalAlokasi();
+});
 
 $('#btnAutoAlokasi').on('click', function() {
     let sisaNominal = parseFloat($('#amount').val()) || 0;
@@ -176,7 +256,7 @@ $('#btnAutoAlokasi').on('click', function() {
         const checked = alokasi > 0;
 
         $row.find('.check-invoice').prop('checked', checked);
-        $row.find('.input-alokasi').prop('disabled', !checked).val(Math.round(alokasi));
+        $row.find('.input-alokasi').prop('disabled', !checked).val(Number(alokasi.toFixed(2)));
         sisaNominal -= alokasi;
     });
 
@@ -184,6 +264,8 @@ $('#btnAutoAlokasi').on('click', function() {
 });
 
 $('#formPembayaran').on('submit', function(event) {
+    const amount = Math.round(parseNominalIndonesia($('#amountDisplay').val()));
+    $('#amount').val(amount);
     hitungTotalAlokasi();
     if ($('#btnSimpanPembayaran').prop('disabled')) {
         event.preventDefault();
@@ -192,5 +274,7 @@ $('#formPembayaran').on('submit', function(event) {
 });
 
 hitungTotalAlokasi();
+syncSelectAllInvoice();
+$('#amountDisplay').val(formatNominalIndonesia($('#amount').val()));
 </script>
 <?= $this->endSection('isi') ?>

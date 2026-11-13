@@ -233,7 +233,8 @@ class PoKeluar extends BaseController
             }
 
             $this->db->transCommit();
-            return redirect()->to('/poKeluar/detail/' . $poId)->with('message', 'PO Keluar berhasil disimpan.');
+            $poToken = PublicId::encode($poId, 'po-keluar-id');
+            return redirect()->to('/poKeluar/detail/' . $poToken)->with('message', 'PO Keluar berhasil disimpan.');
         } catch (\Throwable $e) {
             $this->db->transRollback();
             log_message('error', 'Gagal menyimpan PO Keluar: {message}', ['message' => $e->getMessage()]);
@@ -260,9 +261,13 @@ class PoKeluar extends BaseController
         $details = $this->detailModel->where('po_keluar_id', $id)->orderBy('id', 'ASC')->findAll();
         foreach ($details as &$detail) {
             $itemKey = (string) ($detail['kode_item'] ?? '');
-            $detail['qty_ng'] = $ngQtyByItem[$itemKey] ?? 0;
-            $detail['qty_pengganti'] = $replacementQtyByItem[$itemKey] ?? 0;
-            $detail['qty_masuk_net'] = max(0, (float) $detail['qty_masuk'] - (float) $detail['qty_ng']);
+            $qtyNg = (float) ($ngQtyByItem[$itemKey] ?? 0);
+            $qtyPengganti = (float) ($replacementQtyByItem[$itemKey] ?? 0);
+            // Yang ditampilkan sebagai NG adalah sisa NG yang belum diganti,
+            // bukan histori retur NG sebelum barang pengganti diterima.
+            $detail['qty_ng'] = max(0, $qtyNg - $qtyPengganti);
+            $detail['qty_pengganti'] = $qtyPengganti;
+            $detail['qty_masuk_net'] = max(0, (float) $detail['qty_masuk'] - $qtyNg + $qtyPengganti);
         }
         unset($detail);
 
@@ -550,7 +555,8 @@ class PoKeluar extends BaseController
             return redirect()->back()->withInput()->with('error', 'PO Keluar gagal diperbarui. ' . $e->getMessage());
         }
 
-        return redirect()->to('/poKeluar/detail/' . $id)->with('message', 'PO Keluar berhasil diperbarui.');
+        $poToken = PublicId::encode($id, 'po-keluar-id');
+        return redirect()->to('/poKeluar/detail/' . $poToken)->with('message', 'PO Keluar berhasil diperbarui.');
     }
     public function cetak(string $token)
     {
@@ -677,7 +683,7 @@ class PoKeluar extends BaseController
         }
         if ($hasOutstanding) {
             $this->db->table('po_keluar')->where('id', $poKeluarId)->update(['status' => 'NG']);
-            $this->db->table('detail_po_keluar')->where('po_keluar_id', $poKeluarId)->where('tipe_item', 'material')->update(['status' => 'NG']);
+            $this->db->table('detail_po_keluar')->where('po_keluar_id', $poKeluarId)->whereIn('tipe_item', ['material', 'produk'])->update(['status' => 'NG']);
             return;
         }
         $this->db->table('po_keluar')->where('id', $poKeluarId)->where('status', 'NG')->update(['status' => 'AKTIF']);
@@ -760,18 +766,21 @@ class PoKeluar extends BaseController
 
     private function poPunyaReturNg(int $poId): bool
     {
-        if ($poId <= 0 || !$this->db->tableExists('retur_material_detail')) {
+        if ($poId <= 0) {
             return false;
         }
 
-        $hasRetur = $this->db->table('retur_material_detail rd')
-            ->join('detail_materialmasuk dmm', 'dmm.id = rd.material_masuk_detail_id', 'left')
-            ->groupStart()
-                ->where('rd.po_keluar_id', $poId)
-                ->orWhere('dmm.po_keluar_id', $poId)
-            ->groupEnd()
-            ->countAllResults() > 0;
-        if (!$hasRetur && (!$this->db->tableExists('retur_produk_detail') || $this->db->table('retur_produk_detail')->where('po_keluar_id', $poId)->countAllResults() === 0)) return false;
+        $hasRetur = false;
+        if ($this->db->tableExists('retur_material_detail')) {
+            $hasRetur = $this->db->table('retur_material_detail rd')
+                ->join('detail_materialmasuk dmm', 'dmm.id = rd.material_masuk_detail_id', 'left')
+                ->groupStart()->where('rd.po_keluar_id', $poId)->orWhere('dmm.po_keluar_id', $poId)->groupEnd()
+                ->countAllResults() > 0;
+        }
+        if (!$hasRetur && $this->db->tableExists('retur_produk_detail')) {
+            $hasRetur = $this->db->table('retur_produk_detail')->where('po_keluar_id', $poId)->countAllResults() > 0;
+        }
+        if (!$hasRetur) return false;
         $ng = $this->getNgQtyByPoItem($poId);
         $replacement = $this->getReplacementQtyByPoItem($poId);
         foreach ($ng as $kode => $qtyNg) {
@@ -782,20 +791,20 @@ class PoKeluar extends BaseController
 
     private function getNgQtyByPoItem(int $poId): array
     {
-        if ($poId <= 0 || !$this->db->tableExists('retur_material_detail')) {
+        if ($poId <= 0) {
             return [];
         }
 
-        $rows = $this->db->table('retur_material_detail rd')
-            ->select('dmm.detmatkode AS kode_item, SUM(rd.qty_retur) AS qty_ng', false)
-            ->join('detail_materialmasuk dmm', 'dmm.id = rd.material_masuk_detail_id', 'inner')
-            ->groupStart()->where('rd.po_keluar_id', $poId)->orWhere('dmm.po_keluar_id', $poId)->groupEnd()
-            ->groupBy('dmm.detmatkode')
-            ->get()->getResultArray();
-
         $result = [];
-        foreach ($rows as $row) {
-            $result[(string) $row['kode_item']] = (float) $row['qty_ng'];
+        if ($this->db->tableExists('retur_material_detail')) {
+            $rows = $this->db->table('retur_material_detail rd')
+                ->select('dmm.detmatkode AS kode_item, SUM(rd.qty_retur) AS qty_ng', false)
+                ->join('detail_materialmasuk dmm', 'dmm.id = rd.material_masuk_detail_id', 'inner')
+                ->groupStart()->where('rd.po_keluar_id', $poId)->orWhere('dmm.po_keluar_id', $poId)->groupEnd()
+                ->groupBy('dmm.detmatkode')->get()->getResultArray();
+            foreach ($rows as $row) {
+                $result[(string) $row['kode_item']] = (float) $row['qty_ng'];
+            }
         }
         if ($this->db->tableExists('retur_produk_detail')) {
             foreach ($this->db->table('retur_produk_detail')->select('kode_barang AS kode_item, SUM(qty_retur) AS qty_ng', false)->where('po_keluar_id', $poId)->groupBy('kode_barang')->get()->getResultArray() as $row) {
@@ -873,6 +882,45 @@ class PoKeluar extends BaseController
         return $usages;
     }
 
+    /**
+     * Retur NG dan penerimaan penggantinya saling terkait dengan stok serta
+     * histori PO. Setelah proses ini dimulai, PO tidak boleh dibatalkan atau
+     * dihapus karena akan meninggalkan data yang tidak seimbang.
+     */
+    private function poMemilikiProsesNg(int $poId): bool
+    {
+        if ($poId <= 0) {
+            return false;
+        }
+
+        if ($this->db->tableExists('retur_produk_detail')
+            && $this->db->table('retur_produk_detail')->where('po_keluar_id', $poId)->countAllResults() > 0) {
+            return true;
+        }
+
+        if ($this->db->tableExists('retur_material_detail')) {
+            $hasReturMaterial = $this->db->table('retur_material_detail rd')
+                ->join('detail_materialmasuk dmm', 'dmm.id = rd.material_masuk_detail_id', 'left')
+                ->groupStart()->where('rd.po_keluar_id', $poId)->orWhere('dmm.po_keluar_id', $poId)->groupEnd()
+                ->countAllResults() > 0;
+            if ($hasReturMaterial) {
+                return true;
+            }
+        }
+
+        if ($this->db->fieldExists('sumber', 'barangmasuk')
+            && $this->db->table('barangmasuk')->where('po_keluar_id', $poId)->where('sumber', 'retur_ng')->countAllResults() > 0) {
+            return true;
+        }
+
+        if ($this->db->fieldExists('sumber', 'materialmasuk')
+            && $this->db->table('materialmasuk')->where('po_keluar_id', $poId)->where('sumber', 'retur_ng')->countAllResults() > 0) {
+            return true;
+        }
+
+        return false;
+    }
+
     private function hitungStatusQtyPenerimaan(int $poKeluarId): string
     {
         $totals = $this->db->table('detail_po_keluar')
@@ -883,7 +931,12 @@ class PoKeluar extends BaseController
         $totalPesan = (float) ($totals['total_pesan'] ?? 0);
         $totalMasuk = (float) ($totals['total_masuk'] ?? 0);
         $ngQty = array_sum($this->getNgQtyByPoItem($poKeluarId));
-        $totalMasuk = max(0, $totalMasuk - $ngQty);
+        $replacementQty = array_sum($this->getReplacementQtyByPoItem($poKeluarId));
+        // Barang yang diretur NG mengurangi penerimaan efektif, sedangkan
+        // barang pengganti menambahkannya kembali. Penerimaan pengganti
+        // sengaja tidak menambah qty_masuk PO normal agar tidak melewati
+        // qty_pesan, sehingga harus diperhitungkan di sini.
+        $totalMasuk = max(0, $totalMasuk - $ngQty + $replacementQty);
 
         if ($totalMasuk <= 0) {
             return 'Belum Diterima';
@@ -944,6 +997,10 @@ class PoKeluar extends BaseController
             return redirect()->to('/poKeluar/data')->with('error', 'PO Keluar tidak ditemukan.');
         }
 
+        if ($this->poMemilikiProsesNg($id)) {
+            return redirect()->to('/poKeluar/data')->with('error', 'PO Keluar tidak dapat dibatalkan karena sudah memiliki proses Retur NG atau penerimaan pengganti NG.');
+        }
+
         $this->poModel->update($id, ['status' => 'DIBATALKAN']);
         return redirect()->to('/poKeluar/data')->with('message', 'PO Keluar berhasil dibatalkan.');
     }
@@ -963,6 +1020,10 @@ class PoKeluar extends BaseController
 
         if ($po['status'] !== 'DIBATALKAN') {
             return redirect()->to('/poKeluar/data')->with('error', 'Hanya PO Keluar berstatus DIBATALKAN yang bisa dihapus.');
+        }
+
+        if ($this->poMemilikiProsesNg($id)) {
+            return redirect()->to('/poKeluar/data')->with('error', 'PO Keluar tidak dapat dihapus karena sudah memiliki proses Retur NG atau penerimaan pengganti NG.');
         }
 
         $punyaPenerimaan = $this->db->table('materialmasuk')->where('po_keluar_id', $id)->countAllResults() > 0

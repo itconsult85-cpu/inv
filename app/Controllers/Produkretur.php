@@ -4,6 +4,24 @@ namespace App\Controllers;
 
 class Produkretur extends BaseController
 {
+    private function qtyPenggantiProduk(int $poId, string $kodeBarang): float
+    {
+        $db = db_connect();
+        if ($poId <= 0 || !$db->fieldExists('sumber', 'barangmasuk')) {
+            return 0.0;
+        }
+
+        $row = $db->table('detail_barangmasuk d')
+            ->selectSum('d.detjml', 'qty_pengganti')
+            ->join('barangmasuk bm', 'bm.faktur = d.detfaktur')
+            ->where('bm.po_keluar_id', $poId)
+            ->where('bm.sumber', 'retur_ng')
+            ->where('d.detbrgkode', $kodeBarang)
+            ->get()->getRowArray();
+
+        return (float) ($row['qty_pengganti'] ?? 0);
+    }
+
     private function headerByToken(string $token): ?array
     {
         $faktur = \App\Libraries\PublicId::decode($token, 'barangmasuk-faktur');
@@ -56,6 +74,23 @@ class Produkretur extends BaseController
             ->join('detail_barangmasuk d', 'd.id = rd.barang_masuk_detail_id')
             ->where('r.barang_masuk_faktur', $header['faktur'])
             ->orderBy('rd.id', 'DESC')->get()->getResultArray();
+        $replacementByItem = [];
+        if ($db->fieldExists('sumber', 'barangmasuk') && $header['po_keluar_id']) {
+            foreach ($db->table('detail_barangmasuk d')
+                ->select('d.detbrgkode, SUM(d.detjml) AS qty_pengganti', false)
+                ->join('barangmasuk bm', 'bm.faktur = d.detfaktur')
+                ->where('bm.po_keluar_id', (int) $header['po_keluar_id'])
+                ->where('bm.sumber', 'retur_ng')
+                ->groupBy('d.detbrgkode')->get()->getResultArray() as $replacement) {
+                $replacementByItem[(string) $replacement['detbrgkode']] = (float) $replacement['qty_pengganti'];
+            }
+        }
+        foreach ($returns as &$return) {
+            $qtyPengganti = $replacementByItem[(string) $return['kode_barang']] ?? 0;
+            $return['qty_pengganti'] = $qtyPengganti;
+            $return['sisa_ng'] = max(0, (float) $return['qty_retur'] - $qtyPengganti);
+        }
+        unset($return);
         return view('produkretur/manage', ['header' => $header, 'returns' => $returns]);
     }
 
@@ -72,6 +107,10 @@ class Produkretur extends BaseController
             ->join('detail_barangmasuk d', 'd.id=rd.barang_masuk_detail_id')
             ->where('rd.id', $id)->get()->getRowArray();
         if (!$row) return redirect()->back()->with('error', 'Detail retur produk tidak ditemukan.');
+        $poId = (int) $row['po_keluar_id'];
+        if ($this->qtyPenggantiProduk($poId, (string) $row['source_kode']) > 0.000001) {
+            return redirect()->back()->with('error', 'Retur Produk NG tidak dapat diedit atau dibatalkan karena produk penggantinya sudah diterima.');
+        }
         $selisih = $qtyBaru - (float) $row['qty_retur'];
         if ($qtyBaru > (float) $row['detjml'] + 0.000001) return redirect()->back()->with('error', 'Qty retur melebihi Qty produk masuk.');
         $db->transStart();
@@ -82,7 +121,6 @@ class Produkretur extends BaseController
         elseif ($selisih < 0) $db->table('stok')->where('id', (int) $stok['id'])->set('stok', 'stok + ' . abs($selisih), false)->update();
         if ($qtyBaru <= 0) $db->table('retur_produk_detail')->where('id', $id)->delete();
         else $db->table('retur_produk_detail')->where('id', $id)->update(['qty_retur' => $qtyBaru, 'keterangan' => $ket]);
-        $poId = (int) $row['po_keluar_id'];
         $db->transComplete();
         if ($db->transStatus() === false) return redirect()->back()->with('error', 'Koreksi retur produk gagal disimpan.');
         if ($poId > 0) (new PoKeluar())->refreshStatusAfterReplacement($poId);

@@ -75,6 +75,26 @@ $fscmSummary = $fscm_summary ?? [
     'nilai_total' => 0,
     'due_dates' => [],
 ];
+$fscmDuePeriod = $fscm_due_period ?? [
+    'month' => date('Y-m'),
+    'start_date' => date('Y-m-01'),
+    'end_date' => date('Y-m-d', strtotime('+2 months last day of this month')),
+    'label' => date('M Y') . ' - ' . date('M Y', strtotime('+2 months')),
+];
+$fscmDueChartData = [
+    'labels' => array_map(
+        static fn(array $due): string => date('d-m-Y', strtotime((string) ($due['due_date'] ?? ''))),
+        $fscmSummary['due_dates'] ?? []
+    ),
+    'values' => array_map(
+        static fn(array $due): float => (float) ($due['chart_amount'] ?? $due['amount'] ?? 0),
+        $fscmSummary['due_dates'] ?? []
+    ),
+    'months' => array_map(
+        static fn(array $due): string => (string) ($due['month'] ?? substr((string) ($due['due_date'] ?? ''), 0, 7)),
+        $fscmSummary['due_dates'] ?? []
+    ),
+];
 ?>
 
 <style>
@@ -474,13 +494,118 @@ $fscmSummary = $fscm_summary ?? [
         padding: 1rem 1.15rem;
     }
 
-    .fscm-summary-card .tre-stat-label { color: #147a91; }
-    .fscm-summary-card .tre-stat-value { font-size: 1.18rem; }
-    .fscm-summary-card .tre-stat-hint { color: #64748b; }
-    .fscm-due-card { grid-column: 1 / -1; }
-    .fscm-due-table { margin-bottom: 0; }
-    .fscm-due-table th { background: #f8fafc; color: #334155; font-size: .82rem; }
-    .fscm-due-table td { color: #475569; font-size: .86rem; vertical-align: middle; }
+    .fscm-summary-card .tre-stat-label {
+        color: #147a91;
+    }
+
+    .fscm-summary-card .tre-stat-value {
+        font-size: 1.18rem;
+    }
+
+    .fscm-summary-card .tre-stat-hint {
+        color: #64748b;
+    }
+
+    .fscm-due-panels {
+        grid-column: 1 / -1;
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 1.15rem;
+        align-items: stretch;
+    }
+
+    .fscm-due-panels>.payroll-style-card {
+        min-width: 0;
+        height: 100%;
+    }
+
+    .fscm-due-table {
+        margin-bottom: 0;
+    }
+
+    .fscm-due-table th {
+        background: #f8fafc;
+        color: #334155;
+        font-size: .82rem;
+    }
+
+    .fscm-due-table td {
+        color: #475569;
+        font-size: .86rem;
+        vertical-align: middle;
+    }
+
+    .fscm-due-chart-frame {
+        height: 20rem;
+        position: relative;
+    }
+
+    .fscm-due-chart-frame canvas {
+        height: 100% !important;
+        width: 100% !important;
+    }
+
+    .fscm-due-chart-empty {
+        align-items: center;
+        color: #94a3b8;
+        display: none;
+        height: 100%;
+        justify-content: center;
+        position: absolute;
+        text-align: center;
+        width: 100%;
+    }
+
+    .fscm-due-month-form {
+        align-items: center;
+        display: flex;
+        gap: .4rem;
+    }
+
+    .fscm-due-month-form label {
+        color: #64748b;
+        font-size: .75rem;
+        margin: 0;
+    }
+
+    .fscm-due-month-form input {
+        border: 1px solid #dbe5ec;
+        border-radius: 7px;
+        color: #475569;
+        font-size: .78rem;
+        padding: .2rem .35rem;
+    }
+
+    .fscm-due-month-form button {
+        background: #147a91;
+        border: 0;
+        border-radius: 7px;
+        color: #fff;
+        font-size: .78rem;
+        padding: .25rem .5rem;
+    }
+
+    .fscm-month-legend {
+        display: flex;
+        flex-wrap: wrap;
+        gap: .45rem .8rem;
+        margin-top: .6rem;
+    }
+
+    .fscm-month-legend-item {
+        align-items: center;
+        color: #64748b;
+        display: inline-flex;
+        font-size: .75rem;
+        gap: .3rem;
+    }
+
+    .fscm-month-legend-dot {
+        border-radius: 50%;
+        display: inline-block;
+        height: .55rem;
+        width: .55rem;
+    }
 
     @media (max-width: 1200px) {
         .tre-stat-grid {
@@ -499,9 +624,14 @@ $fscmSummary = $fscm_summary ?? [
         .fscm-dashboard-grid {
             grid-template-columns: repeat(2, minmax(0, 1fr));
         }
+
+        .fscm-due-panels {
+            grid-template-columns: 1fr;
+        }
     }
 
     @media (max-width: 768px) {
+
         .tre-stat-grid,
         .dashboard-charts,
         .fscm-dashboard-grid {
@@ -554,11 +684,13 @@ $fscmSummary = $fscm_summary ?? [
                     <div class="tre-period-control">
                         <div class="tre-period-field">
                             <div class="tre-period-field-label">Tanggal Awal</div>
-                            <input type="date" class="tre-period-input" name="start_date" value="<?= $isAllTimePeriod ? '' : esc($dashboardPeriod['start_date']) ?>">
+                            <input type="date" class="tre-period-input" name="start_date"
+                                value="<?= $isAllTimePeriod ? '' : esc($dashboardPeriod['start_date']) ?>">
                         </div>
                         <div class="tre-period-field">
                             <div class="tre-period-field-label">Tanggal Akhir</div>
-                            <input type="date" class="tre-period-input" name="end_date" value="<?= $isAllTimePeriod ? '' : esc($dashboardPeriod['end_date']) ?>">
+                            <input type="date" class="tre-period-input" name="end_date"
+                                value="<?= $isAllTimePeriod ? '' : esc($dashboardPeriod['end_date']) ?>">
                         </div>
                         <div class="tre-period-actions">
                             <button type="submit" class="tre-period-submit" title="Terapkan periode">
@@ -595,7 +727,8 @@ $fscmSummary = $fscm_summary ?? [
             <div class="tre-stat-content">
                 <div class="tre-stat-label">PO In Berjalan</div>
                 <div class="tre-stat-value"><?= number_format($poInSummary['berjalan'], 0, ',', '.') ?></div>
-                <button type="button" class="tre-stat-link" id="poInBerjalanToggle" aria-controls="po-in-berjalan-list" aria-expanded="false">
+                <button type="button" class="tre-stat-link" id="poInBerjalanToggle" aria-controls="po-in-berjalan-list"
+                    aria-expanded="false">
                     <span id="poInBerjalanText">Lihat daftar berjalan</span>
                     <i class="fa fa-chevron-down"></i>
                 </button>
@@ -613,8 +746,10 @@ $fscmSummary = $fscm_summary ?? [
             <div class="tre-stat-icon"><i class="fas fa-exclamation-triangle"></i></div>
             <div class="tre-stat-content">
                 <div class="tre-stat-label">Produk Perlu Restok</div>
-                <div class="tre-stat-value"><?= number_format($inventorySummary['produk_perlu_restok'], 0, ',', '.') ?></div>
-                <button type="button" class="tre-stat-link" id="productRestockToggle" aria-controls="product-restock-list" aria-expanded="false">
+                <div class="tre-stat-value"><?= number_format($inventorySummary['produk_perlu_restok'], 0, ',', '.') ?>
+                </div>
+                <button type="button" class="tre-stat-link" id="productRestockToggle"
+                    aria-controls="product-restock-list" aria-expanded="false">
                     <span id="productRestockText">Lihat daftar restok</span>
                     <i class="fa fa-chevron-down"></i>
                 </button>
@@ -624,8 +759,10 @@ $fscmSummary = $fscm_summary ?? [
             <div class="tre-stat-icon"><i class="fas fa-tools"></i></div>
             <div class="tre-stat-content">
                 <div class="tre-stat-label">Material Perlu Restok</div>
-                <div class="tre-stat-value"><?= number_format($inventorySummary['material_perlu_restok'], 0, ',', '.') ?></div>
-                <button type="button" class="tre-stat-link" id="materialRestockToggle" aria-controls="material-restock-list" aria-expanded="false">
+                <div class="tre-stat-value">
+                    <?= number_format($inventorySummary['material_perlu_restok'], 0, ',', '.') ?></div>
+                <button type="button" class="tre-stat-link" id="materialRestockToggle"
+                    aria-controls="material-restock-list" aria-expanded="false">
                     <span id="materialRestockText">Lihat daftar restok</span>
                     <i class="fa fa-chevron-down"></i>
                 </button>
@@ -637,54 +774,105 @@ $fscmSummary = $fscm_summary ?? [
         <div class="fscm-summary-card">
             <div class="tre-stat-label">FSCM Surat Jalan Belum Ditagihkan</div>
             <div class="tre-stat-value"><?= number_format((int) $fscmSummary['surat_jalan_belum'], 0, ',', '.') ?></div>
-            <div class="tre-stat-hint">Sisa nilai: Rp <?= number_format((float) $fscmSummary['nilai_belum'], 0, ',', '.') ?></div>
+            <div class="tre-stat-hint">Sisa nilai: Rp
+                <?= number_format((float) $fscmSummary['nilai_belum'], 0, ',', '.') ?></div>
         </div>
         <div class="fscm-summary-card">
             <div class="tre-stat-label">FSCM Surat Jalan Sudah Ditagihkan</div>
             <div class="tre-stat-value"><?= number_format((int) $fscmSummary['surat_jalan_sudah'], 0, ',', '.') ?></div>
-            <div class="tre-stat-hint">Nilai tertagih: Rp <?= number_format((float) $fscmSummary['nilai_sudah'], 0, ',', '.') ?></div>
+            <div class="tre-stat-hint">Nilai tertagih: Rp
+                <?= number_format((float) $fscmSummary['nilai_sudah'], 0, ',', '.') ?></div>
         </div>
         <div class="fscm-summary-card">
             <div class="tre-stat-label">Total Nilai Surat Jalan FSCM</div>
             <div class="tre-stat-value">Rp <?= number_format((float) $fscmSummary['nilai_total'], 0, ',', '.') ?></div>
-            <div class="tre-stat-hint"><?= number_format((int) $fscmSummary['surat_jalan_total'], 0, ',', '.') ?> surat jalan unik pada periode</div>
+            <div class="tre-stat-hint"><?= number_format((int) $fscmSummary['surat_jalan_total'], 0, ',', '.') ?> surat
+                jalan unik pada periode</div>
         </div>
 
-        <section class="payroll-style-card fscm-due-card">
-            <div class="payroll-style-header">
-                <div>
-                    <h3 class="payroll-style-title">Due Date Invoice FSCM</h3>
-                    <span class="payroll-style-note">Sisa tagihan aktif berdasarkan jatuh tempo bulan berikutnya</span>
+        <div class="fscm-due-panels">
+            <section class="payroll-style-card fscm-due-card">
+                <div class="payroll-style-header">
+                    <div>
+                        <h3 class="payroll-style-title">Due Date Invoice FSCM</h3>
+                        <span class="payroll-style-note">Invoice FSCM dan sisa tagihan berdasarkan jatuh tempo</span>
+                    </div>
+                    <span class="payroll-style-note">Tanggal 15 / 25</span>
                 </div>
-                <span class="payroll-style-note">Tanggal 15 / 25</span>
-            </div>
-            <div class="payroll-style-body">
-                <div class="table-responsive">
-                    <table class="table table-sm table-bordered fscm-due-table">
-                        <thead>
-                            <tr>
-                                <th>Due Date</th>
-                                <th class="text-center">Jumlah Invoice</th>
-                                <th class="text-right">Total Tagihan</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php if (empty($fscmSummary['due_dates'])) : ?>
-                                <tr><td colspan="3" class="text-center text-muted">Tidak ada invoice FSCM aktif yang memiliki sisa tagihan.</td></tr>
-                            <?php else : ?>
-                                <?php foreach ($fscmSummary['due_dates'] as $due) : ?>
+                <div class="payroll-style-body">
+                    <div class="table-responsive">
+                        <table class="table table-sm table-bordered fscm-due-table">
+                            <thead>
+                                <tr>
+                                    <th>Due Date</th>
+                                    <th class="text-center">Jumlah Invoice</th>
+                                    <th class="text-right">Total Tagihan</th>
+                                    <th class="text-center">Status Pembayaran</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php if (empty($fscmSummary['due_dates'])) : ?>
                                     <tr>
-                                        <td><?= date('d-m-Y', strtotime($due['due_date'])) ?></td>
-                                        <td class="text-center"><?= number_format((int) $due['invoice_count'], 0, ',', '.') ?></td>
-                                        <td class="text-right font-weight-bold">Rp <?= number_format((float) $due['amount'], 0, ',', '.') ?></td>
+                                        <td colspan="4" class="text-center text-muted">Tidak ada invoice FSCM aktif yang
+                                            memiliki sisa tagihan.</td>
                                     </tr>
-                                <?php endforeach ?>
-                            <?php endif ?>
-                        </tbody>
-                    </table>
+                                <?php else : ?>
+                                    <?php foreach ($fscmSummary['due_dates'] as $due) : ?>
+                                        <tr>
+                                            <td><?= date('d-m-Y', strtotime($due['due_date'])) ?></td>
+                                            <td class="text-center">
+                                                <?= number_format((int) $due['invoice_count'], 0, ',', '.') ?></td>
+                                            <td class="text-right font-weight-bold">Rp
+                                                <?= number_format((float) $due['amount'], 0, ',', '.') ?></td>
+                                            <td class="text-center">
+                                                <?php if (empty($due['statuses'])) : ?>
+                                                    <span class="text-muted">-</span>
+                                                <?php endif ?>
+                                                <?php foreach (($due['statuses'] ?? []) as $status => $statusCount) : ?>
+                                                    <?php
+                                                    $statusClass = $status === 'Lunas'
+                                                        ? 'success'
+                                                        : ($status === 'Dibayar Sebagian' ? 'warning' : 'secondary');
+                                                    ?>
+                                                    <span class="badge badge-<?= $statusClass ?> mr-1">
+                                                        <?= esc($status) ?><?= (count($due['statuses']) > 1 || $statusCount > 1) ? ' (' . (int) $statusCount . ')' : '' ?>
+                                                    </span>
+                                                <?php endforeach ?>
+                                            </td>
+                                        </tr>
+                                    <?php endforeach ?>
+                                <?php endif ?>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
-            </div>
-        </section>
+            </section>
+            <section class="payroll-style-card fscm-due-chart-card">
+                <div class="payroll-style-header">
+                    <div>
+                        <h3 class="payroll-style-title">Grafik Total Tagihan</h3>
+                        <span class="payroll-style-note">Total nilai invoice berdasarkan due date, termasuk yang sudah lunas</span>
+                    </div>
+                    <form class="fscm-due-month-form" method="get" action="<?= current_url() ?>">
+                        <?php if (!$isAllTimePeriod) : ?>
+                            <input type="hidden" name="start_date" value="<?= esc($dashboardPeriod['start_date']) ?>">
+                            <input type="hidden" name="end_date" value="<?= esc($dashboardPeriod['end_date']) ?>">
+                        <?php endif ?>
+                        <label for="fscmMonth">Mulai</label>
+                        <input type="month" id="fscmMonth" name="fscm_month"
+                            value="<?= esc($fscmDuePeriod['month']) ?>">
+                        <button type="submit" title="Tampilkan tiga bulan"><i class="fas fa-filter"></i></button>
+                    </form>
+                </div>
+                <div class="payroll-style-body">
+                    <div class="fscm-due-chart-frame">
+                        <canvas id="fscm-due-chart"></canvas>
+                        <div id="fscm-due-chart-empty" class="fscm-due-chart-empty">Belum ada data tagihan FSCM.</div>
+                    </div>
+                    <div id="fscm-month-legend" class="fscm-month-legend"></div>
+                </div>
+            </section>
+        </div>
     </section>
 
     <section class="payroll-style-card po-running-panel is-hidden" id="po-in-berjalan-list" aria-hidden="true">
@@ -729,9 +917,11 @@ $fscmSummary = $fscm_summary ?? [
                                 <td><?= esc($po['pelnama'] ?: '-') ?></td>
                                 <td class="text-right"><?= number_format((float) $po['total_qty'], 0, ',', '.') ?></td>
                                 <td class="text-right"><?= number_format((float) $po['total_kirim'], 0, ',', '.') ?></td>
-                                <td class="text-right text-danger font-weight-bold"><?= number_format((float) $po['sisa_qty'], 0, ',', '.') ?></td>
+                                <td class="text-right text-danger font-weight-bold">
+                                    <?= number_format((float) $po['sisa_qty'], 0, ',', '.') ?></td>
                                 <td class="text-center">
-                                    <a class="btn btn-sm btn-info" href="/po/progress/<?= sha1($po['nopo']) ?>" title="Lihat Progress">
+                                    <a class="btn btn-sm btn-info" href="/po/progress/<?= sha1($po['nopo']) ?>"
+                                        title="Lihat Progress">
                                         <i class="fa fa-eye"></i>
                                     </a>
                                 </td>
@@ -750,7 +940,9 @@ $fscmSummary = $fscm_summary ?? [
                 <span class="payroll-style-note">Kebutuhan PO periode <?= esc($periodLabel) ?></span>
             </div>
             <div>
-                <span class="payroll-style-note"><?= number_format($inventorySummary['produk_perlu_restok'], 0, ',', '.') ?> produk</span>
+                <span
+                    class="payroll-style-note"><?= number_format($inventorySummary['produk_perlu_restok'], 0, ',', '.') ?>
+                    produk</span>
                 <button type="button" class="po-running-toggle" id="productRestockClose" title="Tutup daftar">
                     <i class="fa fa-times"></i>
                 </button>
@@ -772,7 +964,8 @@ $fscmSummary = $fscm_summary ?? [
                     <tbody>
                         <?php if (empty($inventorySummary['list_produk_perlu_restok'])) : ?>
                             <tr>
-                                <td colspan="6" class="text-center text-muted">Tidak ada produk yang perlu restok pada periode ini.</td>
+                                <td colspan="6" class="text-center text-muted">Tidak ada produk yang perlu restok pada
+                                    periode ini.</td>
                             </tr>
                         <?php endif ?>
                         <?php foreach (($inventorySummary['list_produk_perlu_restok'] ?? []) as $index => $produk) : ?>
@@ -780,9 +973,12 @@ $fscmSummary = $fscm_summary ?? [
                                 <td class="text-center"><?= $index + 1 ?></td>
                                 <td><?= esc($produk['kode'] ?? '-') ?></td>
                                 <td><?= esc($produk['nama'] ?? '-') ?></td>
-                                <td class="text-right"><?= number_format((float) ($produk['sisa_po'] ?? 0), 0, ',', '.') ?></td>
-                                <td class="text-right"><?= number_format((float) ($produk['total_stok'] ?? 0), 0, ',', '.') ?></td>
-                                <td class="text-right text-danger font-weight-bold"><?= number_format((float) ($produk['kurang_stok'] ?? 0), 0, ',', '.') ?></td>
+                                <td class="text-right"><?= number_format((float) ($produk['sisa_po'] ?? 0), 0, ',', '.') ?>
+                                </td>
+                                <td class="text-right">
+                                    <?= number_format((float) ($produk['total_stok'] ?? 0), 0, ',', '.') ?></td>
+                                <td class="text-right text-danger font-weight-bold">
+                                    <?= number_format((float) ($produk['kurang_stok'] ?? 0), 0, ',', '.') ?></td>
                             </tr>
                         <?php endforeach ?>
                     </tbody>
@@ -798,7 +994,9 @@ $fscmSummary = $fscm_summary ?? [
                 <span class="payroll-style-note">Kebutuhan produksi PO periode <?= esc($periodLabel) ?></span>
             </div>
             <div>
-                <span class="payroll-style-note"><?= number_format($inventorySummary['material_perlu_restok'], 0, ',', '.') ?> material</span>
+                <span
+                    class="payroll-style-note"><?= number_format($inventorySummary['material_perlu_restok'], 0, ',', '.') ?>
+                    material</span>
                 <button type="button" class="po-running-toggle" id="materialRestockClose" title="Tutup daftar">
                     <i class="fa fa-times"></i>
                 </button>
@@ -820,7 +1018,8 @@ $fscmSummary = $fscm_summary ?? [
                     <tbody>
                         <?php if (empty($inventorySummary['list_material_perlu_restok'])) : ?>
                             <tr>
-                                <td colspan="6" class="text-center text-muted">Tidak ada material yang perlu restok pada periode ini.</td>
+                                <td colspan="6" class="text-center text-muted">Tidak ada material yang perlu restok pada
+                                    periode ini.</td>
                             </tr>
                         <?php endif ?>
                         <?php foreach (($inventorySummary['list_material_perlu_restok'] ?? []) as $index => $material) : ?>
@@ -828,9 +1027,12 @@ $fscmSummary = $fscm_summary ?? [
                                 <td class="text-center"><?= $index + 1 ?></td>
                                 <td><?= esc($material['kode'] ?? '-') ?></td>
                                 <td><?= esc($material['nama'] ?? '-') ?></td>
-                                <td class="text-right"><?= number_format((float) ($material['kebutuhan'] ?? 0), 2, ',', '.') ?></td>
-                                <td class="text-right"><?= number_format((float) ($material['total_stok'] ?? 0), 2, ',', '.') ?></td>
-                                <td class="text-right text-danger font-weight-bold"><?= number_format((float) ($material['kurang_stok'] ?? 0), 2, ',', '.') ?></td>
+                                <td class="text-right">
+                                    <?= number_format((float) ($material['kebutuhan'] ?? 0), 2, ',', '.') ?></td>
+                                <td class="text-right">
+                                    <?= number_format((float) ($material['total_stok'] ?? 0), 2, ',', '.') ?></td>
+                                <td class="text-right text-danger font-weight-bold">
+                                    <?= number_format((float) ($material['kurang_stok'] ?? 0), 2, ',', '.') ?></td>
                             </tr>
                         <?php endforeach ?>
                     </tbody>
@@ -854,9 +1056,12 @@ $fscmSummary = $fscm_summary ?? [
                     <div id="prod-chart-tooltip" class="payroll-chart-empty">Data Stok Belum Tersedia.</div>
                 </div>
                 <div class="payroll-legend">
-                    <span class="payroll-legend-item"><i class="payroll-legend-dot" style="background:#28a745"></i> Stok Aman</span>
-                    <span class="payroll-legend-item"><i class="payroll-legend-dot" style="background:#ffc107"></i> Stok Cukup</span>
-                    <span class="payroll-legend-item"><i class="payroll-legend-dot" style="background:#dc3545"></i> Stok Kurang</span>
+                    <span class="payroll-legend-item"><i class="payroll-legend-dot" style="background:#28a745"></i> Stok
+                        Aman</span>
+                    <span class="payroll-legend-item"><i class="payroll-legend-dot" style="background:#ffc107"></i> Stok
+                        Cukup</span>
+                    <span class="payroll-legend-item"><i class="payroll-legend-dot" style="background:#dc3545"></i> Stok
+                        Kurang</span>
                 </div>
             </div>
         </section>
@@ -875,9 +1080,12 @@ $fscmSummary = $fscm_summary ?? [
                     <div id="mat-chart-tooltip" class="payroll-chart-empty">Data Material Belum Tersedia.</div>
                 </div>
                 <div class="payroll-legend">
-                    <span class="payroll-legend-item"><i class="payroll-legend-dot" style="background:#28a745"></i> Stok Aman</span>
-                    <span class="payroll-legend-item"><i class="payroll-legend-dot" style="background:#ffc107"></i> Stok Cukup</span>
-                    <span class="payroll-legend-item"><i class="payroll-legend-dot" style="background:#dc3545"></i> Stok Kurang</span>
+                    <span class="payroll-legend-item"><i class="payroll-legend-dot" style="background:#28a745"></i> Stok
+                        Aman</span>
+                    <span class="payroll-legend-item"><i class="payroll-legend-dot" style="background:#ffc107"></i> Stok
+                        Cukup</span>
+                    <span class="payroll-legend-item"><i class="payroll-legend-dot" style="background:#dc3545"></i> Stok
+                        Kurang</span>
                 </div>
             </div>
         </section>
@@ -919,6 +1127,92 @@ $fscmSummary = $fscm_summary ?? [
 
     function formatDashboardNumber(value) {
         return Number(value || 0).toLocaleString('id-ID');
+    }
+
+    const fscmDueChartData = <?= json_encode($fscmDueChartData, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>;
+    const fscmDueChartCanvas = document.getElementById('fscm-due-chart');
+    const fscmDueChartEmpty = document.getElementById('fscm-due-chart-empty');
+    const fscmMonthLegend = document.getElementById('fscm-month-legend');
+    const fscmMonthPalette = ['#147a91', '#e08a2e', '#7b61a8', '#3c8d5a', '#c94c4c', '#3577a8'];
+    const fscmMonthNames = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September',
+        'Oktober', 'November', 'Desember'
+    ];
+    const fscmMonths = fscmDueChartData.months || [];
+    const fscmUniqueMonths = [...new Set(fscmMonths)];
+    const fscmMonthColorMap = {};
+    fscmUniqueMonths.forEach((month, index) => {
+        fscmMonthColorMap[month] = fscmMonthPalette[index % fscmMonthPalette.length];
+    });
+    const fscmBarColors = fscmMonths.map(month => fscmMonthColorMap[month] || fscmMonthPalette[0]);
+
+    if (fscmMonthLegend) {
+        fscmMonthLegend.innerHTML = fscmUniqueMonths.map(month => {
+            const [year, monthNumber] = month.split('-');
+            const monthLabel = `${fscmMonthNames[Number(monthNumber) - 1] || monthNumber} ${year}`;
+            return `<span class="fscm-month-legend-item"><i class="fscm-month-legend-dot" style="background:${fscmMonthColorMap[month]}"></i>${monthLabel}</span>`;
+        }).join('');
+    }
+
+    if (fscmDueChartCanvas && fscmDueChartEmpty) {
+        const hasFscmDueData = Array.isArray(fscmDueChartData.labels) && fscmDueChartData.labels.length > 0;
+        fscmDueChartCanvas.style.display = hasFscmDueData ? 'block' : 'none';
+        fscmDueChartEmpty.style.display = hasFscmDueData ? 'none' : 'flex';
+
+        if (hasFscmDueData) {
+            new Chart(fscmDueChartCanvas, {
+                type: 'line',
+                data: {
+                    labels: fscmDueChartData.labels,
+                    datasets: [{
+                        label: 'Total Tagihan',
+                        data: fscmDueChartData.values,
+                        backgroundColor: 'rgba(20, 122, 145, .12)',
+                        borderColor: '#147a91',
+                        borderWidth: 3,
+                        fill: true,
+                        tension: .35,
+                        pointBackgroundColor: fscmBarColors,
+                        pointBorderColor: '#fff',
+                        pointBorderWidth: 2,
+                        pointRadius: 5,
+                        pointHoverRadius: 7,
+                        segment: {
+                            borderColor: context => fscmBarColors[context.p0DataIndex] || '#147a91',
+                        },
+                    }],
+                },
+                options: {
+                    maintainAspectRatio: false,
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: context => ' Rp ' + formatDashboardNumber(context.parsed.y),
+                            },
+                        },
+                    },
+                    scales: {
+                        x: {
+                            grid: {
+                                display: false
+                            },
+                            ticks: dashboardChartTick,
+                        },
+                        y: {
+                            beginAtZero: true,
+                            grid: dashboardChartGrid,
+                            ticks: {
+                                ...dashboardChartTick,
+                                callback: value => 'Rp ' + formatDashboardNumber(value),
+                            },
+                        },
+                    },
+                },
+            });
+        }
     }
 
     function showDashboardEmptyState(chartData, canvasId, emptyId) {
@@ -965,31 +1259,29 @@ $fscmSummary = $fscm_summary ?? [
 
         return {
             labels: sourceData.labels || [],
-            datasets: [
-                {
-                    label: 'Stok Saat Ini',
-                    data: stockValues,
-                    movementData: movementValues,
-                    stockData: stockValues,
-                    minimalData: minimalValues,
-                    statusLabels: statusLabels,
-                    backgroundColor: colors,
-                    borderColor: colors,
-                    borderSkipped: false,
-                    borderWidth: 0,
-                    borderRadius: {
-                        topLeft: 10,
-                        topRight: 10,
-                        bottomLeft: 2,
-                        bottomRight: 2
-                    },
-                    barPercentage: .62,
-                    categoryPercentage: .7,
-                    hoverBackgroundColor: colors,
-                    maxBarThickness: 42,
-                    pointStyle: 'circle'
-                }
-            ]
+            datasets: [{
+                label: 'Stok Saat Ini',
+                data: stockValues,
+                movementData: movementValues,
+                stockData: stockValues,
+                minimalData: minimalValues,
+                statusLabels: statusLabels,
+                backgroundColor: colors,
+                borderColor: colors,
+                borderSkipped: false,
+                borderWidth: 0,
+                borderRadius: {
+                    topLeft: 10,
+                    topRight: 10,
+                    bottomLeft: 2,
+                    bottomRight: 2
+                },
+                barPercentage: .62,
+                categoryPercentage: .7,
+                hoverBackgroundColor: colors,
+                maxBarThickness: 42,
+                pointStyle: 'circle'
+            }]
         };
     }
 
@@ -1142,72 +1434,114 @@ $fscmSummary = $fscm_summary ?? [
 </script>
 
 <?php if (service('request')->getGet('manual_preview') === 'dashboard') : ?>
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const tooltipItems = [
-            ['.tre-area-period-filter', 'Filter periode dashboard. Dipakai untuk mengatur tanggal awal dan akhir laporan transaksi yang ingin dilihat.'],
-            ['input[name="start_date"].tre-period-input', 'Tanggal awal periode laporan dashboard. Kosongkan kalau ingin melihat semua data.'],
-            ['input[name="end_date"].tre-period-input', 'Tanggal akhir periode laporan dashboard. Dashboard akan menghitung transaksi sampai tanggal ini.'],
-            ['.tre-period-submit', 'Terapkan filter periode agar ringkasan PO dan transaksi mengikuti tanggal yang dipilih.'],
-            ['.tre-period-reset', 'Reset periode agar dashboard kembali menampilkan semua data tanpa batas tanggal.'],
-            ['.tre-area-total-product', 'Total jenis produk yang sudah terdaftar di master produk. Angka ini tidak mengikuti filter periode.'],
-            ['.tre-area-total-material', 'Total jenis material yang sudah terdaftar di master material. Angka ini tidak mengikuti filter periode.'],
-            ['.tre-area-po-running', 'Jumlah PO masuk yang masih berjalan atau belum terkirim penuh pada periode yang dipilih.'],
-            ['#poInBerjalanToggle', 'Buka daftar rincian PO masuk yang masih berjalan.'],
-            ['.tre-area-po-done', 'Jumlah PO masuk yang sudah selesai terkirim penuh pada periode yang dipilih.'],
-            ['.tre-area-product-restock', 'Produk yang stoknya kurang dibanding kebutuhan PO, sehingga perlu disiapkan atau diproduksi lagi.'],
-            ['#productRestockToggle', 'Buka daftar produk yang perlu restok beserta sisa PO, stok, dan jumlah kekurangannya.'],
-            ['.tre-area-material-restock', 'Material yang stoknya kurang dibanding kebutuhan produksi dari PO, sehingga perlu restok.'],
-            ['#materialRestockToggle', 'Buka daftar material yang perlu restok beserta kebutuhan, stok, dan jumlah kekurangannya.'],
-            ['#po-in-berjalan-list', 'Daftar rincian PO masuk yang masih berjalan, termasuk qty PO, terkirim, dan sisa yang belum terkirim.'],
-            ['#poInBerjalanClose', 'Tutup daftar PO masuk berjalan.'],
-            ['#product-restock-list', 'Daftar produk yang perlu restok berdasarkan sisa PO dan stok produk saat ini.'],
-            ['#productRestockClose', 'Tutup daftar produk perlu restok.'],
-            ['#material-restock-list', 'Daftar material yang perlu restok berdasarkan kebutuhan produksi dan stok material saat ini.'],
-            ['#materialRestockClose', 'Tutup daftar material perlu restok.'],
-            ['.tre-area-product-chart', 'Grafik top 5 pergerakan stok produk terhadap batas minimal stok. Warna menunjukkan status aman, cukup, atau kurang.'],
-            ['#prod-stok-chart', 'Bar grafik produk. Tinggi bar menunjukkan jumlah stok saat ini dibanding batas minimal stok.'],
-            ['.tre-area-material-chart', 'Grafik top 5 pergerakan stok material terhadap batas minimal stok. Warna menunjukkan status aman, cukup, atau kurang.'],
-            ['#mat-stok-chart', 'Bar grafik material. Tinggi bar menunjukkan jumlah stok material saat ini dibanding batas minimal stok.'],
-            ['.payroll-legend', 'Keterangan warna grafik: hijau stok aman, kuning stok cukup, merah stok kurang.']
-        ];
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const tooltipItems = [
+                ['.tre-area-period-filter',
+                    'Filter periode dashboard. Dipakai untuk mengatur tanggal awal dan akhir laporan transaksi yang ingin dilihat.'
+                ],
+                ['input[name="start_date"].tre-period-input',
+                    'Tanggal awal periode laporan dashboard. Kosongkan kalau ingin melihat semua data.'
+                ],
+                ['input[name="end_date"].tre-period-input',
+                    'Tanggal akhir periode laporan dashboard. Dashboard akan menghitung transaksi sampai tanggal ini.'
+                ],
+                ['.tre-period-submit',
+                    'Terapkan filter periode agar ringkasan PO dan transaksi mengikuti tanggal yang dipilih.'
+                ],
+                ['.tre-period-reset',
+                    'Reset periode agar dashboard kembali menampilkan semua data tanpa batas tanggal.'
+                ],
+                ['.tre-area-total-product',
+                    'Total jenis produk yang sudah terdaftar di master produk. Angka ini tidak mengikuti filter periode.'
+                ],
+                ['.tre-area-total-material',
+                    'Total jenis material yang sudah terdaftar di master material. Angka ini tidak mengikuti filter periode.'
+                ],
+                ['.tre-area-po-running',
+                    'Jumlah PO masuk yang masih berjalan atau belum terkirim penuh pada periode yang dipilih.'
+                ],
+                ['#poInBerjalanToggle', 'Buka daftar rincian PO masuk yang masih berjalan.'],
+                ['.tre-area-po-done',
+                    'Jumlah PO masuk yang sudah selesai terkirim penuh pada periode yang dipilih.'
+                ],
+                ['.tre-area-product-restock',
+                    'Produk yang stoknya kurang dibanding kebutuhan PO, sehingga perlu disiapkan atau diproduksi lagi.'
+                ],
+                ['#productRestockToggle',
+                    'Buka daftar produk yang perlu restok beserta sisa PO, stok, dan jumlah kekurangannya.'
+                ],
+                ['.tre-area-material-restock',
+                    'Material yang stoknya kurang dibanding kebutuhan produksi dari PO, sehingga perlu restok.'
+                ],
+                ['#materialRestockToggle',
+                    'Buka daftar material yang perlu restok beserta kebutuhan, stok, dan jumlah kekurangannya.'
+                ],
+                ['#po-in-berjalan-list',
+                    'Daftar rincian PO masuk yang masih berjalan, termasuk qty PO, terkirim, dan sisa yang belum terkirim.'
+                ],
+                ['#poInBerjalanClose', 'Tutup daftar PO masuk berjalan.'],
+                ['#product-restock-list',
+                    'Daftar produk yang perlu restok berdasarkan sisa PO dan stok produk saat ini.'
+                ],
+                ['#productRestockClose', 'Tutup daftar produk perlu restok.'],
+                ['#material-restock-list',
+                    'Daftar material yang perlu restok berdasarkan kebutuhan produksi dan stok material saat ini.'
+                ],
+                ['#materialRestockClose', 'Tutup daftar material perlu restok.'],
+                ['.tre-area-product-chart',
+                    'Grafik top 5 pergerakan stok produk terhadap batas minimal stok. Warna menunjukkan status aman, cukup, atau kurang.'
+                ],
+                ['#prod-stok-chart',
+                    'Bar grafik produk. Tinggi bar menunjukkan jumlah stok saat ini dibanding batas minimal stok.'
+                ],
+                ['.tre-area-material-chart',
+                    'Grafik top 5 pergerakan stok material terhadap batas minimal stok. Warna menunjukkan status aman, cukup, atau kurang.'
+                ],
+                ['#mat-stok-chart',
+                    'Bar grafik material. Tinggi bar menunjukkan jumlah stok material saat ini dibanding batas minimal stok.'
+                ],
+                ['.payroll-legend',
+                    'Keterangan warna grafik: hijau stok aman, kuning stok cukup, merah stok kurang.'
+                ]
+            ];
 
-        const tooltip = document.createElement('div');
-        tooltip.className = 'manual-dashboard-tooltip';
-        document.body.appendChild(tooltip);
+            const tooltip = document.createElement('div');
+            tooltip.className = 'manual-dashboard-tooltip';
+            document.body.appendChild(tooltip);
 
-        function moveTooltip(event) {
-            const padding = 14;
-            const width = tooltip.offsetWidth || 280;
-            const height = tooltip.offsetHeight || 70;
-            let left = event.clientX + 14;
-            let top = event.clientY + 14;
+            function moveTooltip(event) {
+                const padding = 14;
+                const width = tooltip.offsetWidth || 280;
+                const height = tooltip.offsetHeight || 70;
+                let left = event.clientX + 14;
+                let top = event.clientY + 14;
 
-            if (left + width + padding > window.innerWidth) {
-                left = event.clientX - width - 14;
+                if (left + width + padding > window.innerWidth) {
+                    left = event.clientX - width - 14;
+                }
+                if (top + height + padding > window.innerHeight) {
+                    top = event.clientY - height - 14;
+                }
+
+                tooltip.style.left = Math.max(padding, left) + 'px';
+                tooltip.style.top = Math.max(padding, top) + 'px';
             }
-            if (top + height + padding > window.innerHeight) {
-                top = event.clientY - height - 14;
-            }
 
-            tooltip.style.left = Math.max(padding, left) + 'px';
-            tooltip.style.top = Math.max(padding, top) + 'px';
-        }
-
-        tooltipItems.forEach(function(item) {
-            document.querySelectorAll(item[0]).forEach(function(element) {
-                element.addEventListener('mouseenter', function(event) {
-                    tooltip.textContent = item[1];
-                    tooltip.classList.add('is-visible');
-                    moveTooltip(event);
-                });
-                element.addEventListener('mousemove', moveTooltip);
-                element.addEventListener('mouseleave', function() {
-                    tooltip.classList.remove('is-visible');
+            tooltipItems.forEach(function(item) {
+                document.querySelectorAll(item[0]).forEach(function(element) {
+                    element.addEventListener('mouseenter', function(event) {
+                        tooltip.textContent = item[1];
+                        tooltip.classList.add('is-visible');
+                        moveTooltip(event);
+                    });
+                    element.addEventListener('mousemove', moveTooltip);
+                    element.addEventListener('mouseleave', function() {
+                        tooltip.classList.remove('is-visible');
+                    });
                 });
             });
         });
-    });
-</script>
+    </script>
 <?php endif ?>
 <?= $this->endSection('isi') ?>

@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites>
+  <testsuite name="D:\xampp\htdocs\inv\phpunit.dist.xml" tests="7" assertions="13" errors="0" failures="0" skipped="0" time="0.105484">
+    <testsuite name="App" tests="7" assertions="13" errors="0" failures="0" skipped="0" time="0.105484">
+      <testsuite name="ExampleDatabaseTest" file="D:\xampp\htdocs\inv\tests\database\ExampleDatabaseTest.php" tests="2" assertions="3" errors="0" failures="0" skipped="0" time="0.082324">
+        <testcase name="testModelFindAll" file="D:\xampp\htdocs\inv\tests\database\ExampleDatabaseTest.php" line="17" class="ExampleDatabaseTest" classname="ExampleDatabaseTest" assertions="1" time="0.066297"/>
+        <testcase name="testSoftDeleteLeavesRow" file="D:\xampp\htdocs\inv\tests\database\ExampleDatabaseTest.php" line="28" class="ExampleDatabaseTest" classname="ExampleDatabaseTest" assertions="2" time="0.016027"/>
+      </testsuite>
+      <testsuite name="ExampleSessionTest" file="D:\xampp\htdocs\inv\tests\session\ExampleSessionTest.php" tests="1" assertions="1" errors="0" failures="0" skipped="0" time="0.001948">
+        <testcase name="testSessionSimple" file="D:\xampp\htdocs\inv\tests\session\ExampleSessionTest.php" line="10" class="ExampleSessionTest" classname="ExampleSessionTest" assertions="1" time="0.001948"/>
+      </testsuite>
+      <testsuite name="HealthTest" file="D:\xampp\htdocs\inv\tests\unit\HealthTest.php" tests="2" assertions="3" errors="0" failures="0" skipped="0" time="0.016875">
+        <testcase name="testIsDefinedAppPath" file="D:\xampp\htdocs\inv\tests\unit\HealthTest.php" line="12" class="HealthTest" classname="HealthTest" assertions="1" time="0.001876"/>
+        <testcase name="testBaseUrlHasBeenSet" file="D:\xampp\htdocs\inv\tests\unit\HealthTest.php" line="17" class="HealthTest" classname="HealthTest" assertions="2" time="0.014999"/>
+      </testsuite>
+      <testsuite name="InvoiceRupiahTest" file="D:\xampp\htdocs\inv\tests\unit\InvoiceRupiahTest.php" tests="2" assertions="6" errors="0" failures="0" skipped="0" time="0.004338">
+        <testcase name="testRoundHalfUpAndDownBelowHalf" file="D:\xampp\htdocs\inv\tests\unit\InvoiceRupiahTest.php" line="11" class="InvoiceRupiahTest" classname="InvoiceRupiahTest" assertions="3" time="0.002410"/>
+        <testcase name="testRemainingBalanceUsesRoundedRupiahAmounts" file="D:\xampp\htdocs\inv\tests\unit\InvoiceRupiahTest.php" line="18" class="InvoiceRupiahTest" classname="InvoiceRupiahTest" assertions="3" time="0.001928"/>
+      </testsuite>
+    </testsuite>
+  </testsuite>
+</testsuites>

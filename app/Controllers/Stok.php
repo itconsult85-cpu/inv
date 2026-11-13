@@ -38,6 +38,9 @@ class Stok extends BaseController
     {
         if ($this->request->isAJAX()) {
             $db = Database::connect();
+            $tglawal = trim((string) $this->request->getPost('tglawal'));
+            $tglakhir = trim((string) $this->request->getPost('tglakhir'));
+            $tanggalValid = static fn(string $tanggal): bool => (bool) preg_match('/^\d{4}-\d{2}-\d{2}$/', $tanggal);
             $stokCikarangSql = 'SUM(CASE WHEN stok.gudang = 1 THEN GREATEST(COALESCE(stok.stok, 0), 0) ELSE 0 END)';
             $stokCirebonSql = 'SUM(CASE WHEN stok.gudang = 2 THEN GREATEST(COALESCE(stok.stok, 0), 0) ELSE 0 END)';
             $totalStokSql = '(' . $stokCikarangSql . ' + ' . $stokCirebonSql . ')';
@@ -50,20 +53,35 @@ class Stok extends BaseController
             // `detkurang` (detqty - detkirim_awal - detkirim) yang udah jadi
             // acuan resmi di seluruh sistem (lihat Modeloutstand::sinkronByPo()).
             $qtyTerkirimSql = 'COALESCE(totalterkirim, 0)';
+            $poDateFilterSql = '';
+            if ($tanggalValid($tglawal) && $tanggalValid($tglakhir)) {
+                $tglawalSql = $db->escape($tglawal);
+                $tglakhirSql = $db->escape($tglakhir);
+                $poDateFilterSql = " AND dp.dettglpo >= {$tglawalSql} AND dp.dettglpo <= {$tglakhirSql}";
+                $qtyTerkirimSql = "COALESCE((
+                    SELECT SUM(dk.detjml)
+                    FROM detail_barangkeluar dk
+                    INNER JOIN barangkeluar bk ON bk.faktur = dk.detfaktur
+                    WHERE dk.detbrgkode = stok.kodebarang
+                      AND bk.tglfaktur >= {$tglawalSql}
+                      AND bk.tglfaktur <= {$tglakhirSql}
+                ), 0)";
+            }
             $sisaPoSql = 'GREATEST(COALESCE(totalsisa, 0), 0)';
             $builder = $db->table('stok')
                 ->select('stok.kodebarang, stok.material, stok.namabarang, stok.gudang, stok.idpel')
                 ->select($stokCikarangSql . ' AS totmascik', false)
                 ->select($stokCirebonSql . ' AS totmascir', false)
                 ->select($totalStokSql . ' AS totalstok', false)
-                ->join('(SELECT detkodebrg,
-                     SUM(detqty) as totalpo,
-                     SUM(COALESCE(detkirim_awal, 0) + COALESCE(detkirim, 0)) as totalterkirim,
-                     SUM(detkurang) as totalsisa
-                 FROM detail_po
-                 WHERE detkodebrg NOT IN (SELECT kodebarang FROM stok WHERE idpel IN (1, 2))
-                 AND detidpel NOT IN (1, 2)
-                 GROUP BY detkodebrg) detail_po', 'stok.kodebarang = detail_po.detkodebrg', 'left')
+                ->join("(SELECT dp.detkodebrg,
+                     SUM(CASE WHEN COALESCE(dp.detkurang, 0) > 0 THEN dp.detqty ELSE 0 END) as totalpo,
+                     SUM(COALESCE(dp.detkirim_awal, 0) + COALESCE(dp.detkirim, 0)) as totalterkirim,
+                     SUM(CASE WHEN COALESCE(dp.detkurang, 0) > 0 THEN dp.detkurang ELSE 0 END) as totalsisa
+                 FROM detail_po dp
+                 WHERE dp.detkodebrg NOT IN (SELECT kodebarang FROM stok WHERE idpel IN (1, 2))
+                 AND dp.detidpel NOT IN (1, 2)
+                 {$poDateFilterSql}
+                 GROUP BY dp.detkodebrg) detail_po", 'stok.kodebarang = detail_po.detkodebrg', 'left')
                 ->join('gudang', 'gudang.gdgid = stok.gudang', 'left')
                 ->join('material', 'material.matid = stok.material', 'left')
                 ->join('barang', 'barang.brgkode = stok.kodebarang', 'left')
@@ -145,6 +163,14 @@ class Stok extends BaseController
         $material = $this->request->getPost('material');
         $kategori = $this->request->getPost('kategori');
         $pelanggan_id = $this->request->getPost('pelanggan');
+        $bulan = trim((string) $this->request->getPost('bulan'));
+        $tglawal = trim((string) $this->request->getPost('tglawal'));
+        $tglakhir = trim((string) $this->request->getPost('tglakhir'));
+        if (preg_match('/^\d{4}-(0[1-9]|1[0-2])$/', $bulan) === 1) {
+            $tglawal = $bulan . '-01';
+            $tglakhir = (new \DateTimeImmutable($tglawal))->modify('last day of this month')->format('Y-m-d');
+        }
+        $tanggalValid = static fn(string $tanggal): bool => (bool) preg_match('/^\d{4}-\d{2}-\d{2}$/', $tanggal);
 
         $modelPelanggan = new ModelPelanggan();
         $pelanggan = $modelPelanggan->find($pelanggan_id);
@@ -159,6 +185,22 @@ class Stok extends BaseController
         $stokCikarangSql = 'SUM(CASE WHEN stok.gudang = 1 THEN GREATEST(COALESCE(stok.stok, 0), 0) ELSE 0 END)';
         $stokCirebonSql = 'SUM(CASE WHEN stok.gudang = 2 THEN GREATEST(COALESCE(stok.stok, 0), 0) ELSE 0 END)';
         $totalStokSql = '(' . $stokCikarangSql . ' + ' . $stokCirebonSql . ')';
+        $qtyTerkirimSql = 'COALESCE(detail_po.totalterkirim, 0)';
+        $sisaPoDetailSql = 'GREATEST(COALESCE(dp.detqty, 0) - COALESCE(dp.detkirim_awal, 0) - COALESCE(dp.detkirim, 0), 0)';
+        $poDateFilterSql = '';
+        if ($tanggalValid($tglawal) && $tanggalValid($tglakhir)) {
+            $tglawalSql = $db->escape($tglawal);
+            $tglakhirSql = $db->escape($tglakhir);
+            $poDateFilterSql = " AND dp.dettglpo >= {$tglawalSql} AND dp.dettglpo <= {$tglakhirSql}";
+            $qtyTerkirimSql = "COALESCE((
+                SELECT SUM(dk.detjml)
+                FROM detail_barangkeluar dk
+                INNER JOIN barangkeluar bk ON bk.faktur = dk.detfaktur
+                WHERE dk.detbrgkode = stok.kodebarang
+                  AND bk.tglfaktur >= {$tglawalSql}
+                  AND bk.tglfaktur <= {$tglakhirSql}
+            ), 0)";
+        }
 
         $builder = $db->table('stok')
             ->select('stok.kodebarang, stok.material, stok.namabarang, stok.gudang, stok.idpel')
@@ -166,17 +208,18 @@ class Stok extends BaseController
             ->select($stokCirebonSql . ' AS totmascir', false)
             ->select($totalStokSql . ' AS totalstok', false)
             ->select('COALESCE(detail_po.totalpo, 0) AS total_po')
-            ->select('COALESCE(detail_po.totalterkirim, 0) AS qty_terkirim')
+            ->select($qtyTerkirimSql . ' AS qty_terkirim', false)
             ->select('COALESCE(detail_po.totalsisa, 0) AS total_sisa')
             ->join('barang', 'barang.brgkode = stok.kodebarang', 'left')
-            ->join('(SELECT detkodebrg,
-                     SUM(detqty) as totalpo,
-                     SUM(COALESCE(detkirim_awal, 0) + COALESCE(detkirim, 0)) as totalterkirim,
-                     SUM(detkurang) as totalsisa
-                 FROM detail_po
-                 WHERE detkodebrg NOT IN (SELECT kodebarang FROM stok WHERE idpel IN (1, 2))
-                 AND detidpel NOT IN (1, 2)
-                 GROUP BY detkodebrg) detail_po', 'stok.kodebarang = detail_po.detkodebrg', 'left')
+            ->join("(SELECT dp.detkodebrg,
+                     SUM(CASE WHEN {$sisaPoDetailSql} > 0 THEN dp.detqty ELSE 0 END) as totalpo,
+                     SUM(COALESCE(dp.detkirim_awal, 0) + COALESCE(dp.detkirim, 0)) as totalterkirim,
+                     SUM({$sisaPoDetailSql}) as totalsisa
+                 FROM detail_po dp
+                 WHERE dp.detkodebrg NOT IN (SELECT kodebarang FROM stok WHERE idpel IN (1, 2))
+                 AND dp.detidpel NOT IN (1, 2)
+                 {$poDateFilterSql}
+                 GROUP BY dp.detkodebrg) detail_po", 'stok.kodebarang = detail_po.detkodebrg', 'left')
             ->groupBy('stok.kodebarang, stok.material, stok.idpel, detail_po.totalpo, detail_po.totalterkirim, detail_po.totalsisa');
 
         if ($material) {
@@ -213,7 +256,12 @@ class Stok extends BaseController
         }
 
 
-        return view('laporan/cetakLaporanStok', ['data' => $data, 'nama_pelanggan' => $nama_pelanggan]);
+        return view('laporan/cetakLaporanStok', [
+            'data' => $data,
+            'nama_pelanggan' => $nama_pelanggan,
+            'tglawal' => $tglawal,
+            'tglakhir' => $tglakhir,
+        ]);
 
         // $dompdf = new Dompdf();
         // $dompdf->set_option('isRemoteEnabled', true);

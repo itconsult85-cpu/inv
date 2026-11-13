@@ -3,6 +3,7 @@
 namespace App\Controllers;
 
 use App\Controllers\BaseController;
+use App\Libraries\InvoiceRupiah;
 use App\Models\ModelPelanggan;
 
 /**
@@ -380,7 +381,7 @@ class InvoiceHub extends BaseController
             ->where('status', 'AKTIF')
             ->where('invoice_date >=', $tglawal)
             ->where('invoice_date <=', $tglakhir)
-            ->where('grand_total > COALESCE(paid_total, 0)', null, false)
+            ->where('ROUND(grand_total) > ROUND(COALESCE(paid_total, 0))', null, false)
             ->orderBy('invoice_date', 'ASC')
             ->orderBy('id', 'ASC');
 
@@ -389,7 +390,7 @@ class InvoiceHub extends BaseController
         }
 
         return array_map(static function (array $row): array {
-            $row['sisa'] = max((float) $row['grand_total'] - (float) ($row['paid_total'] ?? 0), 0);
+            $row['sisa'] = InvoiceRupiah::remaining($row['grand_total'], $row['paid_total'] ?? 0);
             return $row;
         }, $builder->get()->getResultArray());
     }
@@ -501,13 +502,18 @@ class InvoiceHub extends BaseController
             $cursor = $cursor->modify('+1 month');
         }
 
+        // Kartu mingguan adalah omzet per surat jalan: gunakan tanggal
+        // surat jalan dari source_no, bukan tanggal pembuatan Invoice Out.
+        // Nominal tetap memakai nilai aktual Invoice Out agar partial billing
+        // dan perubahan harga invoice tidak mengubah alur perhitungan.
         $dailyBuilder = $db->table('invoice_out_detail iod')
-            ->select('DATE(io.invoice_date) AS tanggal, SUM(COALESCE(iod.amount, iod.qty * iod.unit_price, 0)) AS total', false)
+            ->select('DATE(bk.tglfaktur) AS tanggal, SUM(COALESCE(iod.amount, iod.qty * iod.unit_price, 0)) AS total', false)
             ->join('invoice_out io', 'io.id = iod.invoice_id')
+            ->join('barangkeluar bk', 'bk.faktur = iod.source_no')
             ->where('io.status', 'AKTIF')
-            ->where('io.invoice_date >=', $tglawal)
-            ->where('io.invoice_date <=', $tglakhir)
-            ->groupBy('DATE(io.invoice_date)', false);
+            ->where('bk.tglfaktur >=', $tglawal)
+            ->where('bk.tglfaktur <=', $tglakhir)
+            ->groupBy('DATE(bk.tglfaktur)', false);
         if ($pelanggan !== null) $dailyBuilder->where('io.customer_id', $pelanggan);
         $dailyTotals = [];
         foreach ($dailyBuilder->get()->getResultArray() as $row) {
@@ -580,7 +586,10 @@ class InvoiceHub extends BaseController
             $invoiceDate = (string) ($invoice['invoice_date'] ?? '');
             $timestamp = strtotime($invoiceDate);
             if (!$timestamp) continue;
-            $remaining = max((float) ($invoice['grand_total'] ?? 0) - (float) ($invoice['paid_total'] ?? 0), 0);
+            $remaining = InvoiceRupiah::remaining(
+                $invoice['grand_total'] ?? 0,
+                $invoice['paid_total'] ?? 0
+            );
             if ($remaining <= 0) continue;
             $dueDay = (int) date('j', $timestamp) <= 15 ? 15 : 25;
             $dueMonth = (new \DateTimeImmutable($invoiceDate))->modify('first day of next month');

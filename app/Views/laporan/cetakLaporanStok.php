@@ -34,9 +34,24 @@
         }
 
         @media print {
-            /* @page {
-                margin: 10mm;
-            } */
+            @page {
+                size: A4 landscape;
+                margin: 8mm;
+            }
+
+            .col-10 {
+                max-width: 100%;
+                width: 100%;
+            }
+
+            .table {
+                font-size: 9px;
+            }
+
+            .table td,
+            .table th {
+                padding: .25rem;
+            }
 
             .table th {
                 background-color: #e5e5e5 !important;
@@ -84,6 +99,16 @@
                 <!-- <td><strong>Pelanggan:</strong> <?= $nama_pelanggan ?></td> -->
                 <td><strong>Tanggal Cetak:</strong> <?= date('d-m-Y') ?></td>
             </tr>
+            <tr>
+                <td><strong>Periode PO &amp; QTY Terkirim:</strong>
+                    <?php if (!empty($tglawal) && !empty($tglakhir)) : ?>
+                        <?= date('d-m-Y', strtotime($tglawal)) ?> s/d <?= date('d-m-Y', strtotime($tglakhir)) ?>
+                    <?php else : ?>
+                        Seluruh data
+                    <?php endif; ?>
+                    <br><small>Qty PO awal pada baris yang masih outstanding dan Total Sisa PO Outstanding (saldo saat ini setelah seluruh pengiriman dikurangi) dibatasi berdasarkan tanggal PO pada periode terpilih. QTY Terkirim mengikuti tanggal surat jalan pada periode yang sama.</small>
+                </td>
+            </tr>
 
         </table>
     </div>
@@ -98,11 +123,11 @@
                     <tr>
                         <th style="width: 2%; text-align: center; vertical-align: middle;">No</th>
                         <th style="width: auto; text-align: center; vertical-align: middle;">Kode Barang</th>
-                        <!-- <th style="text-align: center; width: auto; vertical-align: middle;">Stok Cikarang (Pcs)</th> -->
-                        <!-- <th style="text-align: center; width: auto; vertical-align: middle;">Stok Cirebon (Pcs)</th> -->
+                        <th style="text-align: center; width: auto; vertical-align: middle;">Stok Cikarang (Pcs)</th>
+                        <th style="text-align: center; width: auto; vertical-align: middle;">Stok Cirebon (Pcs)</th>
                         <th style="text-align: center; width: auto; vertical-align: middle;">Total Stok (Pcs)</th>
-                        <th style="text-align: center; width: auto; vertical-align: middle;">Total PO</th>
-                        <th style="text-align: center; width: auto; vertical-align: middle;">Total Sisa PO</th>
+                        <th style="text-align: center; width: auto; vertical-align: middle;">Qty PO Awal pada Baris Outstanding (Pcs)</th>
+                        <th style="text-align: center; width: auto; vertical-align: middle;">Total Sisa PO Outstanding (Pcs)</th>
                         <th style="text-align: center; width: auto; vertical-align: middle;">QTY Terkirim (Pcs)</th>
                         <th style="text-align: center; width: auto; vertical-align: middle;">Belum Terkirim (Pcs)</th>
                         <th style="text-align: center; width: auto; vertical-align: middle;">Kekurangan Produksi (Pcs)</th>
@@ -122,8 +147,8 @@
                         <tr>
                             <td class="text-center"><?= $nomor++ ?></td>
                             <td class="text-center"><?= $row['kodebarang'] ?></td>
-                            <!-- <td class="text-right"><?= number_format($row['totmascik'], 0, ',', '.') ?></td> -->
-                            <!-- <td class="text-right"><?= number_format($row['totmascir'], 0, ',', '.') ?></td> -->
+                            <td class="text-right"><?= number_format($row['totmascik'] ?? 0, 0, ',', '.') ?></td>
+                            <td class="text-right"><?= number_format($row['totmascir'] ?? 0, 0, ',', '.') ?></td>
                             <td class="text-right"><?= number_format($row['totalstok'], 0, ',', '.') ?></td>
                             <td class="text-right"><?= number_format($row['total_po'], 0, ',', '.') ?></td>
                             <td class="text-right" style="color: <?= $row['color_kekurangan'] ?>"><?= number_format($row['total_sisa'] ?? $row['kekurangan'], 0, ',', '.') ?></td>

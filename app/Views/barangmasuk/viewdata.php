@@ -321,6 +321,18 @@ Data Produk Masuk
                     </div>
 
                     <div class="dpm-filter-section">
+                        <div class="dpm-filter-label">Periode PO &amp; QTY Terkirim</div>
+                        <div class="dpm-filter-chip-row mb-2">
+                            <button type="button" class="dpm-filter-chip" data-range="month">Bulan Berjalan</button>
+                        </div>
+                        <div class="dpm-filter-field-row">
+                            <input type="date" name="tglawal" id="tglawalStok" class="dpm-filter-date" aria-label="Tanggal awal periode PO dan QTY terkirim">
+                            <input type="date" name="tglakhir" id="tglakhirStok" class="dpm-filter-date" aria-label="Tanggal akhir periode PO dan QTY terkirim">
+                        </div>
+                        <small class="text-muted d-block mt-1">Sisa PO difilter berdasarkan tanggal PO; QTY Terkirim berdasarkan tanggal surat jalan.</small>
+                    </div>
+
+                    <div class="dpm-filter-section">
                         <div class="dpm-filter-label">Show Data</div>
                         <div class="dpm-filter-field-row">
                             <select id="stokPageLength" class="dpm-filter-select" aria-label="Show data">
@@ -335,6 +347,7 @@ Data Produk Masuk
                     <div class="dpm-filter-section">
                         <div class="dpm-filter-action-row">
                             <button type="submit" name="btnCetak" class="dpm-filter-apply"><i class="fa fa-print"></i> Cetak Laporan</button>
+                            <button type="button" class="dpm-filter-apply" id="stokTombolTampil">Tampilkan</button>
                             <button type="button" class="dpm-filter-reset" id="stokFilterReset">Reset</button>
                         </div>
                     </div>
@@ -350,7 +363,7 @@ Data Produk Masuk
                     <th style="vertical-align: middle;">Stok Cikarang (Pcs)</th>
                     <th style="vertical-align: middle;">Stok Cirebon (Pcs)</th>
                     <th style="vertical-align: middle;">Total Stok (Pcs)</th>
-                    <th style="vertical-align: middle;">Total Sisa PO</th>
+                    <th style="vertical-align: middle;">Total Sisa PO Outstanding (Pcs)</th>
                     <th style="vertical-align: middle;">QTY Terkirim (Pcs)</th>
                     <th style="vertical-align: middle;">Kekurangan Produksi (Pcs)</th>
                     <th style="vertical-align: middle;">Kelebihan Produksi (Pcs)</th>
@@ -613,6 +626,8 @@ Data Produk Masuk
                     d.kategori = $('#kategoriStok').val();
                     d.material = $('#materialStok').val();
                     d.pelanggan = $('#pelangganStok').val();
+                    d.tglawal = $('#tglawalStok').val();
+                    d.tglakhir = $('#tglakhirStok').val();
                     d[csrfToken] = csrfHash;
                 }
             },
@@ -722,7 +737,7 @@ Data Produk Masuk
                     className: 'text-center'
                 },
                 {
-                    data: 'faktur'
+                    data: 'nomor_po_tampil'
                 },
                 {
                     data: 'tglfaktur',
@@ -978,12 +993,22 @@ Data Produk Masuk
             }
 
             if (opts.tglawalId && opts.tglakhirId) {
-                const formatDateInput = (date) => date.toISOString().slice(0, 10);
+                const formatDateInput = (date) => {
+                    const year = date.getFullYear();
+                    const month = String(date.getMonth() + 1).padStart(2, '0');
+                    const day = String(date.getDate()).padStart(2, '0');
+                    return `${year}-${month}-${day}`;
+                };
                 panel.find('.dpm-filter-chip').on('click', function() {
-                    const days = Number($(this).data('range')) || 30;
                     const endDate = new Date();
-                    const startDate = new Date();
-                    startDate.setDate(endDate.getDate() - days);
+                    const range = String($(this).data('range') || '');
+                    const startDate = range === 'month'
+                        ? new Date(endDate.getFullYear(), endDate.getMonth(), 1)
+                        : new Date();
+                    if (range !== 'month') {
+                        const days = Number(range) || 30;
+                        startDate.setDate(endDate.getDate() - days);
+                    }
                     panel.find('.dpm-filter-chip').removeClass('is-active');
                     $(this).addClass('is-active');
                     $('#' + opts.tglawalId).val(formatDateInput(startDate));
@@ -1000,6 +1025,8 @@ Data Produk Masuk
             closeId: 'stokFilterClose',
             searchInputId: 'stokSearchInput',
             pageLengthId: 'stokPageLength',
+            tglawalId: 'tglawalStok',
+            tglakhirId: 'tglakhirStok',
             table: tableStok
         });
 
@@ -1050,12 +1077,21 @@ Data Produk Masuk
         <?php endif ?>
 
         $('#stokFilterReset').on('click', function() {
+            $('#kategoriStok').val('');
             $('#materialStok').val('');
             $('#pelangganStok').val('');
+            $('#tglawalStok').val('');
+            $('#tglakhirStok').val('');
+            $('#stokFilterPanel .dpm-filter-chip').removeClass('is-active');
             $('#stokPageLength').val('50');
             $('#stokSearchInput').val('');
             tableStok.search('').page.len(50);
             tableStok.ajax.reload();
+        });
+
+        $('#stokTombolTampil').on('click', function() {
+            tableStok.ajax.reload();
+            stokFilter.toggleFilterPanel(false);
         });
 
         $('#supplierFilterReset').on('click', function() {

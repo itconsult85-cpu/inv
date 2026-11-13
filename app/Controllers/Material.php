@@ -238,7 +238,7 @@ class Material extends BaseController
         $request['idmaterial'] = (int) $idDecoded;
         $validation = \Config\Services::validation();
         $modelMaterial = new Modelmaterial();
-        $cekId = $modelMaterial->cekId($request['idmaterial']);
+        $cekId = $modelMaterial->cekId(sha1((string) $request['idmaterial']));
 
         if ($cekId->getNumRows() === 0) {
             session()->setFlashdata('error', $this->generateAlert('danger', 'Gagal!', 'Data Material Tidak Ditemukan'));
@@ -297,7 +297,7 @@ class Material extends BaseController
 
         if (!$this->validate($rules)) {
             session()->setFlashdata('error', $this->generateAlert('danger', 'Error!', $validation->listErrors()));
-            return redirect()->to('/material/edit/' . $request['idmaterial']);
+            return redirect()->to('/material/edit/' . rawurlencode((string) $idToken));
         }
 
         if ($cekId->getNumRows() > 0) {

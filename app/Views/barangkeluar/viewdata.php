@@ -284,7 +284,7 @@ Pengiriman
                 <div class="pgr-search-shell">
                     <i class="fas fa-search"></i>
                     <input type="search" id="daftarSearchInput" class="pgr-search-input"
-                        placeholder="Search anything..." aria-label="Search anything">
+                        placeholder="Cari No. Surat Jalan, PO, atau nama/kode produk..." aria-label="Cari pengiriman atau produk">
                     <button type="button" class="pgr-filter-toggle" id="daftarFilterToggle" title="Buka filter"
                         aria-controls="daftarFilterPanel" aria-expanded="false">
                         <i class="fas fa-sliders-h"></i>
@@ -1005,7 +1005,7 @@ function editDokumenPengiriman(noDoHash) {
                 cancelButtonText: 'Tutup',
                 didOpen: () => {
                     const idTerpilih = () => $('.btb-item-checkbox:checked').map(function() {
-                        return parseInt(this.value, 10);
+                        return String(this.value);
                     }).get();
 
                     const tampilkanView = function() {
@@ -1385,6 +1385,42 @@ function hapusSuratJalan(hash) {
                 }
             });
         }
+    });
+}
+
+function hapusTransaksiSuratJalan(hash) {
+    showBootstrapModal({
+        title: 'Hapus Surat Jalan belum selesai?',
+        text: 'Surat jalan ini tidak memiliki rencana pengiriman. Detail akan dihapus dan stok yang terpotong akan dikembalikan. Lanjutkan?',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'Ya, hapus dan kembalikan stok'
+    }).then((result) => {
+        if (!result.isConfirmed) return;
+
+        $.ajax({
+            type: 'post',
+            url: '<?= site_url('barangkeluar/hapusTransaksi') ?>',
+            data: {
+                [csrfToken]: csrfHash,
+                faktur: hash
+            },
+            dataType: 'json',
+            success: function(response) {
+                if (response.error) {
+                    showBootstrapModal('Gagal', response.error, 'error');
+                    return;
+                }
+                showBootstrapModal('Berhasil', response.sukses, 'success');
+                tableDaftar.ajax.reload();
+                tableRiwayat.ajax.reload();
+            },
+            error: function(xhr, ajaxOptions, thrownError) {
+                showBootstrapModal('Error', xhr.status + '\n' + thrownError, 'error');
+            }
+        });
     });
 }
 
