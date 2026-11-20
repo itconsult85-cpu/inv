@@ -26,6 +26,37 @@ Data Produk Masuk
         z-index: 30;
     }
 
+    #tab-stok .dpm-toolbar {
+        align-items: center;
+        gap: 1rem;
+        justify-content: space-between;
+    }
+
+    .stok-filter-summary {
+        color: #374151;
+        flex: 1 1 auto;
+        min-width: 0;
+    }
+
+    .stok-filter-summary-title {
+        color: #334155;
+        font-size: .92rem;
+        font-weight: 700;
+        margin-bottom: .2rem;
+    }
+
+    .stok-filter-summary-title i {
+        color: #16869a;
+        margin-right: .35rem;
+    }
+
+    .stok-filter-summary-text {
+        color: #64748b;
+        font-size: .84rem;
+        line-height: 1.4;
+        overflow-wrap: anywhere;
+    }
+
     .dpm-filter-anchor {
         align-items: flex-end;
         display: flex;
@@ -47,7 +78,7 @@ Data Produk Masuk
         width: 100%;
     }
 
-    .dpm-search-shell > i {
+    .dpm-search-shell>i {
         color: #6b7280;
         font-size: 1.1rem;
     }
@@ -222,6 +253,16 @@ Data Produk Masuk
             justify-content: stretch;
         }
 
+        #tab-stok .dpm-toolbar {
+            align-items: stretch;
+            flex-direction: column;
+        }
+
+        #tab-stok .stok-filter-summary,
+        #tab-stok .dpm-filter-anchor {
+            width: 100%;
+        }
+
         .dpm-filter-anchor,
         .dpm-search-shell,
         .dpm-filter-panel {
@@ -277,11 +318,17 @@ Data Produk Masuk
 <div class="tab-content border border-top-0 p-3 mb-3">
     <div class="tab-pane fade show active" id="tab-stok" role="tabpanel">
         <div class="dpm-toolbar">
+            <div class="stok-filter-summary" role="status" aria-live="polite">
+                <div class="stok-filter-summary-title"><i class="fas fa-eye"></i>Data yang sedang ditampilkan</div>
+                <div class="stok-filter-summary-text" id="stokFilterSummaryText">Memuat ringkasan filter...</div>
+            </div>
             <div class="dpm-filter-anchor">
                 <div class="dpm-search-shell">
                     <i class="fas fa-search"></i>
-                    <input type="search" id="stokSearchInput" class="dpm-search-input" placeholder="Search anything..." aria-label="Search anything">
-                    <button type="button" class="dpm-filter-toggle" id="stokFilterToggle" title="Buka filter" aria-controls="stokFilterPanel" aria-expanded="false">
+                    <input type="search" id="stokSearchInput" class="dpm-search-input" placeholder="Search anything..."
+                        aria-label="Search anything">
+                    <button type="button" class="dpm-filter-toggle" id="stokFilterToggle" title="Buka filter"
+                        aria-controls="stokFilterPanel" aria-expanded="false">
                         <i class="fas fa-sliders-h"></i>
                     </button>
                 </div>
@@ -311,7 +358,8 @@ Data Produk Masuk
                                     <option value="<?= $material['matid'] ?>"><?= $material['matnama'] ?></option>
                                 <?php endforeach; ?>
                             </select>
-                            <select name="pelanggan" id="pelangganStok" class="dpm-filter-select" aria-label="Pelanggan">
+                            <select name="pelanggan" id="pelangganStok" class="dpm-filter-select"
+                                aria-label="Pelanggan">
                                 <option value="">Pilih Pelanggan</option>
                                 <?php foreach ($pelanggans as $pelanggan) : ?>
                                     <option value="<?= $pelanggan['pelid'] ?>"><?= $pelanggan['pelnama'] ?></option>
@@ -326,10 +374,21 @@ Data Produk Masuk
                             <button type="button" class="dpm-filter-chip" data-range="month">Bulan Berjalan</button>
                         </div>
                         <div class="dpm-filter-field-row">
-                            <input type="date" name="tglawal" id="tglawalStok" class="dpm-filter-date" aria-label="Tanggal awal periode PO dan QTY terkirim">
-                            <input type="date" name="tglakhir" id="tglakhirStok" class="dpm-filter-date" aria-label="Tanggal akhir periode PO dan QTY terkirim">
+                            <input type="date" name="tglawal" id="tglawalStok" class="dpm-filter-date"
+                                aria-label="Tanggal awal periode PO dan QTY terkirim">
+                            <input type="date" name="tglakhir" id="tglakhirStok" class="dpm-filter-date"
+                                aria-label="Tanggal akhir periode PO dan QTY terkirim">
                         </div>
-                        <small class="text-muted d-block mt-1">Sisa PO difilter berdasarkan tanggal PO; QTY Terkirim berdasarkan tanggal surat jalan.</small>
+                        <div class="dpm-filter-field-row mt-2">
+                            <select name="mode_po" id="modePoStok" class="dpm-filter-select"
+                                aria-label="Cakupan perhitungan PO">
+                                <option value="all">Semua PO (termasuk yang selesai)</option>
+                                <option value="open" selected>PO masih terbuka pada tanggal akhir</option>
+                            </select>
+                        </div>
+                        <small class="text-muted d-block mt-1">Jika rentang tanggal dipilih, pada mode PO terbuka Total PO = QTY Terkirim dalam periode + outstanding pada tanggal akhir.</small>
+                        <small class="text-muted d-block">Outstanding menggunakan pengiriman sampai tanggal akhir; QTY Terkirim
+                            menampilkan pengiriman dalam rentang tanggal.</small>
                     </div>
 
                     <div class="dpm-filter-section">
@@ -346,7 +405,8 @@ Data Produk Masuk
 
                     <div class="dpm-filter-section">
                         <div class="dpm-filter-action-row">
-                            <button type="submit" name="btnCetak" class="dpm-filter-apply"><i class="fa fa-print"></i> Cetak Laporan</button>
+                            <button type="submit" name="btnCetak" class="dpm-filter-apply"><i class="fa fa-print"></i>
+                                Cetak Laporan</button>
                             <button type="button" class="dpm-filter-apply" id="stokTombolTampil">Tampilkan</button>
                             <button type="button" class="dpm-filter-reset" id="stokFilterReset">Reset</button>
                         </div>
@@ -363,6 +423,7 @@ Data Produk Masuk
                     <th style="vertical-align: middle;">Stok Cikarang (Pcs)</th>
                     <th style="vertical-align: middle;">Stok Cirebon (Pcs)</th>
                     <th style="vertical-align: middle;">Total Stok (Pcs)</th>
+                    <th style="vertical-align: middle;">Total PO (Pcs)</th>
                     <th style="vertical-align: middle;">Total Sisa PO Outstanding (Pcs)</th>
                     <th style="vertical-align: middle;">QTY Terkirim (Pcs)</th>
                     <th style="vertical-align: middle;">Kekurangan Produksi (Pcs)</th>
@@ -378,8 +439,10 @@ Data Produk Masuk
             <div class="dpm-filter-anchor">
                 <div class="dpm-search-shell">
                     <i class="fas fa-search"></i>
-                    <input type="search" id="supplierSearchInput" class="dpm-search-input" placeholder="Search anything..." aria-label="Search anything">
-                    <button type="button" class="dpm-filter-toggle" id="supplierFilterToggle" title="Buka filter" aria-controls="supplierFilterPanel" aria-expanded="false">
+                    <input type="search" id="supplierSearchInput" class="dpm-search-input"
+                        placeholder="Search anything..." aria-label="Search anything">
+                    <button type="button" class="dpm-filter-toggle" id="supplierFilterToggle" title="Buka filter"
+                        aria-controls="supplierFilterPanel" aria-expanded="false">
                         <i class="fas fa-sliders-h"></i>
                     </button>
                 </div>
@@ -403,8 +466,10 @@ Data Produk Masuk
                     <div class="dpm-filter-section">
                         <div class="dpm-filter-label">Custom Date Range</div>
                         <div class="dpm-filter-field-row">
-                            <input type="date" name="tglawal" id="tglawal" class="dpm-filter-date" aria-label="Start date">
-                            <input type="date" name="tglakhir" id="tglakhir" class="dpm-filter-date" aria-label="End date">
+                            <input type="date" name="tglawal" id="tglawal" class="dpm-filter-date"
+                                aria-label="Start date">
+                            <input type="date" name="tglakhir" id="tglakhir" class="dpm-filter-date"
+                                aria-label="End date">
                         </div>
                     </div>
 
@@ -429,7 +494,8 @@ Data Produk Masuk
                 </section>
             </div>
         </div>
-        <table id="databarangmasuk" class="table table-bordered table-striped table-hover dataTable dtr-inline collapsed">
+        <table id="databarangmasuk"
+            class="table table-bordered table-striped table-hover dataTable dtr-inline collapsed">
             <thead>
                 <tr>
                     <th style="width: 5%;">No</th>
@@ -451,8 +517,10 @@ Data Produk Masuk
             <div class="dpm-filter-anchor">
                 <div class="dpm-search-shell">
                     <i class="fas fa-search"></i>
-                    <input type="search" id="adjustmentSearchInput" class="dpm-search-input" placeholder="Search anything..." aria-label="Search anything">
-                    <button type="button" class="dpm-filter-toggle" id="adjustmentFilterToggle" title="Buka filter" aria-controls="adjustmentFilterPanel" aria-expanded="false">
+                    <input type="search" id="adjustmentSearchInput" class="dpm-search-input"
+                        placeholder="Search anything..." aria-label="Search anything">
+                    <button type="button" class="dpm-filter-toggle" id="adjustmentFilterToggle" title="Buka filter"
+                        aria-controls="adjustmentFilterPanel" aria-expanded="false">
                         <i class="fas fa-sliders-h"></i>
                     </button>
                 </div>
@@ -476,8 +544,10 @@ Data Produk Masuk
                     <div class="dpm-filter-section">
                         <div class="dpm-filter-label">Custom Date Range</div>
                         <div class="dpm-filter-field-row">
-                            <input type="date" name="tglawalAdjustment" id="tglawalAdjustment" class="dpm-filter-date" aria-label="Start date">
-                            <input type="date" name="tglakhirAdjustment" id="tglakhirAdjustment" class="dpm-filter-date" aria-label="End date">
+                            <input type="date" name="tglawalAdjustment" id="tglawalAdjustment" class="dpm-filter-date"
+                                aria-label="Start date">
+                            <input type="date" name="tglakhirAdjustment" id="tglakhirAdjustment" class="dpm-filter-date"
+                                aria-label="End date">
                         </div>
                     </div>
 
@@ -495,14 +565,16 @@ Data Produk Masuk
 
                     <div class="dpm-filter-section">
                         <div class="dpm-filter-action-row">
-                            <button type="button" class="dpm-filter-apply" id="tombolTampilAdjustment">Tampilkan</button>
+                            <button type="button" class="dpm-filter-apply"
+                                id="tombolTampilAdjustment">Tampilkan</button>
                             <button type="button" class="dpm-filter-reset" id="adjustmentFilterReset">Reset</button>
                         </div>
                     </div>
                 </section>
             </div>
         </div>
-        <table id="dataadjustment" class="table table-bordered table-striped table-hover dataTable dtr-inline collapsed" style="width: 100%;">
+        <table id="dataadjustment" class="table table-bordered table-striped table-hover dataTable dtr-inline collapsed"
+            style="width: 100%;">
             <thead>
                 <tr>
                     <th style="width: 5%;">No</th>
@@ -519,69 +591,74 @@ Data Produk Masuk
     </div>
 
     <?php if ($bisaLihatProduksi) : ?>
-    <div class="tab-pane fade" id="tab-produksi" role="tabpanel">
-        <div class="dpm-toolbar">
-            <div class="dpm-filter-anchor">
-                <div class="dpm-search-shell">
-                    <i class="fas fa-search"></i>
-                    <input type="search" id="produksiSearchInput" class="dpm-search-input" placeholder="Search anything..." aria-label="Search anything">
-                    <button type="button" class="dpm-filter-toggle" id="produksiFilterToggle" title="Buka filter" aria-controls="produksiFilterPanel" aria-expanded="false">
-                        <i class="fas fa-sliders-h"></i>
-                    </button>
-                </div>
-
-                <section class="dpm-filter-panel" id="produksiFilterPanel" aria-hidden="true">
-                    <div class="dpm-filter-header">
-                        <h3 class="dpm-filter-title">Filter</h3>
-                        <button type="button" class="dpm-filter-close" id="produksiFilterClose" title="Tutup filter">
-                            <i class="fas fa-times"></i>
+        <div class="tab-pane fade" id="tab-produksi" role="tabpanel">
+            <div class="dpm-toolbar">
+                <div class="dpm-filter-anchor">
+                    <div class="dpm-search-shell">
+                        <i class="fas fa-search"></i>
+                        <input type="search" id="produksiSearchInput" class="dpm-search-input"
+                            placeholder="Search anything..." aria-label="Search anything">
+                        <button type="button" class="dpm-filter-toggle" id="produksiFilterToggle" title="Buka filter"
+                            aria-controls="produksiFilterPanel" aria-expanded="false">
+                            <i class="fas fa-sliders-h"></i>
                         </button>
                     </div>
 
-                    <div class="dpm-filter-section">
-                        <div class="dpm-filter-label">Filter by Date Range</div>
-                        <div class="dpm-filter-chip-row">
-                            <button type="button" class="dpm-filter-chip" data-range="30">Last 30 Days</button>
-                            <button type="button" class="dpm-filter-chip" data-range="180">Last 6 Months</button>
+                    <section class="dpm-filter-panel" id="produksiFilterPanel" aria-hidden="true">
+                        <div class="dpm-filter-header">
+                            <h3 class="dpm-filter-title">Filter</h3>
+                            <button type="button" class="dpm-filter-close" id="produksiFilterClose" title="Tutup filter">
+                                <i class="fas fa-times"></i>
+                            </button>
                         </div>
-                    </div>
 
-                    <div class="dpm-filter-section">
-                        <div class="dpm-filter-label">Custom Date Range</div>
-                        <div class="dpm-filter-field-row">
-                            <input type="date" name="tglawalProduksi" id="tglawalProduksi" class="dpm-filter-date" aria-label="Start date">
-                            <input type="date" name="tglakhirProduksi" id="tglakhirProduksi" class="dpm-filter-date" aria-label="End date">
+                        <div class="dpm-filter-section">
+                            <div class="dpm-filter-label">Filter by Date Range</div>
+                            <div class="dpm-filter-chip-row">
+                                <button type="button" class="dpm-filter-chip" data-range="30">Last 30 Days</button>
+                                <button type="button" class="dpm-filter-chip" data-range="180">Last 6 Months</button>
+                            </div>
                         </div>
-                    </div>
 
-                    <div class="dpm-filter-section">
-                        <div class="dpm-filter-action-row">
-                            <button type="button" class="dpm-filter-apply" id="tombolTampilProduksi">Tampilkan</button>
-                            <button type="button" class="dpm-filter-reset" id="produksiFilterReset">Reset</button>
+                        <div class="dpm-filter-section">
+                            <div class="dpm-filter-label">Custom Date Range</div>
+                            <div class="dpm-filter-field-row">
+                                <input type="date" name="tglawalProduksi" id="tglawalProduksi" class="dpm-filter-date"
+                                    aria-label="Start date">
+                                <input type="date" name="tglakhirProduksi" id="tglakhirProduksi" class="dpm-filter-date"
+                                    aria-label="End date">
+                            </div>
                         </div>
-                    </div>
-                </section>
+
+                        <div class="dpm-filter-section">
+                            <div class="dpm-filter-action-row">
+                                <button type="button" class="dpm-filter-apply" id="tombolTampilProduksi">Tampilkan</button>
+                                <button type="button" class="dpm-filter-reset" id="produksiFilterReset">Reset</button>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+            </div>
+            <div class="table-responsive">
+                <table id="dataproduksi" class="table table-bordered table-striped table-hover dataTable"
+                    style="width: 100%;">
+                    <thead>
+                        <tr>
+                            <th style="width: 5%;">No</th>
+                            <th>Tanggal</th>
+                            <th>Kode Produk</th>
+                            <th>Nama Produk</th>
+                            <th>Qty Diproduksi</th>
+                            <th>Gudang</th>
+                            <th>Keterangan</th>
+                            <th style="width: 10%;">#</th>
+                            <th>User Input</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
             </div>
         </div>
-        <div class="table-responsive">
-            <table id="dataproduksi" class="table table-bordered table-striped table-hover dataTable" style="width: 100%;">
-                <thead>
-                    <tr>
-                        <th style="width: 5%;">No</th>
-                        <th>Tanggal</th>
-                        <th>Kode Produk</th>
-                        <th>Nama Produk</th>
-                        <th>Qty Diproduksi</th>
-                        <th>Gudang</th>
-                        <th>Keterangan</th>
-                        <th style="width: 10%;">#</th>
-                        <th>User Input</th>
-                    </tr>
-                </thead>
-                <tbody></tbody>
-            </table>
-        </div>
-    </div>
     <?php endif ?>
 </div>
 
@@ -607,7 +684,61 @@ Data Produk Masuk
         return number.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
     }
 
+    function updateStokFilterSummary() {
+        const parts = [];
+        const addSelected = (selector, label) => {
+            const control = $(selector);
+            if (control.length && control.val()) {
+                const selectedText = control.find('option:selected').text().trim();
+                if (selectedText) parts.push(label + ': ' + selectedText);
+            }
+        };
+        const formatDate = (value) => {
+            if (!value) return '';
+            const dateParts = value.split('-');
+            return dateParts.length === 3 ? dateParts[2] + '/' + dateParts[1] + '/' + dateParts[0] : value;
+        };
+
+        addSelected('#kategoriStok', 'Kategori');
+        addSelected('#materialStok', 'Material');
+        addSelected('#pelangganStok', 'Pelanggan');
+
+        const dateStart = $('#tglawalStok').val();
+        const dateEnd = $('#tglakhirStok').val();
+        if (dateStart || dateEnd) {
+            parts.push('Periode: ' + (dateStart ? formatDate(dateStart) : '...') + ' s/d ' + (dateEnd ? formatDate(dateEnd) : '...'));
+        }
+
+        if ($('#modePoStok').val() === 'open') {
+            parts.push(dateEnd ? 'PO terbuka per ' + formatDate(dateEnd) : 'PO terbuka saat ini');
+        } else if ($('#modePoStok').val() === 'all') {
+            parts.push('Termasuk PO yang selesai');
+        }
+
+        const keyword = ($('#stokSearchInput').val() || '').trim();
+        if (keyword) parts.push('Pencarian: ' + keyword);
+        if (parts.length === 0) parts.push('Semua data stok');
+
+        $('#stokFilterSummaryText').text(parts.join('  |  '));
+    }
+
     $(document).ready(function() {
+        const formatStokDateInput = (date) => {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        };
+        const setStokCurrentMonthRange = () => {
+            const today = new Date();
+            const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+            $('#tglawalStok').val(formatStokDateInput(firstDay));
+            $('#tglakhirStok').val(formatStokDateInput(today));
+            $('#stokFilterPanel .dpm-filter-chip[data-range="month"]').addClass('is-active');
+        };
+
+        setStokCurrentMonthRange();
+
         tableStok = $('#datastok').DataTable({
             lengthChange: true,
             autoWidth: false,
@@ -628,6 +759,7 @@ Data Produk Masuk
                     d.pelanggan = $('#pelangganStok').val();
                     d.tglawal = $('#tglawalStok').val();
                     d.tglakhir = $('#tglakhirStok').val();
+                    d.mode_po = $('#modePoStok').val();
                     d[csrfToken] = csrfHash;
                 }
             },
@@ -666,6 +798,13 @@ Data Produk Masuk
                     }
                 },
                 {
+                    data: 'totalpo_produk',
+                    className: 'text-right',
+                    render: function(data) {
+                        return formatNumber(data);
+                    }
+                },
+                {
                     data: 'kekurangan',
                     className: 'text-right',
                     render: function(data) {
@@ -696,6 +835,8 @@ Data Produk Masuk
             ],
         });
 
+        tableStok.on('preXhr.dt', updateStokFilterSummary);
+
         $('#kategoriStok').on('change', function() {
             tableStok.ajax.reload();
         });
@@ -703,6 +844,9 @@ Data Produk Masuk
             tableStok.ajax.reload();
         });
         $('#pelangganStok').on('change', function() {
+            tableStok.ajax.reload();
+        });
+        $('#modePoStok').on('change', function() {
             tableStok.ajax.reload();
         });
 
@@ -832,113 +976,113 @@ Data Produk Masuk
             tableAdjustment.ajax.reload();
         });
 
-<?php if ($bisaLihatProduksi) : ?>
-        tableProduksi = $('#dataproduksi').DataTable({
-            searching: true,
-            searchDelay: 500,
-            stateSave: true,
-            stateDuration: -1,
-            autoWidth: false,
-            responsive: true,
-            processing: true,
-            serverSide: false,
-            ordering: false,
-            paging: false,
-            dom: "<'row'<'col-sm-12'tr>><'row mt-3'<'col-sm-12'i>>",
-            ajax: {
-                url: '<?= site_url('produksi/listData') ?>',
-                type: 'POST',
-                data: function(d) {
-                    d.tglawal = $('#tglawalProduksi').val();
-                    d.tglakhir = $('#tglakhirProduksi').val();
-                    d[csrfToken] = csrfHash;
-                    // Endpoint memakai library Hermawan\DataTables yang
-                    // mengharuskan parameter draw, columns, dan search.
-                    // Array kosong akan dihilangkan oleh jQuery saat
-                    // diserialisasi, sehingga backend menerima columns=null
-                    // dan gagal saat melakukan foreach pada parameter itu.
-                    d.draw = 1;
-                    d.length = -1;
-                    d.start = 0;
-                    d.columns = [
-                        'nomor', 'tgl_produksi', 'kode_produk',
-                        'nama_produk', 'qty_produk', 'gdgnama',
-                        'keterangan', 'aksi', 'user_input'
-                    ].map(function(column) {
-                        return {
-                            data: column,
-                            name: column,
-                            searchable: 'false',
-                            orderable: 'false',
-                            search: {
-                                value: '',
-                                regex: 'false'
-                            }
+        <?php if ($bisaLihatProduksi) : ?>
+            tableProduksi = $('#dataproduksi').DataTable({
+                searching: true,
+                searchDelay: 500,
+                stateSave: true,
+                stateDuration: -1,
+                autoWidth: false,
+                responsive: true,
+                processing: true,
+                serverSide: false,
+                ordering: false,
+                paging: false,
+                dom: "<'row'<'col-sm-12'tr>><'row mt-3'<'col-sm-12'i>>",
+                ajax: {
+                    url: '<?= site_url('produksi/listData') ?>',
+                    type: 'POST',
+                    data: function(d) {
+                        d.tglawal = $('#tglawalProduksi').val();
+                        d.tglakhir = $('#tglakhirProduksi').val();
+                        d[csrfToken] = csrfHash;
+                        // Endpoint memakai library Hermawan\DataTables yang
+                        // mengharuskan parameter draw, columns, dan search.
+                        // Array kosong akan dihilangkan oleh jQuery saat
+                        // diserialisasi, sehingga backend menerima columns=null
+                        // dan gagal saat melakukan foreach pada parameter itu.
+                        d.draw = 1;
+                        d.length = -1;
+                        d.start = 0;
+                        d.columns = [
+                            'nomor', 'tgl_produksi', 'kode_produk',
+                            'nama_produk', 'qty_produk', 'gdgnama',
+                            'keterangan', 'aksi', 'user_input'
+                        ].map(function(column) {
+                            return {
+                                data: column,
+                                name: column,
+                                searchable: 'false',
+                                orderable: 'false',
+                                search: {
+                                    value: '',
+                                    regex: 'false'
+                                }
+                            };
+                        });
+                        d.search = {
+                            value: '',
+                            regex: false
                         };
+                    }
+                },
+                drawCallback: function(settings) {
+                    // Pakai settings->api langsung (bukan variabel `tableProduksi`
+                    // di luar) karena drawCallback pertama nembak SEBELUM baris
+                    // `tableProduksi = $(...).DataTable(...)` selesai assign.
+                    window.treRenderMergedGroupRows(new $.fn.dataTable.Api(settings), {
+                        groupBy: function(row) {
+                            return row.no_produksi;
+                        },
+                        // Tanggal sengaja tidak di-merge agar tiap baris produksi
+                        // tetap jelas terbaca walaupun masih satu batch.
+                        columns: [5, 6]
                     });
-                    d.search = {
-                        value: '',
-                        regex: false
-                    };
-                }
-            },
-            drawCallback: function(settings) {
-                // Pakai settings->api langsung (bukan variabel `tableProduksi`
-                // di luar) karena drawCallback pertama nembak SEBELUM baris
-                // `tableProduksi = $(...).DataTable(...)` selesai assign.
-                window.treRenderMergedGroupRows(new $.fn.dataTable.Api(settings), {
-                    groupBy: function(row) {
-                        return row.no_produksi;
+                },
+                columns: [{
+                        data: 'nomor',
+                        orderable: false,
+                        className: 'text-center'
                     },
-                    // Tanggal sengaja tidak di-merge agar tiap baris produksi
-                    // tetap jelas terbaca walaupun masih satu batch.
-                    columns: [5, 6]
-                });
-            },
-            columns: [{
-                    data: 'nomor',
-                    orderable: false,
-                    className: 'text-center'
-                },
-                {
-                    data: 'tgl_produksi',
-                    className: 'text-center'
-                },
-                {
-                    data: 'kode_produk',
-                    className: 'text-center'
-                },
-                {
-                    data: 'nama_produk'
-                },
-                {
-                    data: 'qty_produk',
-                    className: 'text-right'
-                },
-                {
-                    data: 'gdgnama',
-                    className: 'text-center'
-                },
-                {
-                    data: 'keterangan',
-                    className: 'text-center'
-                },
-                {
-                    data: 'aksi',
-                    orderable: false,
-                    className: 'text-center'
-                },
-                {
-                    data: 'user_input',
-                    className: 'text-center'
-                },
-            ]
-        });
+                    {
+                        data: 'tgl_produksi',
+                        className: 'text-center'
+                    },
+                    {
+                        data: 'kode_produk',
+                        className: 'text-center'
+                    },
+                    {
+                        data: 'nama_produk'
+                    },
+                    {
+                        data: 'qty_produk',
+                        className: 'text-right'
+                    },
+                    {
+                        data: 'gdgnama',
+                        className: 'text-center'
+                    },
+                    {
+                        data: 'keterangan',
+                        className: 'text-center'
+                    },
+                    {
+                        data: 'aksi',
+                        orderable: false,
+                        className: 'text-center'
+                    },
+                    {
+                        data: 'user_input',
+                        className: 'text-center'
+                    },
+                ]
+            });
 
-        $('#tombolTampilProduksi').on('click', function() {
-            tableProduksi.ajax.reload();
-        });
-<?php endif ?>
+            $('#tombolTampilProduksi').on('click', function() {
+                tableProduksi.ajax.reload();
+            });
+        <?php endif ?>
 
         function setupFilterPanel(opts) {
             const panel = $('#' + opts.panelId);
@@ -1002,9 +1146,9 @@ Data Produk Masuk
                 panel.find('.dpm-filter-chip').on('click', function() {
                     const endDate = new Date();
                     const range = String($(this).data('range') || '');
-                    const startDate = range === 'month'
-                        ? new Date(endDate.getFullYear(), endDate.getMonth(), 1)
-                        : new Date();
+                    const startDate = range === 'month' ?
+                        new Date(endDate.getFullYear(), endDate.getMonth(), 1) :
+                        new Date();
                     if (range !== 'month') {
                         const days = Number(range) || 30;
                         startDate.setDate(endDate.getDate() - days);
@@ -1016,7 +1160,9 @@ Data Produk Masuk
                 });
             }
 
-            return { toggleFilterPanel };
+            return {
+                toggleFilterPanel
+            };
         }
 
         const stokFilter = setupFilterPanel({
@@ -1029,6 +1175,7 @@ Data Produk Masuk
             tglakhirId: 'tglakhirStok',
             table: tableStok
         });
+        updateStokFilterSummary();
 
         const supplierFilter = setupFilterPanel({
             panelId: 'supplierFilterPanel',
@@ -1052,17 +1199,17 @@ Data Produk Masuk
             table: tableAdjustment
         });
 
-<?php if ($bisaLihatProduksi) : ?>
-        const produksiFilter = setupFilterPanel({
-            panelId: 'produksiFilterPanel',
-            toggleId: 'produksiFilterToggle',
-            closeId: 'produksiFilterClose',
-            searchInputId: 'produksiSearchInput',
-            tglawalId: 'tglawalProduksi',
-            tglakhirId: 'tglakhirProduksi',
-            table: tableProduksi
-        });
-<?php endif ?>
+        <?php if ($bisaLihatProduksi) : ?>
+            const produksiFilter = setupFilterPanel({
+                panelId: 'produksiFilterPanel',
+                toggleId: 'produksiFilterToggle',
+                closeId: 'produksiFilterClose',
+                searchInputId: 'produksiSearchInput',
+                tglawalId: 'tglawalProduksi',
+                tglakhirId: 'tglakhirProduksi',
+                table: tableProduksi
+            });
+        <?php endif ?>
 
         $('#tombolTampil').on('click', function() {
             supplierFilter.toggleFilterPanel(false);
@@ -1071,18 +1218,19 @@ Data Produk Masuk
             adjustmentFilter.toggleFilterPanel(false);
         });
         <?php if ($bisaLihatProduksi) : ?>
-        $('#tombolTampilProduksi').on('click', function() {
-            produksiFilter.toggleFilterPanel(false);
-        });
+            $('#tombolTampilProduksi').on('click', function() {
+                produksiFilter.toggleFilterPanel(false);
+            });
         <?php endif ?>
 
         $('#stokFilterReset').on('click', function() {
             $('#kategoriStok').val('');
             $('#materialStok').val('');
             $('#pelangganStok').val('');
-            $('#tglawalStok').val('');
-            $('#tglakhirStok').val('');
+            setStokCurrentMonthRange();
+            $('#modePoStok').val('open');
             $('#stokFilterPanel .dpm-filter-chip').removeClass('is-active');
+            $('#stokFilterPanel .dpm-filter-chip[data-range="month"]').addClass('is-active');
             $('#stokPageLength').val('50');
             $('#stokSearchInput').val('');
             tableStok.search('').page.len(50);
@@ -1115,14 +1263,14 @@ Data Produk Masuk
         });
 
         <?php if ($bisaLihatProduksi) : ?>
-        $('#produksiFilterReset').on('click', function() {
-            $('#tglawalProduksi').val('');
-            $('#tglakhirProduksi').val('');
-            $('#produksiFilterPanel .dpm-filter-chip').removeClass('is-active');
-            $('#produksiSearchInput').val('');
-            tableProduksi.search('');
-            tableProduksi.ajax.reload();
-        });
+            $('#produksiFilterReset').on('click', function() {
+                $('#tglawalProduksi').val('');
+                $('#tglakhirProduksi').val('');
+                $('#produksiFilterPanel .dpm-filter-chip').removeClass('is-active');
+                $('#produksiSearchInput').val('');
+                tableProduksi.search('');
+                tableProduksi.ajax.reload();
+            });
         <?php endif ?>
 
         // DataTables perlu di-recalculate lebarnya begitu tab yang
@@ -1130,9 +1278,9 @@ Data Produk Masuk
         // masih tersembunyi (display:none) dan lebar tabelnya belum
         // kehitung benar.
         <?php if ($bisaLihatProduksi) : ?>
-        $('#tab-produksi-link').on('shown.bs.tab', function() {
-            tableProduksi.columns.adjust();
-        });
+            $('#tab-produksi-link').on('shown.bs.tab', function() {
+                tableProduksi.columns.adjust();
+            });
         <?php endif ?>
         $('#tab-supplier-link').on('shown.bs.tab', function() {
             table.columns.adjust().responsive.recalc();
@@ -1142,9 +1290,9 @@ Data Produk Masuk
         });
 
         <?php if ($bisaLihatProduksi) : ?>
-        if (window.location.hash === '#tab-produksi') {
-            $('#tab-produksi-link').tab('show');
-        }
+            if (window.location.hash === '#tab-produksi') {
+                $('#tab-produksi-link').tab('show');
+            }
         <?php endif ?>
     });
 

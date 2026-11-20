@@ -40,24 +40,72 @@ class Stok extends BaseController
             $db = Database::connect();
             $tglawal = trim((string) $this->request->getPost('tglawal'));
             $tglakhir = trim((string) $this->request->getPost('tglakhir'));
+            $modePo = $this->request->getPost('mode_po') === 'all' ? 'all' : 'open';
             $tanggalValid = static fn(string $tanggal): bool => (bool) preg_match('/^\d{4}-\d{2}-\d{2}$/', $tanggal);
             $stokCikarangSql = 'SUM(CASE WHEN stok.gudang = 1 THEN GREATEST(COALESCE(stok.stok, 0), 0) ELSE 0 END)';
             $stokCirebonSql = 'SUM(CASE WHEN stok.gudang = 2 THEN GREATEST(COALESCE(stok.stok, 0), 0) ELSE 0 END)';
             $totalStokSql = '(' . $stokCikarangSql . ' + ' . $stokCirebonSql . ')';
-            // PENTING: "sudah terkirim" itu bukan cuma SUM(detail_barangkeluar.detjml)
-            // -- ada juga detkirim_awal (baseline pengiriman lama yang dulu ngga
-            // pernah dicatat sebagai baris detail_barangkeluar tersendiri). Kalau
-            // cuma detkirim doang yang dihitung, Sisa PO/Kekurangan Produksi jadi
-            // kegedean banget krn dianggap belum kirim sama sekali padahal
-            // sebenernya sebagian besar udah dikirim lewat detkirim_awal. Pakai
-            // `detkurang` (detqty - detkirim_awal - detkirim) yang udah jadi
-            // acuan resmi di seluruh sistem (lihat Modeloutstand::sinkronByPo()).
+            // Tanpa periode, pakai saldo terkini. Jika periode dipilih, saldo
+            // historis dihitung dari pengiriman bertanggal sampai akhir periode;
+            // detkirim/detkurang adalah saldo terkini dan bisa memuat pengiriman
+            // setelah tanggal laporan.
             $qtyTerkirimSql = 'COALESCE(totalterkirim, 0)';
             $poDateFilterSql = '';
+            $sisaPoDetailSql = 'GREATEST(COALESCE(dp.detqty, 0) - COALESCE(dp.detkirim_awal, 0) - COALESCE(dp.detkirim, 0), 0)';
+            $totalPoAggregateSql = 'SUM(COALESCE(dp.detqty, 0))';
+            $totalSisaAggregateSql = "SUM(CASE WHEN {$sisaPoDetailSql} > 0 THEN {$sisaPoDetailSql} ELSE 0 END)";
+            $totalPoProdukSql = '(SELECT COALESCE(SUM(dp_total.detqty), 0) FROM detail_po dp_total WHERE dp_total.detkodebrg = stok.kodebarang AND dp_total.detidpel NOT IN (1, 2))';
+            if ($modePo === 'open') {
+                $sisaPoCurrentTotalSql = 'GREATEST(COALESCE(dp_total.detqty, 0) - COALESCE(dp_total.detkirim_awal, 0) - COALESCE(dp_total.detkirim, 0), 0)';
+                $totalPoAggregateSql = "SUM(CASE WHEN {$sisaPoDetailSql} > 0 THEN COALESCE(dp.detqty, 0) ELSE 0 END)";
+                $totalPoProdukSql = "(SELECT COALESCE(SUM(CASE WHEN {$sisaPoCurrentTotalSql} > 0 THEN COALESCE(dp_total.detqty, 0) ELSE 0 END), 0)
+                    FROM detail_po dp_total
+                    WHERE dp_total.detkodebrg = stok.kodebarang
+                      AND dp_total.detidpel NOT IN (1, 2))";
+            }
             if ($tanggalValid($tglawal) && $tanggalValid($tglakhir)) {
                 $tglawalSql = $db->escape($tglawal);
                 $tglakhirSql = $db->escape($tglakhir);
-                $poDateFilterSql = " AND dp.dettglpo >= {$tglawalSql} AND dp.dettglpo <= {$tglakhirSql}";
+                // Total PO is cumulative from the oldest PO through the selected end date.
+                $poDateFilterSql = " AND dp.dettglpo <= {$tglakhirSql}";
+                $totalPoAggregateSql = 'SUM(COALESCE(dp.detqty, 0))';
+                $sisaPoHistoricalSql = "GREATEST(
+                    COALESCE(dp.detqty, 0) - COALESCE(dp.detkirim_awal, 0) - COALESCE((
+                        SELECT SUM(dk.detjml)
+                        FROM detail_barangkeluar dk
+                        INNER JOIN barangkeluar bk ON bk.faktur = dk.detfaktur
+                        WHERE dk.detpo = dp.detnopo
+                          AND dk.detbrgkode = dp.detkodebrg
+                          AND bk.tglfaktur <= {$tglakhirSql}
+                    ), 0),
+                    0
+                )";
+                $totalSisaAggregateSql = "SUM({$sisaPoHistoricalSql})";
+                $totalPoAggregateSql = $modePo === 'open'
+                    ? "SUM(CASE WHEN {$sisaPoHistoricalSql} > 0 THEN COALESCE(dp.detqty, 0) ELSE 0 END)"
+                    : 'SUM(COALESCE(dp.detqty, 0))';
+                $sisaPoHistoricalTotalSql = "GREATEST(
+                    COALESCE(dp_total.detqty, 0) - COALESCE(dp_total.detkirim_awal, 0) - COALESCE((
+                        SELECT SUM(dk.detjml)
+                        FROM detail_barangkeluar dk
+                        INNER JOIN barangkeluar bk ON bk.faktur = dk.detfaktur
+                        WHERE dk.detpo = dp_total.detnopo
+                          AND dk.detbrgkode = dp_total.detkodebrg
+                          AND bk.tglfaktur <= {$tglakhirSql}
+                    ), 0),
+                    0
+                )";
+                $totalPoProdukSql = $modePo === 'open'
+                    ? "(SELECT COALESCE(SUM(CASE WHEN {$sisaPoHistoricalTotalSql} > 0 THEN COALESCE(dp_total.detqty, 0) ELSE 0 END), 0)
+                        FROM detail_po dp_total
+                        WHERE dp_total.detkodebrg = stok.kodebarang
+                          AND dp_total.detidpel NOT IN (1, 2)
+                          AND dp_total.dettglpo <= {$tglakhirSql})"
+                    : "(SELECT COALESCE(SUM(dp_total.detqty), 0)
+                        FROM detail_po dp_total
+                        WHERE dp_total.detkodebrg = stok.kodebarang
+                          AND dp_total.detidpel NOT IN (1, 2)
+                          AND dp_total.dettglpo <= {$tglakhirSql})";
                 $qtyTerkirimSql = "COALESCE((
                     SELECT SUM(dk.detjml)
                     FROM detail_barangkeluar dk
@@ -66,17 +114,25 @@ class Stok extends BaseController
                       AND bk.tglfaktur >= {$tglawalSql}
                       AND bk.tglfaktur <= {$tglakhirSql}
                 ), 0)";
+                if ($modePo === 'open') {
+                    // Sesuai catatan manual: Total PO = pengiriman dalam periode + saldo outstanding akhir periode.
+                    $totalPoProdukSql = '(' . $qtyTerkirimSql . ' + GREATEST(COALESCE(detail_po.totalsisa, 0), 0))';
+                }
             }
-            $sisaPoSql = 'GREATEST(COALESCE(totalsisa, 0), 0)';
+            // Outstanding is the current open balance of all PO dated up to the
+            // period end; period shipments are independent because they can fulfill
+            // older PO lines rather than only PO created in that period.
+            $sisaPoSql = 'GREATEST(COALESCE(detail_po.totalsisa, 0), 0)';
             $builder = $db->table('stok')
                 ->select('stok.kodebarang, stok.material, stok.namabarang, stok.gudang, stok.idpel')
                 ->select($stokCikarangSql . ' AS totmascik', false)
                 ->select($stokCirebonSql . ' AS totmascir', false)
                 ->select($totalStokSql . ' AS totalstok', false)
+                ->select($totalPoProdukSql . ' AS totalpo_produk', false)
                 ->join("(SELECT dp.detkodebrg,
-                     SUM(CASE WHEN COALESCE(dp.detkurang, 0) > 0 THEN dp.detqty ELSE 0 END) as totalpo,
+                     {$totalPoAggregateSql} as totalpo,
                      SUM(COALESCE(dp.detkirim_awal, 0) + COALESCE(dp.detkirim, 0)) as totalterkirim,
-                     SUM(CASE WHEN COALESCE(dp.detkurang, 0) > 0 THEN dp.detkurang ELSE 0 END) as totalsisa
+                     {$totalSisaAggregateSql} as totalsisa
                  FROM detail_po dp
                  WHERE dp.detkodebrg NOT IN (SELECT kodebarang FROM stok WHERE idpel IN (1, 2))
                  AND dp.detidpel NOT IN (1, 2)
@@ -163,6 +219,7 @@ class Stok extends BaseController
         $material = $this->request->getPost('material');
         $kategori = $this->request->getPost('kategori');
         $pelanggan_id = $this->request->getPost('pelanggan');
+        $modePo = $this->request->getPost('mode_po') === 'all' ? 'all' : 'open';
         $bulan = trim((string) $this->request->getPost('bulan'));
         $tglawal = trim((string) $this->request->getPost('tglawal'));
         $tglakhir = trim((string) $this->request->getPost('tglakhir'));
@@ -186,12 +243,34 @@ class Stok extends BaseController
         $stokCirebonSql = 'SUM(CASE WHEN stok.gudang = 2 THEN GREATEST(COALESCE(stok.stok, 0), 0) ELSE 0 END)';
         $totalStokSql = '(' . $stokCikarangSql . ' + ' . $stokCirebonSql . ')';
         $qtyTerkirimSql = 'COALESCE(detail_po.totalterkirim, 0)';
+        $totalPoDisplaySql = 'COALESCE(detail_po.totalpo, 0)';
         $sisaPoDetailSql = 'GREATEST(COALESCE(dp.detqty, 0) - COALESCE(dp.detkirim_awal, 0) - COALESCE(dp.detkirim, 0), 0)';
         $poDateFilterSql = '';
+        $totalPoAggregateSql = $modePo === 'open'
+            ? "SUM(CASE WHEN {$sisaPoDetailSql} > 0 THEN COALESCE(dp.detqty, 0) ELSE 0 END)"
+            : 'SUM(COALESCE(dp.detqty, 0))';
+        $totalSisaAggregateSql = "SUM(CASE WHEN {$sisaPoDetailSql} > 0 THEN {$sisaPoDetailSql} ELSE 0 END)";
         if ($tanggalValid($tglawal) && $tanggalValid($tglakhir)) {
             $tglawalSql = $db->escape($tglawal);
             $tglakhirSql = $db->escape($tglakhir);
-            $poDateFilterSql = " AND dp.dettglpo >= {$tglawalSql} AND dp.dettglpo <= {$tglakhirSql}";
+            // Total PO bersifat kumulatif dari PO paling awal sampai akhir periode.
+            $poDateFilterSql = " AND dp.dettglpo <= {$tglakhirSql}";
+            $totalPoAggregateSql = 'SUM(COALESCE(dp.detqty, 0))';
+            $sisaPoHistoricalSql = "GREATEST(
+                COALESCE(dp.detqty, 0) - COALESCE(dp.detkirim_awal, 0) - COALESCE((
+                    SELECT SUM(dk.detjml)
+                    FROM detail_barangkeluar dk
+                    INNER JOIN barangkeluar bk ON bk.faktur = dk.detfaktur
+                    WHERE dk.detpo = dp.detnopo
+                      AND dk.detbrgkode = dp.detkodebrg
+                      AND bk.tglfaktur <= {$tglakhirSql}
+                ), 0),
+                0
+            )";
+            $totalSisaAggregateSql = "SUM({$sisaPoHistoricalSql})";
+            $totalPoAggregateSql = $modePo === 'open'
+                ? "SUM(CASE WHEN {$sisaPoHistoricalSql} > 0 THEN COALESCE(dp.detqty, 0) ELSE 0 END)"
+                : 'SUM(COALESCE(dp.detqty, 0))';
             $qtyTerkirimSql = "COALESCE((
                 SELECT SUM(dk.detjml)
                 FROM detail_barangkeluar dk
@@ -200,6 +279,9 @@ class Stok extends BaseController
                   AND bk.tglfaktur >= {$tglawalSql}
                   AND bk.tglfaktur <= {$tglakhirSql}
             ), 0)";
+            if ($modePo === 'open') {
+                $totalPoDisplaySql = '(' . $qtyTerkirimSql . ' + GREATEST(COALESCE(detail_po.totalsisa, 0), 0))';
+            }
         }
 
         $builder = $db->table('stok')
@@ -207,14 +289,14 @@ class Stok extends BaseController
             ->select($stokCikarangSql . ' AS totmascik', false)
             ->select($stokCirebonSql . ' AS totmascir', false)
             ->select($totalStokSql . ' AS totalstok', false)
-            ->select('COALESCE(detail_po.totalpo, 0) AS total_po')
+            ->select($totalPoDisplaySql . ' AS total_po', false)
             ->select($qtyTerkirimSql . ' AS qty_terkirim', false)
             ->select('COALESCE(detail_po.totalsisa, 0) AS total_sisa')
             ->join('barang', 'barang.brgkode = stok.kodebarang', 'left')
             ->join("(SELECT dp.detkodebrg,
-                     SUM(CASE WHEN {$sisaPoDetailSql} > 0 THEN dp.detqty ELSE 0 END) as totalpo,
+                     {$totalPoAggregateSql} as totalpo,
                      SUM(COALESCE(dp.detkirim_awal, 0) + COALESCE(dp.detkirim, 0)) as totalterkirim,
-                     SUM({$sisaPoDetailSql}) as totalsisa
+                     {$totalSisaAggregateSql} as totalsisa
                  FROM detail_po dp
                  WHERE dp.detkodebrg NOT IN (SELECT kodebarang FROM stok WHERE idpel IN (1, 2))
                  AND dp.detidpel NOT IN (1, 2)
@@ -261,6 +343,12 @@ class Stok extends BaseController
             'nama_pelanggan' => $nama_pelanggan,
             'tglawal' => $tglawal,
             'tglakhir' => $tglakhir,
+            'mode_po' => $modePo,
+            'mode_po_label' => $modePo === 'open'
+                ? (($tanggalValid($tglawal) && $tanggalValid($tglakhir))
+                    ? 'Total PO = QTY Terkirim periode + outstanding pada tanggal akhir'
+                    : 'Qty PO awal pada PO yang masih terbuka saat ini')
+                : 'Semua PO (termasuk selesai)',
         ]);
 
         // $dompdf = new Dompdf();
